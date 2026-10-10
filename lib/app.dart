@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-/// Radice dell'app: tema, lingua italiana e prima schermata.
+import 'core/sessione.dart';
+import 'features/home/home_pagina.dart';
+import 'features/primo_avvio/primo_avvio_pagina.dart';
+import 'features/sblocco/sblocco_pagina.dart';
+
+/// Radice dell'app: tema, lingua italiana e schermata in base allo stato della [sessione].
 class GestionaleApp extends StatelessWidget {
-  const GestionaleApp({super.key});
+  const GestionaleApp({super.key, required this.sessione});
+
+  final Sessione sessione;
+
+  static const _colore = Color(0xFF1B6E5A);
 
   @override
   Widget build(BuildContext context) {
@@ -13,45 +22,22 @@ class GestionaleApp extends StatelessWidget {
       locale: const Locale('it', 'IT'),
       supportedLocales: const [Locale('it', 'IT')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: ThemeData(
-        colorSchemeSeed: const Color(0xFF1B6E5A),
-        useMaterial3: true,
-      ),
+      theme: ThemeData(colorSchemeSeed: _colore, useMaterial3: true),
       darkTheme: ThemeData(
-        colorSchemeSeed: const Color(0xFF1B6E5A),
+        colorSchemeSeed: _colore,
         brightness: Brightness.dark,
         useMaterial3: true,
       ),
-      home: const _Benvenuto(),
-    );
-  }
-}
-
-class _Benvenuto extends StatelessWidget {
-  const _Benvenuto();
-
-  @override
-  Widget build(BuildContext context) {
-    final testo = Theme.of(context).textTheme;
-    return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.lock_outline, size: 64),
-              const SizedBox(height: 16),
-              Text('GestionaleFinanziaria', style: testo.headlineMedium),
-              const SizedBox(height: 8),
-              Text(
-                'I tuoi conti, cifrati e solo tuoi.',
-                style: testo.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
-            ],
+      home: ListenableBuilder(
+        listenable: sessione,
+        builder: (context, _) => switch (sessione.fase) {
+          FaseSessione.caricamento => const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
           ),
-        ),
+          FaseSessione.primoAvvio => PrimoAvvioPagina(sessione: sessione),
+          FaseSessione.bloccata => SbloccoPagina(sessione: sessione),
+          FaseSessione.sbloccata => HomePagina(sessione: sessione),
+        },
       ),
     );
   }
