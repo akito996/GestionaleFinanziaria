@@ -38,6 +38,10 @@ jobs:
           flutter --version
       - name: Dipendenze (bloccate da pubspec.lock)
         run: flutter pub get --enforce-lockfile
+      - name: Codice generato aggiornato (drift)
+        run: |
+          dart run build_runner build
+          git diff --exit-code -- lib
       - name: Formattazione
         run: dart format --output=none --set-exit-if-changed lib test
       - name: Analisi statica

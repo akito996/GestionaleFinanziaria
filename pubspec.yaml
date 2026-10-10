@@ -12,16 +12,27 @@ environment:
 
 dependencies:
   crypto: ^3.0.7
+  drift: ^2.35.2
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
   sodium: ^4.1.1+2
+  sqlite3: ^3.7.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  drift_dev: ^2.35.1
+  build_runner: ^2.16.2
 
 flutter:
   uses-material-design: true
+
+hooks:
+  user_defines:
+    sqlite3:
+      # Database locale cifrato con SQLCipher (AES-256 + HMAC-SHA512), decisione del 10/10/2026.
+      # Il pacchetto sqlite3 scarica la build precompilata e ne verifica l'impronta SHA-256.
+      source: sqlcipher
