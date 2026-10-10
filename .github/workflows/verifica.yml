@@ -24,11 +24,18 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
-        with:
-          channel: stable
-          flutter-version-file: pubspec.yaml
-          cache: true
+      # Flutter dal repository ufficiale, senza azioni di terzi: subosito/flutter-action usa
+      # actions/cache per etichetta e la regola "azioni fissate per SHA" del repository lo blocca.
+      - name: Flutter (versione da pubspec.yaml)
+        run: |
+          version="$(sed -n 's/^  flutter: *//p' pubspec.yaml)"
+          echo "Flutter $version"
+          git clone --depth 1 --branch "$version" https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - name: Prima configurazione di Flutter
+        run: |
+          flutter --disable-analytics
+          flutter --version
       - name: Dipendenze (bloccate da pubspec.lock)
         run: flutter pub get --enforce-lockfile
       - name: Formattazione

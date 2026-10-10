@@ -7,7 +7,7 @@ version: 0.1.0+1
 
 environment:
   sdk: ^3.13.5
-  # versione esatta: la stessa sul PC e nella pipeline (subosito/flutter-action la legge da qui)
+  # versione esatta: la stessa sul PC e nella pipeline (il workflow Verifica la legge da qui)
   flutter: 3.47.7
 
 dependencies:
