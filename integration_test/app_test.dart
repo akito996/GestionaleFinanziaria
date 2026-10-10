@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gestionale_finanziaria/app.dart';
 import 'package:gestionale_finanziaria/core/db/deposito_locale.dart';
 import 'package:gestionale_finanziaria/core/sessione.dart';
+import 'package:gestionale_finanziaria/features/sblocco/sblocco_pagina.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:sodium/sodium_sumo.dart';
 
@@ -85,10 +86,15 @@ void main() {
     // Recupero con la Secret Key.
     await tocca(tester, find.text('Ho dimenticato la password'));
     await attendi(tester, find.text('Secret Key (1 di 2)'));
-    await tester.enterText(find.byType(TextField), secretKey);
+    // La schermata di sblocco resta sotto: si cerca solo in quella di recupero.
+    Finder nelRecupero(Type tipo) => find.descendant(
+      of: find.byType(RecuperoPagina),
+      matching: find.byType(tipo),
+    );
+    await tester.enterText(nelRecupero(TextField), secretKey);
     await tester.pump();
     await tocca(tester, find.widgetWithText(FilledButton, 'Continua'));
-    final nuovi = find.byType(TextFormField);
+    final nuovi = nelRecupero(TextFormField);
     await tester.enterText(nuovi.at(0), 'Nuova-Password-2');
     await tester.enterText(nuovi.at(1), 'Nuova-Password-2');
     await tocca(tester, find.text('Recupera l\'archivio'));
