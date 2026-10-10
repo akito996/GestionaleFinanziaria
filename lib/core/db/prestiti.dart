@@ -171,7 +171,7 @@ class PrestitiServizio {
 
   Stream<List<PrestitoConStato>> osserva() => _db
       .customSelect(
-        'SELECT 1',
+        'SELECT 1 AS osserva_prestiti', // testo univoco: drift condivide le query uguali
         readsFrom: {_db.prestiti, _db.movimenti, _db.pianificazioni},
       )
       .watch()

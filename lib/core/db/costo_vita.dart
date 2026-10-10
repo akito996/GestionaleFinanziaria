@@ -445,7 +445,7 @@ class CostoVita {
 
   Stream<void> _osserva() => _db
       .customSelect(
-        'SELECT 1',
+        'SELECT 1 AS osserva_costo_vita', // testo univoco: drift condivide le query uguali
         readsFrom: {
           _db.vociCosto,
           _db.importiVoce,

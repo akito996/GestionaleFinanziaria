@@ -84,6 +84,8 @@ jobs:
           flutter --version
       - name: Dipendenze (bloccate da pubspec.lock)
         run: flutter pub get --enforce-lockfile
+      - name: Lettura dei contratti PDF con PDFium (Windows)
+        run: flutter test test/core/estrazione_pdf_test.dart
       - name: Test sull'app vera (primo avvio, blocco, sblocco, recupero)
         run: |
           set -o pipefail

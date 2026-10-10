@@ -9,6 +9,7 @@ import 'db/carte_credito.dart';
 import 'db/contabilita.dart';
 import 'db/costo_vita.dart';
 import 'db/deposito_locale.dart';
+import 'db/obiettivi.dart';
 import 'db/pianificatore.dart';
 import 'db/prestiti.dart';
 
@@ -61,6 +62,11 @@ class Sessione extends ChangeNotifier {
 
   /// Prestiti e rate: disponibile solo nella fase [FaseSessione.sbloccata].
   PrestitiServizio get prestiti => _prestiti!;
+
+  ObiettiviServizio? _obiettivi;
+
+  /// Obiettivi e collette: disponibile solo nella fase [FaseSessione.sbloccata].
+  ObiettiviServizio get obiettivi => _obiettivi!;
 
   SecureKey? _dek;
 
@@ -176,6 +182,7 @@ class Sessione extends ChangeNotifier {
     _pianificatore = null;
     _carte = null;
     _prestiti = null;
+    _obiettivi = null;
     _archivio = null;
     _dek = null;
     await archivio?.close();
@@ -211,6 +218,7 @@ class Sessione extends ChangeNotifier {
         _contabilita!.orologio,
         _pianificatore!,
       );
+      _obiettivi = ObiettiviServizio(archivio, _contabilita!.orologio);
       _costoVita = CostoVita(archivio, _contabilita!.orologio, _pianificatore!);
     } catch (_) {
       await archivio.close();

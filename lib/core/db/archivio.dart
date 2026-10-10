@@ -52,6 +52,9 @@ const categorieProposte = [
     Pianificazioni,
     CarteCredito,
     Prestiti,
+    Obiettivi,
+    Partecipanti,
+    Versamenti,
     Impostazioni,
   ],
 )
@@ -107,7 +110,7 @@ class Archivio extends _$Archivio {
   Archivio.conEsecutore(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -144,6 +147,12 @@ class Archivio extends _$Archivio {
       if (da < 5) {
         await m.createTable(prestiti);
         await _categoriaFinanziamenti();
+      }
+      // v6: obiettivi e collette.
+      if (da < 6) {
+        await m.createTable(obiettivi);
+        await m.createTable(partecipanti);
+        await m.createTable(versamenti);
       }
     },
     beforeOpen: (_) async {

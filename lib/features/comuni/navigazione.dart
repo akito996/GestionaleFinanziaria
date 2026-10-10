@@ -8,6 +8,7 @@ import '../categorie/categorie_pagina.dart';
 import '../prestiti/prestiti_pagina.dart';
 import '../costo_vita/costo_vita_pagina.dart';
 import '../home/home_pagina.dart';
+import '../obiettivi/obiettivi_pagina.dart';
 import 'icone.dart';
 
 /// Pulsante "blocca" presente in ogni sezione: lucchetto aperto = archivio aperto.
@@ -83,10 +84,38 @@ class _GuscioState extends State<Guscio> {
     (Icons.receipt_long_outlined, Icons.receipt_long, 'Costo della vita'),
     (Icons.credit_card_outlined, Icons.credit_card, 'Carte'),
     (Icons.request_quote_outlined, Icons.request_quote, 'Prestiti'),
+    (Icons.savings_outlined, Icons.savings, 'Obiettivi'),
     (Icons.category_outlined, Icons.category, 'Categorie'),
   ];
 
   void _vaiA(int sezione) => setState(() => _sezione = sezione);
+
+  /// Sezioni visibili nella barra in basso del telefono (le altre in "Altro").
+  static const _inBarra = 4;
+
+  Future<void> _apriAltro(BuildContext context) async {
+    final scelta = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var i = _inBarra; i < _voci.length; i++)
+              ListTile(
+                leading: Icon(_voci[i].$1),
+                title: Text(_voci[i].$3),
+                selected: i == _sezione,
+                onTap: () => Navigator.of(context).pop(i),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (scelta != null) {
+      _vaiA(scelta);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +124,7 @@ class _GuscioState extends State<Guscio> {
       CostoVitaPagina(sessione: widget.sessione),
       CartePagina(sessione: widget.sessione),
       PrestitiPagina(sessione: widget.sessione),
+      ObiettiviPagina(sessione: widget.sessione),
       CategoriePagina(sessione: widget.sessione),
     ];
     final corpo = IndexedStack(index: _sezione, children: pagine);
@@ -126,16 +156,24 @@ class _GuscioState extends State<Guscio> {
         }
         return Scaffold(
           body: corpo,
+          // Telefono: le prime 4 sezioni in basso, le altre in "Altro".
           bottomNavigationBar: NavigationBar(
-            selectedIndex: _sezione,
-            onDestinationSelected: _vaiA,
+            selectedIndex: _sezione < _inBarra ? _sezione : _inBarra,
+            onDestinationSelected: (i) =>
+                i < _inBarra ? _vaiA(i) : _apriAltro(context),
             destinations: [
-              for (final (icona, selezionata, etichetta) in _voci)
+              for (final (icona, selezionata, etichetta) in _voci.take(
+                _inBarra,
+              ))
                 NavigationDestination(
                   icon: Icon(icona),
                   selectedIcon: Icon(selezionata),
                   label: etichetta,
                 ),
+              const NavigationDestination(
+                icon: Icon(Icons.more_horiz),
+                label: 'Altro',
+              ),
             ],
           ),
         );

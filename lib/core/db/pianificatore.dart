@@ -217,7 +217,7 @@ class Pianificatore {
     String? portafoglioId,
   }) => _db
       .customSelect(
-        'SELECT 1',
+        'SELECT 1 AS osserva_pianificatore', // testo univoco: drift condivide le query uguali
         readsFrom: {
           _db.pianificazioni,
           _db.movimenti,

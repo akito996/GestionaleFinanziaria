@@ -250,6 +250,55 @@ abstract final class TipoPrestito {
   static const privato = 'privato';
 }
 
+/// Obiettivo di risparmio personale o colletta con altre persone.
+@DataClassName('Obiettivo')
+class Obiettivi extends Table with ColonneSincronizzate {
+  TextColumn get nome => text().withLength(min: 1, max: 100)();
+
+  /// Vedi [TipoObiettivo].
+  TextColumn get tipo => text()();
+  IntColumn get importoObiettivoMinimo => integer()();
+
+  /// AAAA-MM-GG entro cui raggiungerlo (facoltativa).
+  TextColumn get scadenza => text().nullable()();
+
+  /// Portafoglio dove finiscono i soldi (facoltativo, es. "Salvadanaio").
+  TextColumn get portafoglioId =>
+      text().nullable().references(Portafogli, #id)();
+  TextColumn get valuta =>
+      text().withLength(min: 3, max: 10).withDefault(const Constant('EUR'))();
+  TextColumn get note => text().withDefault(const Constant(''))();
+  BoolColumn get archiviato => boolean().withDefault(const Constant(false))();
+}
+
+/// Partecipante di una colletta, con la sua quota (null = parti uguali).
+@DataClassName('Partecipante')
+class Partecipanti extends Table with ColonneSincronizzate {
+  TextColumn get obiettivoId => text().references(Obiettivi, #id)();
+  TextColumn get nome => text().withLength(min: 1, max: 100)();
+  IntColumn get quotaMinimo => integer().nullable()();
+}
+
+/// Soldi versati per un obiettivo (da un partecipante, o da me se personale).
+@DataClassName('Versamento')
+class Versamenti extends Table with ColonneSincronizzate {
+  TextColumn get obiettivoId => text().references(Obiettivi, #id)();
+  TextColumn get partecipanteId =>
+      text().nullable().references(Partecipanti, #id)();
+  IntColumn get importoMinimo => integer()();
+  TextColumn get data => text().withLength(min: 10, max: 10)();
+  TextColumn get nota => text().withDefault(const Constant(''))();
+
+  /// Movimento registrato insieme al versamento (facoltativo).
+  TextColumn get movimentoId => text().nullable().references(Movimenti, #id)();
+}
+
+/// Valori ammessi per [Obiettivi.tipo].
+abstract final class TipoObiettivo {
+  static const personale = 'personale';
+  static const colletta = 'colletta';
+}
+
 /// Valori ammessi per [Pianificazioni.origine].
 abstract final class OriginePianificazione {
   static const costoVita = 'costo_vita';

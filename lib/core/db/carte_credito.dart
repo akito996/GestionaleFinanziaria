@@ -202,7 +202,7 @@ class CarteCreditoServizio {
   /// Carte attive con lo stato (aggiornato quando cambiano movimenti o carte).
   Stream<List<CartaConStato>> osserva() => _db
       .customSelect(
-        'SELECT 1',
+        'SELECT 1 AS osserva_carte_credito', // testo univoco: drift condivide le query uguali
         readsFrom: {_db.carteCredito, _db.portafogli, _db.movimenti},
       )
       .watch()

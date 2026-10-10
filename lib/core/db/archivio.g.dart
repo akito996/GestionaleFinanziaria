@@ -7671,6 +7671,1727 @@ class PrestitiCompanion extends UpdateCompanion<Prestito> {
   }
 }
 
+class $ObiettiviTable extends Obiettivi
+    with TableInfo<$ObiettiviTable, Obiettivo> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ObiettiviTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _aggiornatoIlMeta = const VerificationMeta(
+    'aggiornatoIl',
+  );
+  @override
+  late final GeneratedColumn<String> aggiornatoIl = GeneratedColumn<String>(
+    'aggiornato_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eliminatoMeta = const VerificationMeta(
+    'eliminato',
+  );
+  @override
+  late final GeneratedColumn<bool> eliminato = GeneratedColumn<bool>(
+    'eliminato',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("eliminato" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _nomeMeta = const VerificationMeta('nome');
+  @override
+  late final GeneratedColumn<String> nome = GeneratedColumn<String>(
+    'nome',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 100,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tipoMeta = const VerificationMeta('tipo');
+  @override
+  late final GeneratedColumn<String> tipo = GeneratedColumn<String>(
+    'tipo',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _importoObiettivoMinimoMeta =
+      const VerificationMeta('importoObiettivoMinimo');
+  @override
+  late final GeneratedColumn<int> importoObiettivoMinimo = GeneratedColumn<int>(
+    'importo_obiettivo_minimo',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _scadenzaMeta = const VerificationMeta(
+    'scadenza',
+  );
+  @override
+  late final GeneratedColumn<String> scadenza = GeneratedColumn<String>(
+    'scadenza',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _portafoglioIdMeta = const VerificationMeta(
+    'portafoglioId',
+  );
+  @override
+  late final GeneratedColumn<String> portafoglioId = GeneratedColumn<String>(
+    'portafoglio_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES portafogli (id)',
+    ),
+  );
+  static const VerificationMeta _valutaMeta = const VerificationMeta('valuta');
+  @override
+  late final GeneratedColumn<String> valuta = GeneratedColumn<String>(
+    'valuta',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 3,
+      maxTextLength: 10,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('EUR'),
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _archiviatoMeta = const VerificationMeta(
+    'archiviato',
+  );
+  @override
+  late final GeneratedColumn<bool> archiviato = GeneratedColumn<bool>(
+    'archiviato',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("archiviato" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    aggiornatoIl,
+    eliminato,
+    nome,
+    tipo,
+    importoObiettivoMinimo,
+    scadenza,
+    portafoglioId,
+    valuta,
+    note,
+    archiviato,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'obiettivi';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Obiettivo> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('aggiornato_il')) {
+      context.handle(
+        _aggiornatoIlMeta,
+        aggiornatoIl.isAcceptableOrUnknown(
+          data['aggiornato_il']!,
+          _aggiornatoIlMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_aggiornatoIlMeta);
+    }
+    if (data.containsKey('eliminato')) {
+      context.handle(
+        _eliminatoMeta,
+        eliminato.isAcceptableOrUnknown(data['eliminato']!, _eliminatoMeta),
+      );
+    }
+    if (data.containsKey('nome')) {
+      context.handle(
+        _nomeMeta,
+        nome.isAcceptableOrUnknown(data['nome']!, _nomeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nomeMeta);
+    }
+    if (data.containsKey('tipo')) {
+      context.handle(
+        _tipoMeta,
+        tipo.isAcceptableOrUnknown(data['tipo']!, _tipoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tipoMeta);
+    }
+    if (data.containsKey('importo_obiettivo_minimo')) {
+      context.handle(
+        _importoObiettivoMinimoMeta,
+        importoObiettivoMinimo.isAcceptableOrUnknown(
+          data['importo_obiettivo_minimo']!,
+          _importoObiettivoMinimoMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_importoObiettivoMinimoMeta);
+    }
+    if (data.containsKey('scadenza')) {
+      context.handle(
+        _scadenzaMeta,
+        scadenza.isAcceptableOrUnknown(data['scadenza']!, _scadenzaMeta),
+      );
+    }
+    if (data.containsKey('portafoglio_id')) {
+      context.handle(
+        _portafoglioIdMeta,
+        portafoglioId.isAcceptableOrUnknown(
+          data['portafoglio_id']!,
+          _portafoglioIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('valuta')) {
+      context.handle(
+        _valutaMeta,
+        valuta.isAcceptableOrUnknown(data['valuta']!, _valutaMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('archiviato')) {
+      context.handle(
+        _archiviatoMeta,
+        archiviato.isAcceptableOrUnknown(data['archiviato']!, _archiviatoMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Obiettivo map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Obiettivo(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      aggiornatoIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}aggiornato_il'],
+      )!,
+      eliminato: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}eliminato'],
+      )!,
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      )!,
+      tipo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tipo'],
+      )!,
+      importoObiettivoMinimo: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}importo_obiettivo_minimo'],
+      )!,
+      scadenza: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}scadenza'],
+      ),
+      portafoglioId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}portafoglio_id'],
+      ),
+      valuta: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}valuta'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      )!,
+      archiviato: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}archiviato'],
+      )!,
+    );
+  }
+
+  @override
+  $ObiettiviTable createAlias(String alias) {
+    return $ObiettiviTable(attachedDatabase, alias);
+  }
+}
+
+class Obiettivo extends DataClass implements Insertable<Obiettivo> {
+  final String id;
+  final String aggiornatoIl;
+  final bool eliminato;
+  final String nome;
+
+  /// Vedi [TipoObiettivo].
+  final String tipo;
+  final int importoObiettivoMinimo;
+
+  /// AAAA-MM-GG entro cui raggiungerlo (facoltativa).
+  final String? scadenza;
+
+  /// Portafoglio dove finiscono i soldi (facoltativo, es. "Salvadanaio").
+  final String? portafoglioId;
+  final String valuta;
+  final String note;
+  final bool archiviato;
+  const Obiettivo({
+    required this.id,
+    required this.aggiornatoIl,
+    required this.eliminato,
+    required this.nome,
+    required this.tipo,
+    required this.importoObiettivoMinimo,
+    this.scadenza,
+    this.portafoglioId,
+    required this.valuta,
+    required this.note,
+    required this.archiviato,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['aggiornato_il'] = Variable<String>(aggiornatoIl);
+    map['eliminato'] = Variable<bool>(eliminato);
+    map['nome'] = Variable<String>(nome);
+    map['tipo'] = Variable<String>(tipo);
+    map['importo_obiettivo_minimo'] = Variable<int>(importoObiettivoMinimo);
+    if (!nullToAbsent || scadenza != null) {
+      map['scadenza'] = Variable<String>(scadenza);
+    }
+    if (!nullToAbsent || portafoglioId != null) {
+      map['portafoglio_id'] = Variable<String>(portafoglioId);
+    }
+    map['valuta'] = Variable<String>(valuta);
+    map['note'] = Variable<String>(note);
+    map['archiviato'] = Variable<bool>(archiviato);
+    return map;
+  }
+
+  ObiettiviCompanion toCompanion(bool nullToAbsent) {
+    return ObiettiviCompanion(
+      id: Value(id),
+      aggiornatoIl: Value(aggiornatoIl),
+      eliminato: Value(eliminato),
+      nome: Value(nome),
+      tipo: Value(tipo),
+      importoObiettivoMinimo: Value(importoObiettivoMinimo),
+      scadenza: scadenza == null && nullToAbsent
+          ? const Value.absent()
+          : Value(scadenza),
+      portafoglioId: portafoglioId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(portafoglioId),
+      valuta: Value(valuta),
+      note: Value(note),
+      archiviato: Value(archiviato),
+    );
+  }
+
+  factory Obiettivo.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Obiettivo(
+      id: serializer.fromJson<String>(json['id']),
+      aggiornatoIl: serializer.fromJson<String>(json['aggiornatoIl']),
+      eliminato: serializer.fromJson<bool>(json['eliminato']),
+      nome: serializer.fromJson<String>(json['nome']),
+      tipo: serializer.fromJson<String>(json['tipo']),
+      importoObiettivoMinimo: serializer.fromJson<int>(
+        json['importoObiettivoMinimo'],
+      ),
+      scadenza: serializer.fromJson<String?>(json['scadenza']),
+      portafoglioId: serializer.fromJson<String?>(json['portafoglioId']),
+      valuta: serializer.fromJson<String>(json['valuta']),
+      note: serializer.fromJson<String>(json['note']),
+      archiviato: serializer.fromJson<bool>(json['archiviato']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'aggiornatoIl': serializer.toJson<String>(aggiornatoIl),
+      'eliminato': serializer.toJson<bool>(eliminato),
+      'nome': serializer.toJson<String>(nome),
+      'tipo': serializer.toJson<String>(tipo),
+      'importoObiettivoMinimo': serializer.toJson<int>(importoObiettivoMinimo),
+      'scadenza': serializer.toJson<String?>(scadenza),
+      'portafoglioId': serializer.toJson<String?>(portafoglioId),
+      'valuta': serializer.toJson<String>(valuta),
+      'note': serializer.toJson<String>(note),
+      'archiviato': serializer.toJson<bool>(archiviato),
+    };
+  }
+
+  Obiettivo copyWith({
+    String? id,
+    String? aggiornatoIl,
+    bool? eliminato,
+    String? nome,
+    String? tipo,
+    int? importoObiettivoMinimo,
+    Value<String?> scadenza = const Value.absent(),
+    Value<String?> portafoglioId = const Value.absent(),
+    String? valuta,
+    String? note,
+    bool? archiviato,
+  }) => Obiettivo(
+    id: id ?? this.id,
+    aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+    eliminato: eliminato ?? this.eliminato,
+    nome: nome ?? this.nome,
+    tipo: tipo ?? this.tipo,
+    importoObiettivoMinimo:
+        importoObiettivoMinimo ?? this.importoObiettivoMinimo,
+    scadenza: scadenza.present ? scadenza.value : this.scadenza,
+    portafoglioId: portafoglioId.present
+        ? portafoglioId.value
+        : this.portafoglioId,
+    valuta: valuta ?? this.valuta,
+    note: note ?? this.note,
+    archiviato: archiviato ?? this.archiviato,
+  );
+  Obiettivo copyWithCompanion(ObiettiviCompanion data) {
+    return Obiettivo(
+      id: data.id.present ? data.id.value : this.id,
+      aggiornatoIl: data.aggiornatoIl.present
+          ? data.aggiornatoIl.value
+          : this.aggiornatoIl,
+      eliminato: data.eliminato.present ? data.eliminato.value : this.eliminato,
+      nome: data.nome.present ? data.nome.value : this.nome,
+      tipo: data.tipo.present ? data.tipo.value : this.tipo,
+      importoObiettivoMinimo: data.importoObiettivoMinimo.present
+          ? data.importoObiettivoMinimo.value
+          : this.importoObiettivoMinimo,
+      scadenza: data.scadenza.present ? data.scadenza.value : this.scadenza,
+      portafoglioId: data.portafoglioId.present
+          ? data.portafoglioId.value
+          : this.portafoglioId,
+      valuta: data.valuta.present ? data.valuta.value : this.valuta,
+      note: data.note.present ? data.note.value : this.note,
+      archiviato: data.archiviato.present
+          ? data.archiviato.value
+          : this.archiviato,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Obiettivo(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('nome: $nome, ')
+          ..write('tipo: $tipo, ')
+          ..write('importoObiettivoMinimo: $importoObiettivoMinimo, ')
+          ..write('scadenza: $scadenza, ')
+          ..write('portafoglioId: $portafoglioId, ')
+          ..write('valuta: $valuta, ')
+          ..write('note: $note, ')
+          ..write('archiviato: $archiviato')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    aggiornatoIl,
+    eliminato,
+    nome,
+    tipo,
+    importoObiettivoMinimo,
+    scadenza,
+    portafoglioId,
+    valuta,
+    note,
+    archiviato,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Obiettivo &&
+          other.id == this.id &&
+          other.aggiornatoIl == this.aggiornatoIl &&
+          other.eliminato == this.eliminato &&
+          other.nome == this.nome &&
+          other.tipo == this.tipo &&
+          other.importoObiettivoMinimo == this.importoObiettivoMinimo &&
+          other.scadenza == this.scadenza &&
+          other.portafoglioId == this.portafoglioId &&
+          other.valuta == this.valuta &&
+          other.note == this.note &&
+          other.archiviato == this.archiviato);
+}
+
+class ObiettiviCompanion extends UpdateCompanion<Obiettivo> {
+  final Value<String> id;
+  final Value<String> aggiornatoIl;
+  final Value<bool> eliminato;
+  final Value<String> nome;
+  final Value<String> tipo;
+  final Value<int> importoObiettivoMinimo;
+  final Value<String?> scadenza;
+  final Value<String?> portafoglioId;
+  final Value<String> valuta;
+  final Value<String> note;
+  final Value<bool> archiviato;
+  final Value<int> rowid;
+  const ObiettiviCompanion({
+    this.id = const Value.absent(),
+    this.aggiornatoIl = const Value.absent(),
+    this.eliminato = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.tipo = const Value.absent(),
+    this.importoObiettivoMinimo = const Value.absent(),
+    this.scadenza = const Value.absent(),
+    this.portafoglioId = const Value.absent(),
+    this.valuta = const Value.absent(),
+    this.note = const Value.absent(),
+    this.archiviato = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ObiettiviCompanion.insert({
+    required String id,
+    required String aggiornatoIl,
+    this.eliminato = const Value.absent(),
+    required String nome,
+    required String tipo,
+    required int importoObiettivoMinimo,
+    this.scadenza = const Value.absent(),
+    this.portafoglioId = const Value.absent(),
+    this.valuta = const Value.absent(),
+    this.note = const Value.absent(),
+    this.archiviato = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       aggiornatoIl = Value(aggiornatoIl),
+       nome = Value(nome),
+       tipo = Value(tipo),
+       importoObiettivoMinimo = Value(importoObiettivoMinimo);
+  static Insertable<Obiettivo> custom({
+    Expression<String>? id,
+    Expression<String>? aggiornatoIl,
+    Expression<bool>? eliminato,
+    Expression<String>? nome,
+    Expression<String>? tipo,
+    Expression<int>? importoObiettivoMinimo,
+    Expression<String>? scadenza,
+    Expression<String>? portafoglioId,
+    Expression<String>? valuta,
+    Expression<String>? note,
+    Expression<bool>? archiviato,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (aggiornatoIl != null) 'aggiornato_il': aggiornatoIl,
+      if (eliminato != null) 'eliminato': eliminato,
+      if (nome != null) 'nome': nome,
+      if (tipo != null) 'tipo': tipo,
+      if (importoObiettivoMinimo != null)
+        'importo_obiettivo_minimo': importoObiettivoMinimo,
+      if (scadenza != null) 'scadenza': scadenza,
+      if (portafoglioId != null) 'portafoglio_id': portafoglioId,
+      if (valuta != null) 'valuta': valuta,
+      if (note != null) 'note': note,
+      if (archiviato != null) 'archiviato': archiviato,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ObiettiviCompanion copyWith({
+    Value<String>? id,
+    Value<String>? aggiornatoIl,
+    Value<bool>? eliminato,
+    Value<String>? nome,
+    Value<String>? tipo,
+    Value<int>? importoObiettivoMinimo,
+    Value<String?>? scadenza,
+    Value<String?>? portafoglioId,
+    Value<String>? valuta,
+    Value<String>? note,
+    Value<bool>? archiviato,
+    Value<int>? rowid,
+  }) {
+    return ObiettiviCompanion(
+      id: id ?? this.id,
+      aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+      eliminato: eliminato ?? this.eliminato,
+      nome: nome ?? this.nome,
+      tipo: tipo ?? this.tipo,
+      importoObiettivoMinimo:
+          importoObiettivoMinimo ?? this.importoObiettivoMinimo,
+      scadenza: scadenza ?? this.scadenza,
+      portafoglioId: portafoglioId ?? this.portafoglioId,
+      valuta: valuta ?? this.valuta,
+      note: note ?? this.note,
+      archiviato: archiviato ?? this.archiviato,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (aggiornatoIl.present) {
+      map['aggiornato_il'] = Variable<String>(aggiornatoIl.value);
+    }
+    if (eliminato.present) {
+      map['eliminato'] = Variable<bool>(eliminato.value);
+    }
+    if (nome.present) {
+      map['nome'] = Variable<String>(nome.value);
+    }
+    if (tipo.present) {
+      map['tipo'] = Variable<String>(tipo.value);
+    }
+    if (importoObiettivoMinimo.present) {
+      map['importo_obiettivo_minimo'] = Variable<int>(
+        importoObiettivoMinimo.value,
+      );
+    }
+    if (scadenza.present) {
+      map['scadenza'] = Variable<String>(scadenza.value);
+    }
+    if (portafoglioId.present) {
+      map['portafoglio_id'] = Variable<String>(portafoglioId.value);
+    }
+    if (valuta.present) {
+      map['valuta'] = Variable<String>(valuta.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (archiviato.present) {
+      map['archiviato'] = Variable<bool>(archiviato.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ObiettiviCompanion(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('nome: $nome, ')
+          ..write('tipo: $tipo, ')
+          ..write('importoObiettivoMinimo: $importoObiettivoMinimo, ')
+          ..write('scadenza: $scadenza, ')
+          ..write('portafoglioId: $portafoglioId, ')
+          ..write('valuta: $valuta, ')
+          ..write('note: $note, ')
+          ..write('archiviato: $archiviato, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PartecipantiTable extends Partecipanti
+    with TableInfo<$PartecipantiTable, Partecipante> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PartecipantiTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _aggiornatoIlMeta = const VerificationMeta(
+    'aggiornatoIl',
+  );
+  @override
+  late final GeneratedColumn<String> aggiornatoIl = GeneratedColumn<String>(
+    'aggiornato_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eliminatoMeta = const VerificationMeta(
+    'eliminato',
+  );
+  @override
+  late final GeneratedColumn<bool> eliminato = GeneratedColumn<bool>(
+    'eliminato',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("eliminato" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _obiettivoIdMeta = const VerificationMeta(
+    'obiettivoId',
+  );
+  @override
+  late final GeneratedColumn<String> obiettivoId = GeneratedColumn<String>(
+    'obiettivo_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES obiettivi (id)',
+    ),
+  );
+  static const VerificationMeta _nomeMeta = const VerificationMeta('nome');
+  @override
+  late final GeneratedColumn<String> nome = GeneratedColumn<String>(
+    'nome',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 100,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _quotaMinimoMeta = const VerificationMeta(
+    'quotaMinimo',
+  );
+  @override
+  late final GeneratedColumn<int> quotaMinimo = GeneratedColumn<int>(
+    'quota_minimo',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    aggiornatoIl,
+    eliminato,
+    obiettivoId,
+    nome,
+    quotaMinimo,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'partecipanti';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Partecipante> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('aggiornato_il')) {
+      context.handle(
+        _aggiornatoIlMeta,
+        aggiornatoIl.isAcceptableOrUnknown(
+          data['aggiornato_il']!,
+          _aggiornatoIlMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_aggiornatoIlMeta);
+    }
+    if (data.containsKey('eliminato')) {
+      context.handle(
+        _eliminatoMeta,
+        eliminato.isAcceptableOrUnknown(data['eliminato']!, _eliminatoMeta),
+      );
+    }
+    if (data.containsKey('obiettivo_id')) {
+      context.handle(
+        _obiettivoIdMeta,
+        obiettivoId.isAcceptableOrUnknown(
+          data['obiettivo_id']!,
+          _obiettivoIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_obiettivoIdMeta);
+    }
+    if (data.containsKey('nome')) {
+      context.handle(
+        _nomeMeta,
+        nome.isAcceptableOrUnknown(data['nome']!, _nomeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nomeMeta);
+    }
+    if (data.containsKey('quota_minimo')) {
+      context.handle(
+        _quotaMinimoMeta,
+        quotaMinimo.isAcceptableOrUnknown(
+          data['quota_minimo']!,
+          _quotaMinimoMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Partecipante map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Partecipante(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      aggiornatoIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}aggiornato_il'],
+      )!,
+      eliminato: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}eliminato'],
+      )!,
+      obiettivoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}obiettivo_id'],
+      )!,
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      )!,
+      quotaMinimo: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}quota_minimo'],
+      ),
+    );
+  }
+
+  @override
+  $PartecipantiTable createAlias(String alias) {
+    return $PartecipantiTable(attachedDatabase, alias);
+  }
+}
+
+class Partecipante extends DataClass implements Insertable<Partecipante> {
+  final String id;
+  final String aggiornatoIl;
+  final bool eliminato;
+  final String obiettivoId;
+  final String nome;
+  final int? quotaMinimo;
+  const Partecipante({
+    required this.id,
+    required this.aggiornatoIl,
+    required this.eliminato,
+    required this.obiettivoId,
+    required this.nome,
+    this.quotaMinimo,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['aggiornato_il'] = Variable<String>(aggiornatoIl);
+    map['eliminato'] = Variable<bool>(eliminato);
+    map['obiettivo_id'] = Variable<String>(obiettivoId);
+    map['nome'] = Variable<String>(nome);
+    if (!nullToAbsent || quotaMinimo != null) {
+      map['quota_minimo'] = Variable<int>(quotaMinimo);
+    }
+    return map;
+  }
+
+  PartecipantiCompanion toCompanion(bool nullToAbsent) {
+    return PartecipantiCompanion(
+      id: Value(id),
+      aggiornatoIl: Value(aggiornatoIl),
+      eliminato: Value(eliminato),
+      obiettivoId: Value(obiettivoId),
+      nome: Value(nome),
+      quotaMinimo: quotaMinimo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(quotaMinimo),
+    );
+  }
+
+  factory Partecipante.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Partecipante(
+      id: serializer.fromJson<String>(json['id']),
+      aggiornatoIl: serializer.fromJson<String>(json['aggiornatoIl']),
+      eliminato: serializer.fromJson<bool>(json['eliminato']),
+      obiettivoId: serializer.fromJson<String>(json['obiettivoId']),
+      nome: serializer.fromJson<String>(json['nome']),
+      quotaMinimo: serializer.fromJson<int?>(json['quotaMinimo']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'aggiornatoIl': serializer.toJson<String>(aggiornatoIl),
+      'eliminato': serializer.toJson<bool>(eliminato),
+      'obiettivoId': serializer.toJson<String>(obiettivoId),
+      'nome': serializer.toJson<String>(nome),
+      'quotaMinimo': serializer.toJson<int?>(quotaMinimo),
+    };
+  }
+
+  Partecipante copyWith({
+    String? id,
+    String? aggiornatoIl,
+    bool? eliminato,
+    String? obiettivoId,
+    String? nome,
+    Value<int?> quotaMinimo = const Value.absent(),
+  }) => Partecipante(
+    id: id ?? this.id,
+    aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+    eliminato: eliminato ?? this.eliminato,
+    obiettivoId: obiettivoId ?? this.obiettivoId,
+    nome: nome ?? this.nome,
+    quotaMinimo: quotaMinimo.present ? quotaMinimo.value : this.quotaMinimo,
+  );
+  Partecipante copyWithCompanion(PartecipantiCompanion data) {
+    return Partecipante(
+      id: data.id.present ? data.id.value : this.id,
+      aggiornatoIl: data.aggiornatoIl.present
+          ? data.aggiornatoIl.value
+          : this.aggiornatoIl,
+      eliminato: data.eliminato.present ? data.eliminato.value : this.eliminato,
+      obiettivoId: data.obiettivoId.present
+          ? data.obiettivoId.value
+          : this.obiettivoId,
+      nome: data.nome.present ? data.nome.value : this.nome,
+      quotaMinimo: data.quotaMinimo.present
+          ? data.quotaMinimo.value
+          : this.quotaMinimo,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Partecipante(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('obiettivoId: $obiettivoId, ')
+          ..write('nome: $nome, ')
+          ..write('quotaMinimo: $quotaMinimo')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, aggiornatoIl, eliminato, obiettivoId, nome, quotaMinimo);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Partecipante &&
+          other.id == this.id &&
+          other.aggiornatoIl == this.aggiornatoIl &&
+          other.eliminato == this.eliminato &&
+          other.obiettivoId == this.obiettivoId &&
+          other.nome == this.nome &&
+          other.quotaMinimo == this.quotaMinimo);
+}
+
+class PartecipantiCompanion extends UpdateCompanion<Partecipante> {
+  final Value<String> id;
+  final Value<String> aggiornatoIl;
+  final Value<bool> eliminato;
+  final Value<String> obiettivoId;
+  final Value<String> nome;
+  final Value<int?> quotaMinimo;
+  final Value<int> rowid;
+  const PartecipantiCompanion({
+    this.id = const Value.absent(),
+    this.aggiornatoIl = const Value.absent(),
+    this.eliminato = const Value.absent(),
+    this.obiettivoId = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.quotaMinimo = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PartecipantiCompanion.insert({
+    required String id,
+    required String aggiornatoIl,
+    this.eliminato = const Value.absent(),
+    required String obiettivoId,
+    required String nome,
+    this.quotaMinimo = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       aggiornatoIl = Value(aggiornatoIl),
+       obiettivoId = Value(obiettivoId),
+       nome = Value(nome);
+  static Insertable<Partecipante> custom({
+    Expression<String>? id,
+    Expression<String>? aggiornatoIl,
+    Expression<bool>? eliminato,
+    Expression<String>? obiettivoId,
+    Expression<String>? nome,
+    Expression<int>? quotaMinimo,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (aggiornatoIl != null) 'aggiornato_il': aggiornatoIl,
+      if (eliminato != null) 'eliminato': eliminato,
+      if (obiettivoId != null) 'obiettivo_id': obiettivoId,
+      if (nome != null) 'nome': nome,
+      if (quotaMinimo != null) 'quota_minimo': quotaMinimo,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PartecipantiCompanion copyWith({
+    Value<String>? id,
+    Value<String>? aggiornatoIl,
+    Value<bool>? eliminato,
+    Value<String>? obiettivoId,
+    Value<String>? nome,
+    Value<int?>? quotaMinimo,
+    Value<int>? rowid,
+  }) {
+    return PartecipantiCompanion(
+      id: id ?? this.id,
+      aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+      eliminato: eliminato ?? this.eliminato,
+      obiettivoId: obiettivoId ?? this.obiettivoId,
+      nome: nome ?? this.nome,
+      quotaMinimo: quotaMinimo ?? this.quotaMinimo,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (aggiornatoIl.present) {
+      map['aggiornato_il'] = Variable<String>(aggiornatoIl.value);
+    }
+    if (eliminato.present) {
+      map['eliminato'] = Variable<bool>(eliminato.value);
+    }
+    if (obiettivoId.present) {
+      map['obiettivo_id'] = Variable<String>(obiettivoId.value);
+    }
+    if (nome.present) {
+      map['nome'] = Variable<String>(nome.value);
+    }
+    if (quotaMinimo.present) {
+      map['quota_minimo'] = Variable<int>(quotaMinimo.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PartecipantiCompanion(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('obiettivoId: $obiettivoId, ')
+          ..write('nome: $nome, ')
+          ..write('quotaMinimo: $quotaMinimo, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $VersamentiTable extends Versamenti
+    with TableInfo<$VersamentiTable, Versamento> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VersamentiTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _aggiornatoIlMeta = const VerificationMeta(
+    'aggiornatoIl',
+  );
+  @override
+  late final GeneratedColumn<String> aggiornatoIl = GeneratedColumn<String>(
+    'aggiornato_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eliminatoMeta = const VerificationMeta(
+    'eliminato',
+  );
+  @override
+  late final GeneratedColumn<bool> eliminato = GeneratedColumn<bool>(
+    'eliminato',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("eliminato" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _obiettivoIdMeta = const VerificationMeta(
+    'obiettivoId',
+  );
+  @override
+  late final GeneratedColumn<String> obiettivoId = GeneratedColumn<String>(
+    'obiettivo_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES obiettivi (id)',
+    ),
+  );
+  static const VerificationMeta _partecipanteIdMeta = const VerificationMeta(
+    'partecipanteId',
+  );
+  @override
+  late final GeneratedColumn<String> partecipanteId = GeneratedColumn<String>(
+    'partecipante_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES partecipanti (id)',
+    ),
+  );
+  static const VerificationMeta _importoMinimoMeta = const VerificationMeta(
+    'importoMinimo',
+  );
+  @override
+  late final GeneratedColumn<int> importoMinimo = GeneratedColumn<int>(
+    'importo_minimo',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dataMeta = const VerificationMeta('data');
+  @override
+  late final GeneratedColumn<String> data = GeneratedColumn<String>(
+    'data',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 10,
+      maxTextLength: 10,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _notaMeta = const VerificationMeta('nota');
+  @override
+  late final GeneratedColumn<String> nota = GeneratedColumn<String>(
+    'nota',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _movimentoIdMeta = const VerificationMeta(
+    'movimentoId',
+  );
+  @override
+  late final GeneratedColumn<String> movimentoId = GeneratedColumn<String>(
+    'movimento_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES movimenti (id)',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    aggiornatoIl,
+    eliminato,
+    obiettivoId,
+    partecipanteId,
+    importoMinimo,
+    data,
+    nota,
+    movimentoId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'versamenti';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Versamento> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('aggiornato_il')) {
+      context.handle(
+        _aggiornatoIlMeta,
+        aggiornatoIl.isAcceptableOrUnknown(
+          data['aggiornato_il']!,
+          _aggiornatoIlMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_aggiornatoIlMeta);
+    }
+    if (data.containsKey('eliminato')) {
+      context.handle(
+        _eliminatoMeta,
+        eliminato.isAcceptableOrUnknown(data['eliminato']!, _eliminatoMeta),
+      );
+    }
+    if (data.containsKey('obiettivo_id')) {
+      context.handle(
+        _obiettivoIdMeta,
+        obiettivoId.isAcceptableOrUnknown(
+          data['obiettivo_id']!,
+          _obiettivoIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_obiettivoIdMeta);
+    }
+    if (data.containsKey('partecipante_id')) {
+      context.handle(
+        _partecipanteIdMeta,
+        partecipanteId.isAcceptableOrUnknown(
+          data['partecipante_id']!,
+          _partecipanteIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('importo_minimo')) {
+      context.handle(
+        _importoMinimoMeta,
+        importoMinimo.isAcceptableOrUnknown(
+          data['importo_minimo']!,
+          _importoMinimoMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_importoMinimoMeta);
+    }
+    if (data.containsKey('data')) {
+      context.handle(
+        _dataMeta,
+        this.data.isAcceptableOrUnknown(data['data']!, _dataMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dataMeta);
+    }
+    if (data.containsKey('nota')) {
+      context.handle(
+        _notaMeta,
+        nota.isAcceptableOrUnknown(data['nota']!, _notaMeta),
+      );
+    }
+    if (data.containsKey('movimento_id')) {
+      context.handle(
+        _movimentoIdMeta,
+        movimentoId.isAcceptableOrUnknown(
+          data['movimento_id']!,
+          _movimentoIdMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Versamento map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Versamento(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      aggiornatoIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}aggiornato_il'],
+      )!,
+      eliminato: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}eliminato'],
+      )!,
+      obiettivoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}obiettivo_id'],
+      )!,
+      partecipanteId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}partecipante_id'],
+      ),
+      importoMinimo: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}importo_minimo'],
+      )!,
+      data: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}data'],
+      )!,
+      nota: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nota'],
+      )!,
+      movimentoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}movimento_id'],
+      ),
+    );
+  }
+
+  @override
+  $VersamentiTable createAlias(String alias) {
+    return $VersamentiTable(attachedDatabase, alias);
+  }
+}
+
+class Versamento extends DataClass implements Insertable<Versamento> {
+  final String id;
+  final String aggiornatoIl;
+  final bool eliminato;
+  final String obiettivoId;
+  final String? partecipanteId;
+  final int importoMinimo;
+  final String data;
+  final String nota;
+
+  /// Movimento registrato insieme al versamento (facoltativo).
+  final String? movimentoId;
+  const Versamento({
+    required this.id,
+    required this.aggiornatoIl,
+    required this.eliminato,
+    required this.obiettivoId,
+    this.partecipanteId,
+    required this.importoMinimo,
+    required this.data,
+    required this.nota,
+    this.movimentoId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['aggiornato_il'] = Variable<String>(aggiornatoIl);
+    map['eliminato'] = Variable<bool>(eliminato);
+    map['obiettivo_id'] = Variable<String>(obiettivoId);
+    if (!nullToAbsent || partecipanteId != null) {
+      map['partecipante_id'] = Variable<String>(partecipanteId);
+    }
+    map['importo_minimo'] = Variable<int>(importoMinimo);
+    map['data'] = Variable<String>(data);
+    map['nota'] = Variable<String>(nota);
+    if (!nullToAbsent || movimentoId != null) {
+      map['movimento_id'] = Variable<String>(movimentoId);
+    }
+    return map;
+  }
+
+  VersamentiCompanion toCompanion(bool nullToAbsent) {
+    return VersamentiCompanion(
+      id: Value(id),
+      aggiornatoIl: Value(aggiornatoIl),
+      eliminato: Value(eliminato),
+      obiettivoId: Value(obiettivoId),
+      partecipanteId: partecipanteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(partecipanteId),
+      importoMinimo: Value(importoMinimo),
+      data: Value(data),
+      nota: Value(nota),
+      movimentoId: movimentoId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(movimentoId),
+    );
+  }
+
+  factory Versamento.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Versamento(
+      id: serializer.fromJson<String>(json['id']),
+      aggiornatoIl: serializer.fromJson<String>(json['aggiornatoIl']),
+      eliminato: serializer.fromJson<bool>(json['eliminato']),
+      obiettivoId: serializer.fromJson<String>(json['obiettivoId']),
+      partecipanteId: serializer.fromJson<String?>(json['partecipanteId']),
+      importoMinimo: serializer.fromJson<int>(json['importoMinimo']),
+      data: serializer.fromJson<String>(json['data']),
+      nota: serializer.fromJson<String>(json['nota']),
+      movimentoId: serializer.fromJson<String?>(json['movimentoId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'aggiornatoIl': serializer.toJson<String>(aggiornatoIl),
+      'eliminato': serializer.toJson<bool>(eliminato),
+      'obiettivoId': serializer.toJson<String>(obiettivoId),
+      'partecipanteId': serializer.toJson<String?>(partecipanteId),
+      'importoMinimo': serializer.toJson<int>(importoMinimo),
+      'data': serializer.toJson<String>(data),
+      'nota': serializer.toJson<String>(nota),
+      'movimentoId': serializer.toJson<String?>(movimentoId),
+    };
+  }
+
+  Versamento copyWith({
+    String? id,
+    String? aggiornatoIl,
+    bool? eliminato,
+    String? obiettivoId,
+    Value<String?> partecipanteId = const Value.absent(),
+    int? importoMinimo,
+    String? data,
+    String? nota,
+    Value<String?> movimentoId = const Value.absent(),
+  }) => Versamento(
+    id: id ?? this.id,
+    aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+    eliminato: eliminato ?? this.eliminato,
+    obiettivoId: obiettivoId ?? this.obiettivoId,
+    partecipanteId: partecipanteId.present
+        ? partecipanteId.value
+        : this.partecipanteId,
+    importoMinimo: importoMinimo ?? this.importoMinimo,
+    data: data ?? this.data,
+    nota: nota ?? this.nota,
+    movimentoId: movimentoId.present ? movimentoId.value : this.movimentoId,
+  );
+  Versamento copyWithCompanion(VersamentiCompanion data) {
+    return Versamento(
+      id: data.id.present ? data.id.value : this.id,
+      aggiornatoIl: data.aggiornatoIl.present
+          ? data.aggiornatoIl.value
+          : this.aggiornatoIl,
+      eliminato: data.eliminato.present ? data.eliminato.value : this.eliminato,
+      obiettivoId: data.obiettivoId.present
+          ? data.obiettivoId.value
+          : this.obiettivoId,
+      partecipanteId: data.partecipanteId.present
+          ? data.partecipanteId.value
+          : this.partecipanteId,
+      importoMinimo: data.importoMinimo.present
+          ? data.importoMinimo.value
+          : this.importoMinimo,
+      data: data.data.present ? data.data.value : this.data,
+      nota: data.nota.present ? data.nota.value : this.nota,
+      movimentoId: data.movimentoId.present
+          ? data.movimentoId.value
+          : this.movimentoId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Versamento(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('obiettivoId: $obiettivoId, ')
+          ..write('partecipanteId: $partecipanteId, ')
+          ..write('importoMinimo: $importoMinimo, ')
+          ..write('data: $data, ')
+          ..write('nota: $nota, ')
+          ..write('movimentoId: $movimentoId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    aggiornatoIl,
+    eliminato,
+    obiettivoId,
+    partecipanteId,
+    importoMinimo,
+    data,
+    nota,
+    movimentoId,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Versamento &&
+          other.id == this.id &&
+          other.aggiornatoIl == this.aggiornatoIl &&
+          other.eliminato == this.eliminato &&
+          other.obiettivoId == this.obiettivoId &&
+          other.partecipanteId == this.partecipanteId &&
+          other.importoMinimo == this.importoMinimo &&
+          other.data == this.data &&
+          other.nota == this.nota &&
+          other.movimentoId == this.movimentoId);
+}
+
+class VersamentiCompanion extends UpdateCompanion<Versamento> {
+  final Value<String> id;
+  final Value<String> aggiornatoIl;
+  final Value<bool> eliminato;
+  final Value<String> obiettivoId;
+  final Value<String?> partecipanteId;
+  final Value<int> importoMinimo;
+  final Value<String> data;
+  final Value<String> nota;
+  final Value<String?> movimentoId;
+  final Value<int> rowid;
+  const VersamentiCompanion({
+    this.id = const Value.absent(),
+    this.aggiornatoIl = const Value.absent(),
+    this.eliminato = const Value.absent(),
+    this.obiettivoId = const Value.absent(),
+    this.partecipanteId = const Value.absent(),
+    this.importoMinimo = const Value.absent(),
+    this.data = const Value.absent(),
+    this.nota = const Value.absent(),
+    this.movimentoId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  VersamentiCompanion.insert({
+    required String id,
+    required String aggiornatoIl,
+    this.eliminato = const Value.absent(),
+    required String obiettivoId,
+    this.partecipanteId = const Value.absent(),
+    required int importoMinimo,
+    required String data,
+    this.nota = const Value.absent(),
+    this.movimentoId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       aggiornatoIl = Value(aggiornatoIl),
+       obiettivoId = Value(obiettivoId),
+       importoMinimo = Value(importoMinimo),
+       data = Value(data);
+  static Insertable<Versamento> custom({
+    Expression<String>? id,
+    Expression<String>? aggiornatoIl,
+    Expression<bool>? eliminato,
+    Expression<String>? obiettivoId,
+    Expression<String>? partecipanteId,
+    Expression<int>? importoMinimo,
+    Expression<String>? data,
+    Expression<String>? nota,
+    Expression<String>? movimentoId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (aggiornatoIl != null) 'aggiornato_il': aggiornatoIl,
+      if (eliminato != null) 'eliminato': eliminato,
+      if (obiettivoId != null) 'obiettivo_id': obiettivoId,
+      if (partecipanteId != null) 'partecipante_id': partecipanteId,
+      if (importoMinimo != null) 'importo_minimo': importoMinimo,
+      if (data != null) 'data': data,
+      if (nota != null) 'nota': nota,
+      if (movimentoId != null) 'movimento_id': movimentoId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  VersamentiCompanion copyWith({
+    Value<String>? id,
+    Value<String>? aggiornatoIl,
+    Value<bool>? eliminato,
+    Value<String>? obiettivoId,
+    Value<String?>? partecipanteId,
+    Value<int>? importoMinimo,
+    Value<String>? data,
+    Value<String>? nota,
+    Value<String?>? movimentoId,
+    Value<int>? rowid,
+  }) {
+    return VersamentiCompanion(
+      id: id ?? this.id,
+      aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+      eliminato: eliminato ?? this.eliminato,
+      obiettivoId: obiettivoId ?? this.obiettivoId,
+      partecipanteId: partecipanteId ?? this.partecipanteId,
+      importoMinimo: importoMinimo ?? this.importoMinimo,
+      data: data ?? this.data,
+      nota: nota ?? this.nota,
+      movimentoId: movimentoId ?? this.movimentoId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (aggiornatoIl.present) {
+      map['aggiornato_il'] = Variable<String>(aggiornatoIl.value);
+    }
+    if (eliminato.present) {
+      map['eliminato'] = Variable<bool>(eliminato.value);
+    }
+    if (obiettivoId.present) {
+      map['obiettivo_id'] = Variable<String>(obiettivoId.value);
+    }
+    if (partecipanteId.present) {
+      map['partecipante_id'] = Variable<String>(partecipanteId.value);
+    }
+    if (importoMinimo.present) {
+      map['importo_minimo'] = Variable<int>(importoMinimo.value);
+    }
+    if (data.present) {
+      map['data'] = Variable<String>(data.value);
+    }
+    if (nota.present) {
+      map['nota'] = Variable<String>(nota.value);
+    }
+    if (movimentoId.present) {
+      map['movimento_id'] = Variable<String>(movimentoId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VersamentiCompanion(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('obiettivoId: $obiettivoId, ')
+          ..write('partecipanteId: $partecipanteId, ')
+          ..write('importoMinimo: $importoMinimo, ')
+          ..write('data: $data, ')
+          ..write('nota: $nota, ')
+          ..write('movimentoId: $movimentoId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ImpostazioniTable extends Impostazioni
     with TableInfo<$ImpostazioniTable, Impostazione> {
   @override
@@ -7899,6 +9620,9 @@ abstract class _$Archivio extends GeneratedDatabase {
   late final $VariazioniMeseTable variazioniMese = $VariazioniMeseTable(this);
   late final $CarteCreditoTable carteCredito = $CarteCreditoTable(this);
   late final $PrestitiTable prestiti = $PrestitiTable(this);
+  late final $ObiettiviTable obiettivi = $ObiettiviTable(this);
+  late final $PartecipantiTable partecipanti = $PartecipantiTable(this);
+  late final $VersamentiTable versamenti = $VersamentiTable(this);
   late final $ImpostazioniTable impostazioni = $ImpostazioniTable(this);
   late final Index movimentiPianificatiUnici = Index(
     'movimenti_pianificati_unici',
@@ -7921,6 +9645,9 @@ abstract class _$Archivio extends GeneratedDatabase {
     variazioniMese,
     carteCredito,
     prestiti,
+    obiettivi,
+    partecipanti,
+    versamenti,
     impostazioni,
     movimentiPianificatiUnici,
   ];
@@ -8730,6 +10457,24 @@ final class $$PortafogliTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$ObiettiviTable, List<Obiettivo>>
+  _obiettiviRefsTable(_$Archivio db) => MultiTypedResultKey.fromTable(
+    db.obiettivi,
+    aliasName: 'portafogli__id__obiettivi__portafoglio_id',
+  );
+
+  $$ObiettiviTableProcessedTableManager get obiettiviRefs {
+    final manager = $$ObiettiviTableTableManager(
+      $_db,
+      $_db.obiettivi,
+    ).filter((f) => f.portafoglioId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_obiettiviRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$PortafogliTableFilterComposer
@@ -8975,6 +10720,31 @@ class $$PortafogliTableFilterComposer
           }) => $$PrestitiTableFilterComposer(
             $db: $db,
             $table: $db.prestiti,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> obiettiviRefs(
+    Expression<bool> Function($$ObiettiviTableFilterComposer f) f,
+  ) {
+    final $$ObiettiviTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.obiettivi,
+      getReferencedColumn: (t) => t.portafoglioId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ObiettiviTableFilterComposer(
+            $db: $db,
+            $table: $db.obiettivi,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -9302,6 +11072,31 @@ class $$PortafogliTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> obiettiviRefs<T extends Object>(
+    Expression<T> Function($$ObiettiviTableAnnotationComposer a) f,
+  ) {
+    final $$ObiettiviTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.obiettivi,
+      getReferencedColumn: (t) => t.portafoglioId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ObiettiviTableAnnotationComposer(
+            $db: $db,
+            $table: $db.obiettivi,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$PortafogliTableTableManager
@@ -9326,6 +11121,7 @@ class $$PortafogliTableTableManager
             bool cartaDelPortafoglio,
             bool carteAddebitate,
             bool prestitiRefs,
+            bool obiettiviRefs,
           })
         > {
   $$PortafogliTableTableManager(_$Archivio db, $PortafogliTable table)
@@ -9409,6 +11205,7 @@ class $$PortafogliTableTableManager
                 cartaDelPortafoglio = false,
                 carteAddebitate = false,
                 prestitiRefs = false,
+                obiettiviRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -9420,6 +11217,7 @@ class $$PortafogliTableTableManager
                     if (cartaDelPortafoglio) db.carteCredito,
                     if (carteAddebitate) db.carteCredito,
                     if (prestitiRefs) db.prestiti,
+                    if (obiettiviRefs) db.obiettivi,
                   ],
                   addJoins:
                       <
@@ -9600,6 +11398,27 @@ class $$PortafogliTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (obiettiviRefs)
+                        await $_getPrefetchedData<
+                          Portafoglio,
+                          $PortafogliTable,
+                          Obiettivo
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PortafogliTableReferences
+                              ._obiettiviRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PortafogliTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).obiettiviRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.portafoglioId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -9629,6 +11448,7 @@ typedef $$PortafogliTableProcessedTableManager =
         bool cartaDelPortafoglio,
         bool carteAddebitate,
         bool prestitiRefs,
+        bool obiettiviRefs,
       })
     >;
 typedef $$CategorieTableCreateCompanionBuilder = CategorieCompanion Function({
@@ -11491,6 +13311,24 @@ final class $$MovimentiTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$VersamentiTable, List<Versamento>>
+  _versamentiRefsTable(_$Archivio db) => MultiTypedResultKey.fromTable(
+    db.versamenti,
+    aliasName: 'movimenti__id__versamenti__movimento_id',
+  );
+
+  $$VersamentiTableProcessedTableManager get versamentiRefs {
+    final manager = $$VersamentiTableTableManager(
+      $_db,
+      $_db.versamenti,
+    ).filter((f) => f.movimentoId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_versamentiRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$MovimentiTableFilterComposer
@@ -11678,6 +13516,31 @@ class $$MovimentiTableFilterComposer
           }) => $$MovimentiEtichetteTableFilterComposer(
             $db: $db,
             $table: $db.movimentiEtichette,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> versamentiRefs(
+    Expression<bool> Function($$VersamentiTableFilterComposer f) f,
+  ) {
+    final $$VersamentiTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.versamenti,
+      getReferencedColumn: (t) => t.movimentoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VersamentiTableFilterComposer(
+            $db: $db,
+            $table: $db.versamenti,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -12042,6 +13905,31 @@ class $$MovimentiTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> versamentiRefs<T extends Object>(
+    Expression<T> Function($$VersamentiTableAnnotationComposer a) f,
+  ) {
+    final $$VersamentiTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.versamenti,
+      getReferencedColumn: (t) => t.movimentoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VersamentiTableAnnotationComposer(
+            $db: $db,
+            $table: $db.versamenti,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$MovimentiTableTableManager
@@ -12064,6 +13952,7 @@ class $$MovimentiTableTableManager
             bool categoriaId,
             bool pianificazioneId,
             bool movimentiEtichetteRefs,
+            bool versamentiRefs,
           })
         > {
   $$MovimentiTableTableManager(_$Archivio db, $MovimentiTable table)
@@ -12161,11 +14050,13 @@ class $$MovimentiTableTableManager
                 categoriaId = false,
                 pianificazioneId = false,
                 movimentiEtichetteRefs = false,
+                versamentiRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (movimentiEtichetteRefs) db.movimentiEtichette,
+                    if (versamentiRefs) db.versamenti,
                   ],
                   addJoins:
                       <
@@ -12264,6 +14155,27 @@ class $$MovimentiTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (versamentiRefs)
+                        await $_getPrefetchedData<
+                          Movimento,
+                          $MovimentiTable,
+                          Versamento
+                        >(
+                          currentTable: table,
+                          referencedTable: $$MovimentiTableReferences
+                              ._versamentiRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$MovimentiTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).versamentiRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.movimentoId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -12291,6 +14203,7 @@ typedef $$MovimentiTableProcessedTableManager =
         bool categoriaId,
         bool pianificazioneId,
         bool movimentiEtichetteRefs,
+        bool versamentiRefs,
       })
     >;
 typedef $$EtichetteTableCreateCompanionBuilder = EtichetteCompanion Function({
@@ -15536,6 +17449,1638 @@ typedef $$PrestitiTableProcessedTableManager =
       Prestito,
       PrefetchHooks Function({bool portafoglioId, bool categoriaId})
     >;
+typedef $$ObiettiviTableCreateCompanionBuilder = ObiettiviCompanion Function({
+  required String id,
+  required String aggiornatoIl,
+  Value<bool> eliminato,
+  required String nome,
+  required String tipo,
+  required int importoObiettivoMinimo,
+  Value<String?> scadenza,
+  Value<String?> portafoglioId,
+  Value<String> valuta,
+  Value<String> note,
+  Value<bool> archiviato,
+  Value<int> rowid,
+});
+typedef $$ObiettiviTableUpdateCompanionBuilder = ObiettiviCompanion Function({
+  Value<String> id,
+  Value<String> aggiornatoIl,
+  Value<bool> eliminato,
+  Value<String> nome,
+  Value<String> tipo,
+  Value<int> importoObiettivoMinimo,
+  Value<String?> scadenza,
+  Value<String?> portafoglioId,
+  Value<String> valuta,
+  Value<String> note,
+  Value<bool> archiviato,
+  Value<int> rowid,
+});
+
+final class $$ObiettiviTableReferences
+    extends BaseReferences<_$Archivio, $ObiettiviTable, Obiettivo> {
+  $$ObiettiviTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $PortafogliTable _portafoglioIdTable(_$Archivio db) =>
+      db.portafogli.createAlias('obiettivi__portafoglio_id__portafogli__id');
+
+  $$PortafogliTableProcessedTableManager? get portafoglioId {
+    final $_column = $_itemColumn<String>('portafoglio_id');
+    if ($_column == null) return null;
+    final manager = $$PortafogliTableTableManager(
+      $_db,
+      $_db.portafogli,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_portafoglioIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$PartecipantiTable, List<Partecipante>>
+  _partecipantiRefsTable(_$Archivio db) => MultiTypedResultKey.fromTable(
+    db.partecipanti,
+    aliasName: 'obiettivi__id__partecipanti__obiettivo_id',
+  );
+
+  $$PartecipantiTableProcessedTableManager get partecipantiRefs {
+    final manager = $$PartecipantiTableTableManager(
+      $_db,
+      $_db.partecipanti,
+    ).filter((f) => f.obiettivoId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_partecipantiRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$VersamentiTable, List<Versamento>>
+  _versamentiRefsTable(_$Archivio db) => MultiTypedResultKey.fromTable(
+    db.versamenti,
+    aliasName: 'obiettivi__id__versamenti__obiettivo_id',
+  );
+
+  $$VersamentiTableProcessedTableManager get versamentiRefs {
+    final manager = $$VersamentiTableTableManager(
+      $_db,
+      $_db.versamenti,
+    ).filter((f) => f.obiettivoId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_versamentiRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ObiettiviTableFilterComposer
+    extends Composer<_$Archivio, $ObiettiviTable> {
+  $$ObiettiviTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tipo => $composableBuilder(
+    column: $table.tipo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get importoObiettivoMinimo => $composableBuilder(
+    column: $table.importoObiettivoMinimo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get scadenza => $composableBuilder(
+    column: $table.scadenza,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get valuta => $composableBuilder(
+    column: $table.valuta,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get archiviato => $composableBuilder(
+    column: $table.archiviato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PortafogliTableFilterComposer get portafoglioId {
+    final $$PortafogliTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portafoglioId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableFilterComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> partecipantiRefs(
+    Expression<bool> Function($$PartecipantiTableFilterComposer f) f,
+  ) {
+    final $$PartecipantiTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.partecipanti,
+      getReferencedColumn: (t) => t.obiettivoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PartecipantiTableFilterComposer(
+            $db: $db,
+            $table: $db.partecipanti,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> versamentiRefs(
+    Expression<bool> Function($$VersamentiTableFilterComposer f) f,
+  ) {
+    final $$VersamentiTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.versamenti,
+      getReferencedColumn: (t) => t.obiettivoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VersamentiTableFilterComposer(
+            $db: $db,
+            $table: $db.versamenti,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ObiettiviTableOrderingComposer
+    extends Composer<_$Archivio, $ObiettiviTable> {
+  $$ObiettiviTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tipo => $composableBuilder(
+    column: $table.tipo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get importoObiettivoMinimo => $composableBuilder(
+    column: $table.importoObiettivoMinimo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get scadenza => $composableBuilder(
+    column: $table.scadenza,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get valuta => $composableBuilder(
+    column: $table.valuta,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get archiviato => $composableBuilder(
+    column: $table.archiviato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PortafogliTableOrderingComposer get portafoglioId {
+    final $$PortafogliTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portafoglioId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableOrderingComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ObiettiviTableAnnotationComposer
+    extends Composer<_$Archivio, $ObiettiviTable> {
+  $$ObiettiviTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get eliminato =>
+      $composableBuilder(column: $table.eliminato, builder: (column) => column);
+
+  GeneratedColumn<String> get nome =>
+      $composableBuilder(column: $table.nome, builder: (column) => column);
+
+  GeneratedColumn<String> get tipo =>
+      $composableBuilder(column: $table.tipo, builder: (column) => column);
+
+  GeneratedColumn<int> get importoObiettivoMinimo => $composableBuilder(
+    column: $table.importoObiettivoMinimo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get scadenza =>
+      $composableBuilder(column: $table.scadenza, builder: (column) => column);
+
+  GeneratedColumn<String> get valuta =>
+      $composableBuilder(column: $table.valuta, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<bool> get archiviato => $composableBuilder(
+    column: $table.archiviato,
+    builder: (column) => column,
+  );
+
+  $$PortafogliTableAnnotationComposer get portafoglioId {
+    final $$PortafogliTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portafoglioId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableAnnotationComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> partecipantiRefs<T extends Object>(
+    Expression<T> Function($$PartecipantiTableAnnotationComposer a) f,
+  ) {
+    final $$PartecipantiTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.partecipanti,
+      getReferencedColumn: (t) => t.obiettivoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PartecipantiTableAnnotationComposer(
+            $db: $db,
+            $table: $db.partecipanti,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> versamentiRefs<T extends Object>(
+    Expression<T> Function($$VersamentiTableAnnotationComposer a) f,
+  ) {
+    final $$VersamentiTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.versamenti,
+      getReferencedColumn: (t) => t.obiettivoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VersamentiTableAnnotationComposer(
+            $db: $db,
+            $table: $db.versamenti,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ObiettiviTableTableManager
+    extends
+        RootTableManager<
+          _$Archivio,
+          $ObiettiviTable,
+          Obiettivo,
+          $$ObiettiviTableFilterComposer,
+          $$ObiettiviTableOrderingComposer,
+          $$ObiettiviTableAnnotationComposer,
+          $$ObiettiviTableCreateCompanionBuilder,
+          $$ObiettiviTableUpdateCompanionBuilder,
+          (Obiettivo, $$ObiettiviTableReferences),
+          Obiettivo,
+          PrefetchHooks Function({
+            bool portafoglioId,
+            bool partecipantiRefs,
+            bool versamentiRefs,
+          })
+        > {
+  $$ObiettiviTableTableManager(_$Archivio db, $ObiettiviTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ObiettiviTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ObiettiviTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ObiettiviTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> aggiornatoIl = const Value.absent(),
+                Value<bool> eliminato = const Value.absent(),
+                Value<String> nome = const Value.absent(),
+                Value<String> tipo = const Value.absent(),
+                Value<int> importoObiettivoMinimo = const Value.absent(),
+                Value<String?> scadenza = const Value.absent(),
+                Value<String?> portafoglioId = const Value.absent(),
+                Value<String> valuta = const Value.absent(),
+                Value<String> note = const Value.absent(),
+                Value<bool> archiviato = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ObiettiviCompanion(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                nome: nome,
+                tipo: tipo,
+                importoObiettivoMinimo: importoObiettivoMinimo,
+                scadenza: scadenza,
+                portafoglioId: portafoglioId,
+                valuta: valuta,
+                note: note,
+                archiviato: archiviato,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String aggiornatoIl,
+                Value<bool> eliminato = const Value.absent(),
+                required String nome,
+                required String tipo,
+                required int importoObiettivoMinimo,
+                Value<String?> scadenza = const Value.absent(),
+                Value<String?> portafoglioId = const Value.absent(),
+                Value<String> valuta = const Value.absent(),
+                Value<String> note = const Value.absent(),
+                Value<bool> archiviato = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ObiettiviCompanion.insert(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                nome: nome,
+                tipo: tipo,
+                importoObiettivoMinimo: importoObiettivoMinimo,
+                scadenza: scadenza,
+                portafoglioId: portafoglioId,
+                valuta: valuta,
+                note: note,
+                archiviato: archiviato,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ObiettiviTable, Obiettivo>(table),
+                  $$ObiettiviTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                portafoglioId = false,
+                partecipantiRefs = false,
+                versamentiRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (partecipantiRefs) db.partecipanti,
+                    if (versamentiRefs) db.versamenti,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (portafoglioId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.portafoglioId,
+                            referencedTable: $$ObiettiviTableReferences
+                                ._portafoglioIdTable(db),
+                            referencedColumn: $$ObiettiviTableReferences
+                                ._portafoglioIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (partecipantiRefs)
+                        await $_getPrefetchedData<
+                          Obiettivo,
+                          $ObiettiviTable,
+                          Partecipante
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ObiettiviTableReferences
+                              ._partecipantiRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ObiettiviTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).partecipantiRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.obiettivoId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (versamentiRefs)
+                        await $_getPrefetchedData<
+                          Obiettivo,
+                          $ObiettiviTable,
+                          Versamento
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ObiettiviTableReferences
+                              ._versamentiRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ObiettiviTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).versamentiRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.obiettivoId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$ObiettiviTableProcessedTableManager =
+    ProcessedTableManager<
+      _$Archivio,
+      $ObiettiviTable,
+      Obiettivo,
+      $$ObiettiviTableFilterComposer,
+      $$ObiettiviTableOrderingComposer,
+      $$ObiettiviTableAnnotationComposer,
+      $$ObiettiviTableCreateCompanionBuilder,
+      $$ObiettiviTableUpdateCompanionBuilder,
+      (Obiettivo, $$ObiettiviTableReferences),
+      Obiettivo,
+      PrefetchHooks Function({
+        bool portafoglioId,
+        bool partecipantiRefs,
+        bool versamentiRefs,
+      })
+    >;
+typedef $$PartecipantiTableCreateCompanionBuilder =
+    PartecipantiCompanion Function({
+      required String id,
+      required String aggiornatoIl,
+      Value<bool> eliminato,
+      required String obiettivoId,
+      required String nome,
+      Value<int?> quotaMinimo,
+      Value<int> rowid,
+    });
+typedef $$PartecipantiTableUpdateCompanionBuilder =
+    PartecipantiCompanion Function({
+      Value<String> id,
+      Value<String> aggiornatoIl,
+      Value<bool> eliminato,
+      Value<String> obiettivoId,
+      Value<String> nome,
+      Value<int?> quotaMinimo,
+      Value<int> rowid,
+    });
+
+final class $$PartecipantiTableReferences
+    extends BaseReferences<_$Archivio, $PartecipantiTable, Partecipante> {
+  $$PartecipantiTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ObiettiviTable _obiettivoIdTable(_$Archivio db) =>
+      db.obiettivi.createAlias('partecipanti__obiettivo_id__obiettivi__id');
+
+  $$ObiettiviTableProcessedTableManager get obiettivoId {
+    final $_column = $_itemColumn<String>('obiettivo_id')!;
+
+    final manager = $$ObiettiviTableTableManager(
+      $_db,
+      $_db.obiettivi,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_obiettivoIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$VersamentiTable, List<Versamento>>
+  _versamentiRefsTable(_$Archivio db) => MultiTypedResultKey.fromTable(
+    db.versamenti,
+    aliasName: 'partecipanti__id__versamenti__partecipante_id',
+  );
+
+  $$VersamentiTableProcessedTableManager get versamentiRefs {
+    final manager = $$VersamentiTableTableManager(
+      $_db,
+      $_db.versamenti,
+    ).filter((f) => f.partecipanteId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_versamentiRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$PartecipantiTableFilterComposer
+    extends Composer<_$Archivio, $PartecipantiTable> {
+  $$PartecipantiTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get quotaMinimo => $composableBuilder(
+    column: $table.quotaMinimo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ObiettiviTableFilterComposer get obiettivoId {
+    final $$ObiettiviTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.obiettivoId,
+      referencedTable: $db.obiettivi,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ObiettiviTableFilterComposer(
+            $db: $db,
+            $table: $db.obiettivi,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> versamentiRefs(
+    Expression<bool> Function($$VersamentiTableFilterComposer f) f,
+  ) {
+    final $$VersamentiTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.versamenti,
+      getReferencedColumn: (t) => t.partecipanteId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VersamentiTableFilterComposer(
+            $db: $db,
+            $table: $db.versamenti,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PartecipantiTableOrderingComposer
+    extends Composer<_$Archivio, $PartecipantiTable> {
+  $$PartecipantiTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get quotaMinimo => $composableBuilder(
+    column: $table.quotaMinimo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ObiettiviTableOrderingComposer get obiettivoId {
+    final $$ObiettiviTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.obiettivoId,
+      referencedTable: $db.obiettivi,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ObiettiviTableOrderingComposer(
+            $db: $db,
+            $table: $db.obiettivi,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PartecipantiTableAnnotationComposer
+    extends Composer<_$Archivio, $PartecipantiTable> {
+  $$PartecipantiTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get eliminato =>
+      $composableBuilder(column: $table.eliminato, builder: (column) => column);
+
+  GeneratedColumn<String> get nome =>
+      $composableBuilder(column: $table.nome, builder: (column) => column);
+
+  GeneratedColumn<int> get quotaMinimo => $composableBuilder(
+    column: $table.quotaMinimo,
+    builder: (column) => column,
+  );
+
+  $$ObiettiviTableAnnotationComposer get obiettivoId {
+    final $$ObiettiviTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.obiettivoId,
+      referencedTable: $db.obiettivi,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ObiettiviTableAnnotationComposer(
+            $db: $db,
+            $table: $db.obiettivi,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> versamentiRefs<T extends Object>(
+    Expression<T> Function($$VersamentiTableAnnotationComposer a) f,
+  ) {
+    final $$VersamentiTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.versamenti,
+      getReferencedColumn: (t) => t.partecipanteId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VersamentiTableAnnotationComposer(
+            $db: $db,
+            $table: $db.versamenti,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PartecipantiTableTableManager
+    extends
+        RootTableManager<
+          _$Archivio,
+          $PartecipantiTable,
+          Partecipante,
+          $$PartecipantiTableFilterComposer,
+          $$PartecipantiTableOrderingComposer,
+          $$PartecipantiTableAnnotationComposer,
+          $$PartecipantiTableCreateCompanionBuilder,
+          $$PartecipantiTableUpdateCompanionBuilder,
+          (Partecipante, $$PartecipantiTableReferences),
+          Partecipante,
+          PrefetchHooks Function({bool obiettivoId, bool versamentiRefs})
+        > {
+  $$PartecipantiTableTableManager(_$Archivio db, $PartecipantiTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PartecipantiTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PartecipantiTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PartecipantiTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> aggiornatoIl = const Value.absent(),
+                Value<bool> eliminato = const Value.absent(),
+                Value<String> obiettivoId = const Value.absent(),
+                Value<String> nome = const Value.absent(),
+                Value<int?> quotaMinimo = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PartecipantiCompanion(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                obiettivoId: obiettivoId,
+                nome: nome,
+                quotaMinimo: quotaMinimo,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String aggiornatoIl,
+                Value<bool> eliminato = const Value.absent(),
+                required String obiettivoId,
+                required String nome,
+                Value<int?> quotaMinimo = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PartecipantiCompanion.insert(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                obiettivoId: obiettivoId,
+                nome: nome,
+                quotaMinimo: quotaMinimo,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$PartecipantiTable, Partecipante>(table),
+                  $$PartecipantiTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({obiettivoId = false, versamentiRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [if (versamentiRefs) db.versamenti],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (obiettivoId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.obiettivoId,
+                            referencedTable: $$PartecipantiTableReferences
+                                ._obiettivoIdTable(db),
+                            referencedColumn: $$PartecipantiTableReferences
+                                ._obiettivoIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (versamentiRefs)
+                        await $_getPrefetchedData<
+                          Partecipante,
+                          $PartecipantiTable,
+                          Versamento
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PartecipantiTableReferences
+                              ._versamentiRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PartecipantiTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).versamentiRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.partecipanteId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$PartecipantiTableProcessedTableManager =
+    ProcessedTableManager<
+      _$Archivio,
+      $PartecipantiTable,
+      Partecipante,
+      $$PartecipantiTableFilterComposer,
+      $$PartecipantiTableOrderingComposer,
+      $$PartecipantiTableAnnotationComposer,
+      $$PartecipantiTableCreateCompanionBuilder,
+      $$PartecipantiTableUpdateCompanionBuilder,
+      (Partecipante, $$PartecipantiTableReferences),
+      Partecipante,
+      PrefetchHooks Function({bool obiettivoId, bool versamentiRefs})
+    >;
+typedef $$VersamentiTableCreateCompanionBuilder = VersamentiCompanion Function({
+  required String id,
+  required String aggiornatoIl,
+  Value<bool> eliminato,
+  required String obiettivoId,
+  Value<String?> partecipanteId,
+  required int importoMinimo,
+  required String data,
+  Value<String> nota,
+  Value<String?> movimentoId,
+  Value<int> rowid,
+});
+typedef $$VersamentiTableUpdateCompanionBuilder = VersamentiCompanion Function({
+  Value<String> id,
+  Value<String> aggiornatoIl,
+  Value<bool> eliminato,
+  Value<String> obiettivoId,
+  Value<String?> partecipanteId,
+  Value<int> importoMinimo,
+  Value<String> data,
+  Value<String> nota,
+  Value<String?> movimentoId,
+  Value<int> rowid,
+});
+
+final class $$VersamentiTableReferences
+    extends BaseReferences<_$Archivio, $VersamentiTable, Versamento> {
+  $$VersamentiTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ObiettiviTable _obiettivoIdTable(_$Archivio db) =>
+      db.obiettivi.createAlias('versamenti__obiettivo_id__obiettivi__id');
+
+  $$ObiettiviTableProcessedTableManager get obiettivoId {
+    final $_column = $_itemColumn<String>('obiettivo_id')!;
+
+    final manager = $$ObiettiviTableTableManager(
+      $_db,
+      $_db.obiettivi,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_obiettivoIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $PartecipantiTable _partecipanteIdTable(_$Archivio db) => db
+      .partecipanti
+      .createAlias('versamenti__partecipante_id__partecipanti__id');
+
+  $$PartecipantiTableProcessedTableManager? get partecipanteId {
+    final $_column = $_itemColumn<String>('partecipante_id');
+    if ($_column == null) return null;
+    final manager = $$PartecipantiTableTableManager(
+      $_db,
+      $_db.partecipanti,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_partecipanteIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $MovimentiTable _movimentoIdTable(_$Archivio db) =>
+      db.movimenti.createAlias('versamenti__movimento_id__movimenti__id');
+
+  $$MovimentiTableProcessedTableManager? get movimentoId {
+    final $_column = $_itemColumn<String>('movimento_id');
+    if ($_column == null) return null;
+    final manager = $$MovimentiTableTableManager(
+      $_db,
+      $_db.movimenti,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_movimentoIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$VersamentiTableFilterComposer
+    extends Composer<_$Archivio, $VersamentiTable> {
+  $$VersamentiTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get importoMinimo => $composableBuilder(
+    column: $table.importoMinimo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get data => $composableBuilder(
+    column: $table.data,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nota => $composableBuilder(
+    column: $table.nota,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ObiettiviTableFilterComposer get obiettivoId {
+    final $$ObiettiviTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.obiettivoId,
+      referencedTable: $db.obiettivi,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ObiettiviTableFilterComposer(
+            $db: $db,
+            $table: $db.obiettivi,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PartecipantiTableFilterComposer get partecipanteId {
+    final $$PartecipantiTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.partecipanteId,
+      referencedTable: $db.partecipanti,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PartecipantiTableFilterComposer(
+            $db: $db,
+            $table: $db.partecipanti,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$MovimentiTableFilterComposer get movimentoId {
+    final $$MovimentiTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.movimentoId,
+      referencedTable: $db.movimenti,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MovimentiTableFilterComposer(
+            $db: $db,
+            $table: $db.movimenti,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VersamentiTableOrderingComposer
+    extends Composer<_$Archivio, $VersamentiTable> {
+  $$VersamentiTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get importoMinimo => $composableBuilder(
+    column: $table.importoMinimo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get data => $composableBuilder(
+    column: $table.data,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nota => $composableBuilder(
+    column: $table.nota,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ObiettiviTableOrderingComposer get obiettivoId {
+    final $$ObiettiviTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.obiettivoId,
+      referencedTable: $db.obiettivi,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ObiettiviTableOrderingComposer(
+            $db: $db,
+            $table: $db.obiettivi,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PartecipantiTableOrderingComposer get partecipanteId {
+    final $$PartecipantiTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.partecipanteId,
+      referencedTable: $db.partecipanti,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PartecipantiTableOrderingComposer(
+            $db: $db,
+            $table: $db.partecipanti,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$MovimentiTableOrderingComposer get movimentoId {
+    final $$MovimentiTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.movimentoId,
+      referencedTable: $db.movimenti,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MovimentiTableOrderingComposer(
+            $db: $db,
+            $table: $db.movimenti,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VersamentiTableAnnotationComposer
+    extends Composer<_$Archivio, $VersamentiTable> {
+  $$VersamentiTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get eliminato =>
+      $composableBuilder(column: $table.eliminato, builder: (column) => column);
+
+  GeneratedColumn<int> get importoMinimo => $composableBuilder(
+    column: $table.importoMinimo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get data =>
+      $composableBuilder(column: $table.data, builder: (column) => column);
+
+  GeneratedColumn<String> get nota =>
+      $composableBuilder(column: $table.nota, builder: (column) => column);
+
+  $$ObiettiviTableAnnotationComposer get obiettivoId {
+    final $$ObiettiviTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.obiettivoId,
+      referencedTable: $db.obiettivi,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ObiettiviTableAnnotationComposer(
+            $db: $db,
+            $table: $db.obiettivi,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PartecipantiTableAnnotationComposer get partecipanteId {
+    final $$PartecipantiTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.partecipanteId,
+      referencedTable: $db.partecipanti,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PartecipantiTableAnnotationComposer(
+            $db: $db,
+            $table: $db.partecipanti,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$MovimentiTableAnnotationComposer get movimentoId {
+    final $$MovimentiTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.movimentoId,
+      referencedTable: $db.movimenti,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MovimentiTableAnnotationComposer(
+            $db: $db,
+            $table: $db.movimenti,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VersamentiTableTableManager
+    extends
+        RootTableManager<
+          _$Archivio,
+          $VersamentiTable,
+          Versamento,
+          $$VersamentiTableFilterComposer,
+          $$VersamentiTableOrderingComposer,
+          $$VersamentiTableAnnotationComposer,
+          $$VersamentiTableCreateCompanionBuilder,
+          $$VersamentiTableUpdateCompanionBuilder,
+          (Versamento, $$VersamentiTableReferences),
+          Versamento,
+          PrefetchHooks Function({
+            bool obiettivoId,
+            bool partecipanteId,
+            bool movimentoId,
+          })
+        > {
+  $$VersamentiTableTableManager(_$Archivio db, $VersamentiTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VersamentiTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VersamentiTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$VersamentiTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> aggiornatoIl = const Value.absent(),
+                Value<bool> eliminato = const Value.absent(),
+                Value<String> obiettivoId = const Value.absent(),
+                Value<String?> partecipanteId = const Value.absent(),
+                Value<int> importoMinimo = const Value.absent(),
+                Value<String> data = const Value.absent(),
+                Value<String> nota = const Value.absent(),
+                Value<String?> movimentoId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VersamentiCompanion(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                obiettivoId: obiettivoId,
+                partecipanteId: partecipanteId,
+                importoMinimo: importoMinimo,
+                data: data,
+                nota: nota,
+                movimentoId: movimentoId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String aggiornatoIl,
+                Value<bool> eliminato = const Value.absent(),
+                required String obiettivoId,
+                Value<String?> partecipanteId = const Value.absent(),
+                required int importoMinimo,
+                required String data,
+                Value<String> nota = const Value.absent(),
+                Value<String?> movimentoId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VersamentiCompanion.insert(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                obiettivoId: obiettivoId,
+                partecipanteId: partecipanteId,
+                importoMinimo: importoMinimo,
+                data: data,
+                nota: nota,
+                movimentoId: movimentoId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$VersamentiTable, Versamento>(table),
+                  $$VersamentiTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                obiettivoId = false,
+                partecipanteId = false,
+                movimentoId = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (obiettivoId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.obiettivoId,
+                            referencedTable: $$VersamentiTableReferences
+                                ._obiettivoIdTable(db),
+                            referencedColumn: $$VersamentiTableReferences
+                                ._obiettivoIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (partecipanteId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.partecipanteId,
+                            referencedTable: $$VersamentiTableReferences
+                                ._partecipanteIdTable(db),
+                            referencedColumn: $$VersamentiTableReferences
+                                ._partecipanteIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (movimentoId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.movimentoId,
+                            referencedTable: $$VersamentiTableReferences
+                                ._movimentoIdTable(db),
+                            referencedColumn: $$VersamentiTableReferences
+                                ._movimentoIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$VersamentiTableProcessedTableManager =
+    ProcessedTableManager<
+      _$Archivio,
+      $VersamentiTable,
+      Versamento,
+      $$VersamentiTableFilterComposer,
+      $$VersamentiTableOrderingComposer,
+      $$VersamentiTableAnnotationComposer,
+      $$VersamentiTableCreateCompanionBuilder,
+      $$VersamentiTableUpdateCompanionBuilder,
+      (Versamento, $$VersamentiTableReferences),
+      Versamento,
+      PrefetchHooks Function({
+        bool obiettivoId,
+        bool partecipanteId,
+        bool movimentoId,
+      })
+    >;
 typedef $$ImpostazioniTableCreateCompanionBuilder =
     ImpostazioniCompanion Function({
       required String chiave,
@@ -15716,6 +19261,12 @@ class $ArchivioManager {
       $$CarteCreditoTableTableManager(_db, _db.carteCredito);
   $$PrestitiTableTableManager get prestiti =>
       $$PrestitiTableTableManager(_db, _db.prestiti);
+  $$ObiettiviTableTableManager get obiettivi =>
+      $$ObiettiviTableTableManager(_db, _db.obiettivi);
+  $$PartecipantiTableTableManager get partecipanti =>
+      $$PartecipantiTableTableManager(_db, _db.partecipanti);
+  $$VersamentiTableTableManager get versamenti =>
+      $$VersamentiTableTableManager(_db, _db.versamenti);
   $$ImpostazioniTableTableManager get impostazioni =>
       $$ImpostazioniTableTableManager(_db, _db.impostazioni);
 }
