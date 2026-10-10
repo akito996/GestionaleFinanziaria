@@ -75,7 +75,18 @@ jobs:
       - name: Dipendenze (bloccate da pubspec.lock)
         run: flutter pub get --enforce-lockfile
       - name: Test sull'app vera (primo avvio, blocco, sblocco, recupero)
-        run: flutter test integration_test -d windows
+        run: |
+          set -o pipefail
+          flutter test integration_test -d windows -r expanded 2>&1 | tee "$RUNNER_TEMP/integration.log"
+      # In caso di errore il motivo diventa un'annotazione (visibile nel riepilogo dell'esecuzione).
+      - name: Motivo dell'errore
+        if: failure()
+        run: |
+          motivo="$(grep -v -E '^\s*$' "$RUNNER_TEMP/integration.log" | grep -E -A25 'EXCEPTION CAUGHT|Expected:|\[E\]|Error' | head -60)"
+          motivo="${motivo//'%'/'%25'}"
+          motivo="${motivo//$'\n'/'%0A'}"
+          motivo="${motivo//$'\r'/}"
+          echo "::error title=Test sull'app vera::${motivo}"
       - name: Build
         run: flutter build windows --release
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
