@@ -7,7 +7,7 @@ import 'package:sqlite3/sqlite3.dart' as sql;
 
 void main() {
   test(
-    'migrazione v1 → v6: dati conservati, nuove tabelle e categorie',
+    'migrazione v1 → v7: dati conservati, nuove tabelle e categorie',
     () async {
       // Lo schema delle tabelle già presenti in v1 non è cambiato: si crea un archivio
       // attuale e lo si riporta com'era in v1 (senza le aggiunte della v2).
@@ -34,6 +34,8 @@ void main() {
           );
       await v2.close();
       grezzo
+        ..execute('ALTER TABLE portafogli DROP COLUMN gruppo')
+        ..execute('ALTER TABLE portafogli DROP COLUMN preferito')
         ..execute('DROP TABLE versamenti')
         ..execute('DROP TABLE partecipanti')
         ..execute('DROP TABLE obiettivi')
@@ -74,7 +76,9 @@ void main() {
       expect(await db.select(db.prestiti).get(), isEmpty);
       expect(categorie.map((c) => c.nome), contains('Finanziamenti'));
       expect(await db.select(db.obiettivi).get(), isEmpty);
-      expect(grezzo.userVersion, 6);
+      expect(portafogli.single.preferito, isFalse);
+      expect(portafogli.single.gruppo, isNull);
+      expect(grezzo.userVersion, 7);
     },
   );
 }

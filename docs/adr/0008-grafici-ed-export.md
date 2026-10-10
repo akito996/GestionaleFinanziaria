@@ -18,6 +18,13 @@ L'utente vuole scegliere il tipo di grafico (con il più semplice e chiaro come 
   - **Excel (.xlsx)** generato in proprio (Office Open XML + zip con `archive`): un foglio per sezione, intestazione in grassetto e bloccata, importi come numeri in formato euro, piani completi delle rate. Il pacchetto `excel` è stato scartato perché incompatibile con `pdf` (versioni di `xml`); Syncfusion scartato perché non open source.
   - Avviso nella finestra: il file esportato **non è cifrato**.
 
+## Aggiornamento dell'11/10/2026 – nuovi tipi di grafico
+Su richiesta dell'utente: linee, **barre e colonne**, **torta e ciambella**, **stato patrimoniale**, **candele**, **cascata (waterfall)**.
+- Panoramica: *Patrimonio* (stato patrimoniale: attività = portafogli con saldo positivo per tipo; passività = debito residuo dei prestiti, debito delle carte, conti in rosso; patrimonio netto) e *Flusso del mese* (cascata: saldo di inizio mese → entrate → spese per le 5 categorie maggiori + altre → saldo di fine mese; la somma "chiude" ed è verificata da un test).
+- Portafoglio: linee (predefinito), colonne, **candele** (apertura, massimo, minimo e chiusura del saldo giornaliero di ogni mese), tabella.
+- Spese per categoria: barre (predefinito), colonne, torta, ciambella, tabella. Costo della vita: barre impilate (predefinito), colonne raggruppate, linee, tabella.
+- Crescita/calo e entrate/spese in **verde acqua / arancio** (coppia validata per il daltonismo) con segni e legenda, non verde/rosso; totali in blu.
+
 ## Conseguenze
 - ✅ Report leggibile e dati completi per analisi esterne, senza servizi esterni.
 - ⚠️ Nei file Excel non ci sono grafici nativi (sono nel PDF).

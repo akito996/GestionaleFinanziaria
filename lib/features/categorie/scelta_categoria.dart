@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/db/contabilita.dart';
 import '../../core/sessione.dart';
+import 'albero_vista.dart';
 
 /// Icona di una categoria principale (chiave salvata nella colonna `icona`).
 IconData iconaCategoria(String? chiave) => switch (chiave) {
@@ -56,96 +57,30 @@ class _SceltaCategoriaDialogo extends StatefulWidget {
 }
 
 class _SceltaCategoriaDialogoState extends State<_SceltaCategoriaDialogo> {
-  final _cerca = TextEditingController();
-  String _filtro = '';
-
-  @override
-  void dispose() {
-    _cerca.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final schema = Theme.of(context).colorScheme;
     return AlertDialog(
       title: Text(widget.titolo),
-      contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      contentPadding: const EdgeInsets.fromLTRB(8, 16, 8, 0),
       content: SizedBox(
-        width: 420,
-        height: 480,
-        child: StreamBuilder(
-          stream: widget.sessione.contabilita.osservaCategorie(),
-          builder: (context, snapshot) {
-            final albero = AlberoCategorie(snapshot.data ?? const []);
-            final filtro = _filtro.trim().toLowerCase();
-            final righe = albero
-                .inOrdine()
-                .where(
-                  (r) =>
-                      filtro.isEmpty ||
-                      albero.percorso(r.$1.id).toLowerCase().contains(filtro),
-                )
-                .toList();
-            return Column(
-              children: [
-                TextField(
-                  controller: _cerca,
-                  autofocus: true,
-                  onChanged: (v) => setState(() => _filtro = v),
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search),
-                    hintText: 'Cerca (es. luce, spesa, auto)',
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: ListView(
-                    children: [
-                      ListTile(
-                        leading: const Icon(Icons.block),
-                        title: const Text('Nessuna categoria'),
-                        selected: widget.selezionata == null,
-                        onTap: () =>
-                            Navigator.of(context)
-                                .pop((annullata: false, id: null)),
-                      ),
-                      for (final (categoria, livello) in righe)
-                        ListTile(
-                          contentPadding: EdgeInsets.only(
-                            left: 16.0 + (filtro.isEmpty ? livello * 24 : 0),
-                            right: 16,
-                          ),
-                          leading: livello == 0
-                              ? Icon(iconaCategoria(categoria.icona))
-                              : Icon(
-                                  Icons.subdirectory_arrow_right,
-                                  color: schema.outline,
-                                ),
-                          title: Text(
-                            filtro.isEmpty
-                                ? categoria.nome
-                                : albero.percorso(categoria.id),
-                          ),
-                          selected: categoria.id == widget.selezionata,
-                          onTap: () =>
-                              Navigator.of(context)
-                                  .pop((annullata: false, id: categoria.id)),
-                        ),
-                      if (righe.isEmpty && snapshot.hasData)
-                        const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Text(
-                            'Nessuna categoria trovata. Puoi crearla nella '
-                            'sezione Categorie.',
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          },
+        width: 460,
+        height: 500,
+        child: AlberoCategorieVista(
+          sessione: widget.sessione,
+          chiave: 'scelta',
+          apertePredefinite: false,
+          selezionata: widget.selezionata,
+          onTocca: (c) =>
+              Navigator.of(context).pop((annullata: false, id: c.id)),
+          intestazione: [
+            ListTile(
+              leading: const Icon(Icons.block),
+              title: const Text('Nessuna categoria'),
+              selected: widget.selezionata == null,
+              onTap: () =>
+                  Navigator.of(context).pop((annullata: false, id: null)),
+            ),
+          ],
         ),
       ),
       actions: [

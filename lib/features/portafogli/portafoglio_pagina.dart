@@ -7,7 +7,9 @@ import '../carte/carte_pagina.dart';
 import '../comuni/in_arrivo.dart';
 import '../comuni/navigazione.dart';
 import '../costo_vita/costo_vita_pagina.dart' show meseBreve;
+import '../../core/db/statistiche.dart';
 import '../grafici/grafici.dart';
+import '../grafici/grafici_avanzati.dart';
 import '../movimenti/movimento_modulo.dart';
 import '../movimenti/riga_movimento.dart';
 import 'portafoglio_modulo.dart';
@@ -213,6 +215,10 @@ class _AndamentoSaldo extends StatefulWidget {
 }
 
 class _AndamentoSaldoState extends State<_AndamentoSaldo> {
+  late final _candele = widget.sessione.statistiche.osservaCandeleSaldo(
+    widget.portafoglioId,
+    finoA: DateTime.now(),
+  );
   late final _saldi = widget.sessione.statistiche.osservaSaldoMensile(
     widget.portafoglioId,
     finoA: DateTime.now(),
@@ -227,32 +233,59 @@ class _AndamentoSaldoState extends State<_AndamentoSaldo> {
         if (saldi == null) {
           return const SizedBox.shrink();
         }
+        final etichette = [for (final s in saldi) meseBreve(context, s.mese)];
         return SchedaGrafico(
           sessione: widget.sessione,
           chiave: 'portafoglio.andamento',
           titolo: 'Andamento del saldo',
-          sottotitolo: 'Saldo a fine mese, ultimi 12 mesi',
-          tipi: const [TipoGrafico.linee, TipoGrafico.tabella],
-          costruisci: (context, tipo) => tipo == TipoGrafico.tabella
-              ? TabellaDati(
-                  colonne: const ['Mese', 'Saldo'],
-                  righe: [
-                    for (final s in saldi)
-                      [
-                        meseLeggibile(context, s.mese),
-                        Importo.formatta(s.saldo, widget.valuta),
+          sottotitolo: 'Ultimi 12 mesi',
+          tipi: const [
+            TipoGrafico.linee,
+            TipoGrafico.colonne,
+            TipoGrafico.candele,
+            TipoGrafico.tabella,
+          ],
+          costruisci: (context, tipo) => switch (tipo) {
+            TipoGrafico.tabella => TabellaDati(
+              colonne: const ['Mese', 'Saldo a fine mese'],
+              righe: [
+                for (final s in saldi)
+                  [
+                    meseLeggibile(context, s.mese),
+                    Importo.formatta(s.saldo, widget.valuta),
+                  ],
+              ],
+            ),
+            TipoGrafico.colonne => Colonne(
+              voci: [
+                for (final (i, s) in saldi.indexed)
+                  VoceValore(etichette[i], s.saldo),
+              ],
+              valuta: widget.valuta,
+            ),
+            TipoGrafico.candele => StreamBuilder<List<CandelaSaldo>>(
+              stream: _candele,
+              builder: (context, c) => c.data == null
+                  ? const SizedBox(
+                      height: 220,
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : CandeleGrafico(
+                      candele: c.data!,
+                      etichette: [
+                        for (final x in c.data!) meseBreve(context, x.mese),
                       ],
-                  ],
-                )
-              : GraficoLinee(
-                  etichette: [
-                    for (final s in saldi) meseBreve(context, s.mese),
-                  ],
-                  valuta: widget.valuta,
-                  serie: [
-                    SerieTempo('Saldo', [for (final s in saldi) s.saldo]),
-                  ],
-                ),
+                      valuta: widget.valuta,
+                    ),
+            ),
+            _ => GraficoLinee(
+              etichette: etichette,
+              valuta: widget.valuta,
+              serie: [
+                SerieTempo('Saldo', [for (final s in saldi) s.saldo]),
+              ],
+            ),
+          },
         );
       },
     );

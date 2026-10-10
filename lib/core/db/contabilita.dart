@@ -137,6 +137,7 @@ class Contabilita {
     required String tipoId,
     required String valuta,
     int saldoIniziale = 0,
+    String? gruppo,
   }) async {
     final id = nuovoId();
     final ordine = await _prossimoOrdine();
@@ -151,6 +152,7 @@ class Contabilita {
             valuta: valuta,
             saldoInizialeMinimo: Value(saldoIniziale),
             ordine: Value(ordine),
+            gruppo: Value(_gruppo(gruppo)),
           ),
         );
     return id;
@@ -162,6 +164,7 @@ class Contabilita {
     required String tipoId,
     required String valuta,
     required int saldoIniziale,
+    String? gruppo,
   }) => (_db.update(_db.portafogli)..where((p) => p.id.equals(id))).write(
     PortafogliCompanion(
       aggiornatoIl: Value(_orologio.adesso()),
@@ -169,8 +172,37 @@ class Contabilita {
       tipoId: Value(tipoId),
       valuta: Value(valuta),
       saldoInizialeMinimo: Value(saldoIniziale),
+      gruppo: Value(_gruppo(gruppo)),
     ),
   );
+
+  /// Mette o toglie il portafoglio dai preferiti.
+  Future<void> impostaPreferito(String id, bool preferito) =>
+      (_db.update(_db.portafogli)..where((p) => p.id.equals(id))).write(
+        PortafogliCompanion(
+          aggiornatoIl: Value(_orologio.adesso()),
+          preferito: Value(preferito),
+        ),
+      );
+
+  /// Nomi dei gruppi già usati (per suggerirli nel modulo).
+  Future<List<String>> gruppiPortafogli() async {
+    final righe =
+        await (_db.selectOnly(_db.portafogli, distinct: true)
+              ..addColumns([_db.portafogli.gruppo])
+              ..where(
+                _db.portafogli.gruppo.isNotNull() &
+                    _db.portafogli.eliminato.equals(false),
+              ))
+            .get();
+    return [
+      for (final r in righe)
+        if (r.read(_db.portafogli.gruppo) case final String g) g,
+    ]..sort();
+  }
+
+  static String? _gruppo(String? g) =>
+      g == null || g.trim().isEmpty ? null : g.trim();
 
   /// Archiviato = nascosto dagli elenchi, movimenti conservati. Reversibile.
   Future<void> archiviaPortafoglio(String id, {bool archiviato = true}) =>

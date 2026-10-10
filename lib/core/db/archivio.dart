@@ -110,7 +110,7 @@ class Archivio extends _$Archivio {
   Archivio.conEsecutore(super.e);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -153,6 +153,11 @@ class Archivio extends _$Archivio {
         await m.createTable(obiettivi);
         await m.createTable(partecipanti);
         await m.createTable(versamenti);
+      }
+      // v7: gruppi e preferiti dei portafogli.
+      if (da < 7) {
+        await m.addColumn(portafogli, portafogli.gruppo);
+        await m.addColumn(portafogli, portafogli.preferito);
       }
     },
     beforeOpen: (_) async {

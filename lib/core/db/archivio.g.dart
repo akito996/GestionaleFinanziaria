@@ -803,6 +803,30 @@ class $PortafogliTable extends Portafogli
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _gruppoMeta = const VerificationMeta('gruppo');
+  @override
+  late final GeneratedColumn<String> gruppo = GeneratedColumn<String>(
+    'gruppo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _preferitoMeta = const VerificationMeta(
+    'preferito',
+  );
+  @override
+  late final GeneratedColumn<bool> preferito = GeneratedColumn<bool>(
+    'preferito',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("preferito" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -815,6 +839,8 @@ class $PortafogliTable extends Portafogli
     campi,
     archiviato,
     ordine,
+    gruppo,
+    preferito,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -901,6 +927,18 @@ class $PortafogliTable extends Portafogli
         ordine.isAcceptableOrUnknown(data['ordine']!, _ordineMeta),
       );
     }
+    if (data.containsKey('gruppo')) {
+      context.handle(
+        _gruppoMeta,
+        gruppo.isAcceptableOrUnknown(data['gruppo']!, _gruppoMeta),
+      );
+    }
+    if (data.containsKey('preferito')) {
+      context.handle(
+        _preferitoMeta,
+        preferito.isAcceptableOrUnknown(data['preferito']!, _preferitoMeta),
+      );
+    }
     return context;
   }
 
@@ -950,6 +988,14 @@ class $PortafogliTable extends Portafogli
         DriftSqlType.int,
         data['${effectivePrefix}ordine'],
       )!,
+      gruppo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gruppo'],
+      ),
+      preferito: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}preferito'],
+      )!,
     );
   }
 
@@ -974,6 +1020,12 @@ class Portafoglio extends DataClass implements Insertable<Portafoglio> {
   final String campi;
   final bool archiviato;
   final int ordine;
+
+  /// Gruppo scelto dall'utente (es. "Conti", "Risparmi"); `null` = senza gruppo.
+  final String? gruppo;
+
+  /// Preferito: sempre in evidenza in cima, mai dentro un gruppo chiuso.
+  final bool preferito;
   const Portafoglio({
     required this.id,
     required this.aggiornatoIl,
@@ -985,6 +1037,8 @@ class Portafoglio extends DataClass implements Insertable<Portafoglio> {
     required this.campi,
     required this.archiviato,
     required this.ordine,
+    this.gruppo,
+    required this.preferito,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -999,6 +1053,10 @@ class Portafoglio extends DataClass implements Insertable<Portafoglio> {
     map['campi'] = Variable<String>(campi);
     map['archiviato'] = Variable<bool>(archiviato);
     map['ordine'] = Variable<int>(ordine);
+    if (!nullToAbsent || gruppo != null) {
+      map['gruppo'] = Variable<String>(gruppo);
+    }
+    map['preferito'] = Variable<bool>(preferito);
     return map;
   }
 
@@ -1014,6 +1072,10 @@ class Portafoglio extends DataClass implements Insertable<Portafoglio> {
       campi: Value(campi),
       archiviato: Value(archiviato),
       ordine: Value(ordine),
+      gruppo: gruppo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gruppo),
+      preferito: Value(preferito),
     );
   }
 
@@ -1035,6 +1097,8 @@ class Portafoglio extends DataClass implements Insertable<Portafoglio> {
       campi: serializer.fromJson<String>(json['campi']),
       archiviato: serializer.fromJson<bool>(json['archiviato']),
       ordine: serializer.fromJson<int>(json['ordine']),
+      gruppo: serializer.fromJson<String?>(json['gruppo']),
+      preferito: serializer.fromJson<bool>(json['preferito']),
     );
   }
   @override
@@ -1051,6 +1115,8 @@ class Portafoglio extends DataClass implements Insertable<Portafoglio> {
       'campi': serializer.toJson<String>(campi),
       'archiviato': serializer.toJson<bool>(archiviato),
       'ordine': serializer.toJson<int>(ordine),
+      'gruppo': serializer.toJson<String?>(gruppo),
+      'preferito': serializer.toJson<bool>(preferito),
     };
   }
 
@@ -1065,6 +1131,8 @@ class Portafoglio extends DataClass implements Insertable<Portafoglio> {
     String? campi,
     bool? archiviato,
     int? ordine,
+    Value<String?> gruppo = const Value.absent(),
+    bool? preferito,
   }) => Portafoglio(
     id: id ?? this.id,
     aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
@@ -1076,6 +1144,8 @@ class Portafoglio extends DataClass implements Insertable<Portafoglio> {
     campi: campi ?? this.campi,
     archiviato: archiviato ?? this.archiviato,
     ordine: ordine ?? this.ordine,
+    gruppo: gruppo.present ? gruppo.value : this.gruppo,
+    preferito: preferito ?? this.preferito,
   );
   Portafoglio copyWithCompanion(PortafogliCompanion data) {
     return Portafoglio(
@@ -1095,6 +1165,8 @@ class Portafoglio extends DataClass implements Insertable<Portafoglio> {
           ? data.archiviato.value
           : this.archiviato,
       ordine: data.ordine.present ? data.ordine.value : this.ordine,
+      gruppo: data.gruppo.present ? data.gruppo.value : this.gruppo,
+      preferito: data.preferito.present ? data.preferito.value : this.preferito,
     );
   }
 
@@ -1110,7 +1182,9 @@ class Portafoglio extends DataClass implements Insertable<Portafoglio> {
           ..write('saldoInizialeMinimo: $saldoInizialeMinimo, ')
           ..write('campi: $campi, ')
           ..write('archiviato: $archiviato, ')
-          ..write('ordine: $ordine')
+          ..write('ordine: $ordine, ')
+          ..write('gruppo: $gruppo, ')
+          ..write('preferito: $preferito')
           ..write(')'))
         .toString();
   }
@@ -1127,6 +1201,8 @@ class Portafoglio extends DataClass implements Insertable<Portafoglio> {
     campi,
     archiviato,
     ordine,
+    gruppo,
+    preferito,
   );
   @override
   bool operator ==(Object other) =>
@@ -1141,7 +1217,9 @@ class Portafoglio extends DataClass implements Insertable<Portafoglio> {
           other.saldoInizialeMinimo == this.saldoInizialeMinimo &&
           other.campi == this.campi &&
           other.archiviato == this.archiviato &&
-          other.ordine == this.ordine);
+          other.ordine == this.ordine &&
+          other.gruppo == this.gruppo &&
+          other.preferito == this.preferito);
 }
 
 class PortafogliCompanion extends UpdateCompanion<Portafoglio> {
@@ -1155,6 +1233,8 @@ class PortafogliCompanion extends UpdateCompanion<Portafoglio> {
   final Value<String> campi;
   final Value<bool> archiviato;
   final Value<int> ordine;
+  final Value<String?> gruppo;
+  final Value<bool> preferito;
   final Value<int> rowid;
   const PortafogliCompanion({
     this.id = const Value.absent(),
@@ -1167,6 +1247,8 @@ class PortafogliCompanion extends UpdateCompanion<Portafoglio> {
     this.campi = const Value.absent(),
     this.archiviato = const Value.absent(),
     this.ordine = const Value.absent(),
+    this.gruppo = const Value.absent(),
+    this.preferito = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PortafogliCompanion.insert({
@@ -1180,6 +1262,8 @@ class PortafogliCompanion extends UpdateCompanion<Portafoglio> {
     this.campi = const Value.absent(),
     this.archiviato = const Value.absent(),
     this.ordine = const Value.absent(),
+    this.gruppo = const Value.absent(),
+    this.preferito = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        aggiornatoIl = Value(aggiornatoIl),
@@ -1197,6 +1281,8 @@ class PortafogliCompanion extends UpdateCompanion<Portafoglio> {
     Expression<String>? campi,
     Expression<bool>? archiviato,
     Expression<int>? ordine,
+    Expression<String>? gruppo,
+    Expression<bool>? preferito,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1211,6 +1297,8 @@ class PortafogliCompanion extends UpdateCompanion<Portafoglio> {
       if (campi != null) 'campi': campi,
       if (archiviato != null) 'archiviato': archiviato,
       if (ordine != null) 'ordine': ordine,
+      if (gruppo != null) 'gruppo': gruppo,
+      if (preferito != null) 'preferito': preferito,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1226,6 +1314,8 @@ class PortafogliCompanion extends UpdateCompanion<Portafoglio> {
     Value<String>? campi,
     Value<bool>? archiviato,
     Value<int>? ordine,
+    Value<String?>? gruppo,
+    Value<bool>? preferito,
     Value<int>? rowid,
   }) {
     return PortafogliCompanion(
@@ -1239,6 +1329,8 @@ class PortafogliCompanion extends UpdateCompanion<Portafoglio> {
       campi: campi ?? this.campi,
       archiviato: archiviato ?? this.archiviato,
       ordine: ordine ?? this.ordine,
+      gruppo: gruppo ?? this.gruppo,
+      preferito: preferito ?? this.preferito,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1276,6 +1368,12 @@ class PortafogliCompanion extends UpdateCompanion<Portafoglio> {
     if (ordine.present) {
       map['ordine'] = Variable<int>(ordine.value);
     }
+    if (gruppo.present) {
+      map['gruppo'] = Variable<String>(gruppo.value);
+    }
+    if (preferito.present) {
+      map['preferito'] = Variable<bool>(preferito.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1295,6 +1393,8 @@ class PortafogliCompanion extends UpdateCompanion<Portafoglio> {
           ..write('campi: $campi, ')
           ..write('archiviato: $archiviato, ')
           ..write('ordine: $ordine, ')
+          ..write('gruppo: $gruppo, ')
+          ..write('preferito: $preferito, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -10288,6 +10388,8 @@ typedef $$PortafogliTableCreateCompanionBuilder = PortafogliCompanion Function({
   Value<String> campi,
   Value<bool> archiviato,
   Value<int> ordine,
+  Value<String?> gruppo,
+  Value<bool> preferito,
   Value<int> rowid,
 });
 typedef $$PortafogliTableUpdateCompanionBuilder = PortafogliCompanion Function({
@@ -10301,6 +10403,8 @@ typedef $$PortafogliTableUpdateCompanionBuilder = PortafogliCompanion Function({
   Value<String> campi,
   Value<bool> archiviato,
   Value<int> ordine,
+  Value<String?> gruppo,
+  Value<bool> preferito,
   Value<int> rowid,
 });
 
@@ -10528,6 +10632,16 @@ class $$PortafogliTableFilterComposer
 
   ColumnFilters<int> get ordine => $composableBuilder(
     column: $table.ordine,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get gruppo => $composableBuilder(
+    column: $table.gruppo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get preferito => $composableBuilder(
+    column: $table.preferito,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10809,6 +10923,16 @@ class $$PortafogliTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get gruppo => $composableBuilder(
+    column: $table.gruppo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get preferito => $composableBuilder(
+    column: $table.preferito,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$DefinizioniTipoTableOrderingComposer get tipoId {
     final $$DefinizioniTipoTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -10874,6 +10998,12 @@ class $$PortafogliTableAnnotationComposer
 
   GeneratedColumn<int> get ordine =>
       $composableBuilder(column: $table.ordine, builder: (column) => column);
+
+  GeneratedColumn<String> get gruppo =>
+      $composableBuilder(column: $table.gruppo, builder: (column) => column);
+
+  GeneratedColumn<bool> get preferito =>
+      $composableBuilder(column: $table.preferito, builder: (column) => column);
 
   $$DefinizioniTipoTableAnnotationComposer get tipoId {
     final $$DefinizioniTipoTableAnnotationComposer composer = $composerBuilder(
@@ -11147,6 +11277,8 @@ class $$PortafogliTableTableManager
                 Value<String> campi = const Value.absent(),
                 Value<bool> archiviato = const Value.absent(),
                 Value<int> ordine = const Value.absent(),
+                Value<String?> gruppo = const Value.absent(),
+                Value<bool> preferito = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PortafogliCompanion(
                 id: id,
@@ -11159,6 +11291,8 @@ class $$PortafogliTableTableManager
                 campi: campi,
                 archiviato: archiviato,
                 ordine: ordine,
+                gruppo: gruppo,
+                preferito: preferito,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -11173,6 +11307,8 @@ class $$PortafogliTableTableManager
                 Value<String> campi = const Value.absent(),
                 Value<bool> archiviato = const Value.absent(),
                 Value<int> ordine = const Value.absent(),
+                Value<String?> gruppo = const Value.absent(),
+                Value<bool> preferito = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PortafogliCompanion.insert(
                 id: id,
@@ -11185,6 +11321,8 @@ class $$PortafogliTableTableManager
                 campi: campi,
                 archiviato: archiviato,
                 ordine: ordine,
+                gruppo: gruppo,
+                preferito: preferito,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

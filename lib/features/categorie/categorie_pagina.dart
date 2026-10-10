@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../core/db/archivio.dart';
-import '../../core/db/contabilita.dart';
 import '../../core/sessione.dart';
 import '../comuni/dialogo_testo.dart';
 import '../comuni/navigazione.dart';
-import 'scelta_categoria.dart';
+import 'albero_vista.dart';
 
 /// Gestione delle categorie: albero senza limiti, aggiungi sottocategoria,
 /// rinomina, archivia (con Annulla).
@@ -81,70 +80,57 @@ class CategoriePagina extends StatelessWidget {
         icon: const Icon(Icons.add),
         label: const Text('Categoria'),
       ),
-      body: StreamBuilder(
-        stream: sessione.contabilita.osservaCategorie(),
-        builder: (context, snapshot) {
-          final albero = AlberoCategorie(snapshot.data ?? const []);
-          final schema = Theme.of(context).colorScheme;
-          return ListView(
-            padding: const EdgeInsets.only(bottom: 96),
-            children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Text(
-                  'Le categorie servono a capire dove vanno i soldi. Puoi creare '
-                  'sottocategorie a qualsiasi livello (es. Casa › Bollette › Luce).',
-                ),
-              ),
-              for (final (categoria, livello) in albero.inOrdine())
-                ListTile(
-                  contentPadding: EdgeInsets.only(
-                    left: 16.0 + livello * 28,
-                    right: 8,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              'Le categorie servono a capire dove vanno i soldi. Puoi creare '
+              'sottocategorie a qualsiasi livello (es. Casa › Bollette › Luce).',
+            ),
+          ),
+          Expanded(
+            child: AlberoCategorieVista(
+              sessione: sessione,
+              chiave: 'pagina',
+              apertePredefinite: true,
+              onTocca: (c) => _rinomina(context, c),
+              azioni: (categoria) => Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: 'Aggiungi sottocategoria',
+                    icon: const Icon(Icons.add),
+                    onPressed: () => _nuova(context, padre: categoria),
                   ),
-                  leading: livello == 0
-                      ? Icon(iconaCategoria(categoria.icona))
-                      : Icon(
-                          Icons.subdirectory_arrow_right,
-                          color: schema.outline,
+                  PopupMenuButton<String>(
+                    tooltip: 'Altre azioni',
+                    onSelected: (azione) => azione == 'rinomina'
+                        ? _rinomina(context, categoria)
+                        : _archivia(context, categoria),
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(
+                        value: 'rinomina',
+                        child: ListTile(
+                          leading: Icon(Icons.edit_outlined),
+                          title: Text('Rinomina'),
                         ),
-                  title: Text(categoria.nome),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        tooltip: 'Aggiungi sottocategoria',
-                        icon: const Icon(Icons.add),
-                        onPressed: () => _nuova(context, padre: categoria),
                       ),
-                      PopupMenuButton<String>(
-                        tooltip: 'Altre azioni',
-                        onSelected: (azione) => azione == 'rinomina'
-                            ? _rinomina(context, categoria)
-                            : _archivia(context, categoria),
-                        itemBuilder: (_) => const [
-                          PopupMenuItem(
-                            value: 'rinomina',
-                            child: ListTile(
-                              leading: Icon(Icons.edit_outlined),
-                              title: Text('Rinomina'),
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: 'archivia',
-                            child: ListTile(
-                              leading: Icon(Icons.archive_outlined),
-                              title: Text('Archivia'),
-                            ),
-                          ),
-                        ],
+                      PopupMenuItem(
+                        value: 'archivia',
+                        child: ListTile(
+                          leading: Icon(Icons.archive_outlined),
+                          title: Text('Archivia'),
+                        ),
                       ),
                     ],
                   ),
-                ),
-            ],
-          );
-        },
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

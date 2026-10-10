@@ -13,10 +13,11 @@ import '../costo_vita/costo_vita_pagina.dart';
 import '../export/export_dialogo.dart';
 import '../costo_vita/grafico_costo_vita.dart';
 import '../grafici/grafici.dart';
+import '../grafici/grafici_avanzati.dart';
 import '../movimenti/movimento_modulo.dart';
 import '../movimenti/riga_movimento.dart';
 import '../portafogli/portafoglio_modulo.dart';
-import '../portafogli/portafoglio_pagina.dart';
+import '../portafogli/elenco_portafogli.dart';
 
 /// Panoramica: totale, portafogli con saldo, ultimi movimenti e "+ Movimento".
 /// Su Windows: Ctrl+N = nuovo movimento.
@@ -37,6 +38,8 @@ class _HomePaginaState extends State<HomePagina> {
   late final Stream<List<MovimentoDettaglio>> _movimenti;
   late final Stream<List<RiepilogoMese>> _costoVita;
   late final Stream<List<SpesaCategoria>> _spese;
+  late final Stream<Patrimonio> _patrimonio;
+  late final Stream<List<PassoCascata>> _cascata;
 
   Sessione get _sessione => widget.sessione;
 
@@ -48,6 +51,13 @@ class _HomePaginaState extends State<HomePagina> {
     final oggi = DateTime.now();
     _costoVita = _sessione.costoVita.osservaStorico(
       finoA: DateTime(oggi.year, oggi.month),
+    );
+    _patrimonio = _sessione.statistiche.osservaPatrimonio(
+      _sessione.carte,
+      _sessione.prestiti,
+    );
+    _cascata = _sessione.statistiche.osservaCascataMese(
+      DateTime(oggi.year, oggi.month),
     );
     _spese = _sessione.statistiche.osservaSpesePerCategoria(
       DateTime(oggi.year, oggi.month),
@@ -170,33 +180,7 @@ class _HomePaginaState extends State<HomePagina> {
           label: const Text('Nuovo'),
         ),
       ),
-      for (final p in portafogli)
-        Card(
-          child: ListTile(
-            leading: Icon(
-              p.tipo.nome == 'Carta di credito'
-                  ? Icons.credit_card
-                  : Icons.account_balance_wallet_outlined,
-            ),
-            title: Text(p.portafoglio.nome),
-            subtitle: Text(p.tipo.nome),
-            trailing: Text(
-              Importo.formatta(p.saldo, p.portafoglio.valuta),
-              style: testo.titleMedium?.copyWith(
-                color: p.saldo < 0 ? Theme.of(context).colorScheme.error : null,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => PortafoglioPagina(
-                  sessione: _sessione,
-                  portafoglioId: p.portafoglio.id,
-                ),
-              ),
-            ),
-          ),
-        ),
+      ElencoPortafogli(sessione: _sessione, portafogli: portafogli),
     ];
 
     final schedaCostoVita = StreamBuilder<List<RiepilogoMese>>(
@@ -285,11 +269,19 @@ class _HomePaginaState extends State<HomePagina> {
                 'Per categoria · totale ${Importo.formatta(totale, 'EUR')}',
             tipi: const [
               TipoGrafico.barre,
+              TipoGrafico.colonne,
+              TipoGrafico.torta,
               TipoGrafico.ciambella,
               TipoGrafico.tabella,
             ],
             costruisci: (context, tipo) => switch (tipo) {
               TipoGrafico.ciambella => Ciambella(voci: voci, valuta: 'EUR'),
+              TipoGrafico.torta => Ciambella(
+                voci: voci,
+                valuta: 'EUR',
+                torta: true,
+              ),
+              TipoGrafico.colonne => Colonne(voci: voci, valuta: 'EUR'),
               TipoGrafico.tabella => TabellaDati(
                 colonne: const ['Categoria', 'Speso'],
                 righe: [
@@ -304,9 +296,99 @@ class _HomePaginaState extends State<HomePagina> {
       },
     );
 
+    final schedaPatrimonio = StreamBuilder<Patrimonio>(
+      stream: _patrimonio,
+      builder: (context, snapshot) {
+        final p = snapshot.data;
+        if (p == null || (p.attivita.isEmpty && p.passivita.isEmpty)) {
+          return const SizedBox.shrink();
+        }
+        final voci = [
+          for (final v in p.attivita) VoceValore(v.nome, v.importo),
+          for (final v in p.passivita)
+            VoceValore('${v.nome} (debito)', v.importo),
+        ];
+        return Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: SchedaGrafico(
+            sessione: _sessione,
+            chiave: 'panoramica.patrimonio',
+            titolo: 'Patrimonio',
+            sottotitolo: 'Cosa possiedi e cosa devi, oggi',
+            tipi: const [
+              TipoGrafico.statoPatrimoniale,
+              TipoGrafico.colonne,
+              TipoGrafico.tabella,
+            ],
+            costruisci: (context, tipo) => switch (tipo) {
+              TipoGrafico.colonne => Colonne(voci: voci, valuta: 'EUR'),
+              TipoGrafico.tabella => TabellaDati(
+                colonne: const ['Voce', 'Importo'],
+                righe: [
+                  for (final v in p.attivita)
+                    [v.nome, Importo.formatta(v.importo, 'EUR')],
+                  for (final v in p.passivita)
+                    ['${v.nome} (debito)', Importo.formatta(-v.importo, 'EUR')],
+                  ['Patrimonio netto', Importo.formatta(p.netto, 'EUR')],
+                ],
+              ),
+              _ => StatoPatrimonialeGrafico(patrimonio: p, valuta: 'EUR'),
+            },
+          ),
+        );
+      },
+    );
+
+    final schedaCascata = StreamBuilder<List<PassoCascata>>(
+      stream: _cascata,
+      builder: (context, snapshot) {
+        final passi = snapshot.data;
+        if (passi == null || passi.where((p) => !p.totale).isEmpty) {
+          return const SizedBox.shrink();
+        }
+        final variazioni = passi.where((p) => !p.totale).toList();
+        return Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: SchedaGrafico(
+            sessione: _sessione,
+            chiave: 'panoramica.flusso',
+            titolo: 'Flusso del mese',
+            sottotitolo: 'Da inizio a fine mese: entrate e spese per categoria',
+            tipi: const [
+              TipoGrafico.cascata,
+              TipoGrafico.colonne,
+              TipoGrafico.tabella,
+            ],
+            costruisci: (context, tipo) => switch (tipo) {
+              TipoGrafico.colonne => Colonne(
+                voci: [
+                  for (final p in variazioni)
+                    VoceValore(p.etichetta, p.valore.abs()),
+                ],
+                valuta: 'EUR',
+              ),
+              TipoGrafico.tabella => TabellaDati(
+                colonne: const ['Voce', 'Importo'],
+                righe: [
+                  for (final p in passi)
+                    [
+                      p.etichetta,
+                      Importo.formatta(p.valore, 'EUR', conSegno: !p.totale),
+                    ],
+                ],
+              ),
+              _ => Cascata(passi: passi, valuta: 'EUR'),
+            },
+          ),
+        );
+      },
+    );
+
     final colonnaMovimenti = [
       schedaCostoVita,
       schedaSpese,
+      schedaCascata,
+      schedaPatrimonio,
       const SizedBox(height: 16),
       const _Intestazione(titolo: 'Ultimi movimenti'),
       StreamBuilder<List<MovimentoDettaglio>>(

@@ -7,6 +7,7 @@ import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import '../comuni/navigazione.dart';
 import '../grafici/grafici.dart';
+import '../grafici/grafici_avanzati.dart';
 import 'grafico_costo_vita.dart';
 import 'voce_modulo.dart';
 
@@ -131,10 +132,26 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
                   titolo: 'Ultimi 6 mesi',
                   tipi: const [
                     TipoGrafico.barreImpilate,
+                    TipoGrafico.colonne,
                     TipoGrafico.linee,
                     TipoGrafico.tabella,
                   ],
                   costruisci: (context, tipo) => switch (tipo) {
+                    TipoGrafico.colonne => ColonneRaggruppate(
+                      etichette: [
+                        for (final m in storico) meseBreve(context, m.mese),
+                      ],
+                      valuta: 'EUR',
+                      serie: [
+                        SerieTempo('Fisse', [for (final m in storico) m.fisse]),
+                        SerieTempo('Variabili previste', [
+                          for (final m in storico) m.variabiliPreviste,
+                        ]),
+                        SerieTempo('Variabili reali', [
+                          for (final m in storico) m.variabiliReali,
+                        ]),
+                      ],
+                    ),
                     TipoGrafico.linee => GraficoLinee(
                       etichette: [
                         for (final m in storico) meseBreve(context, m.mese),

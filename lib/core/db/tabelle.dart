@@ -49,6 +49,12 @@ class Portafogli extends Table with ColonneSincronizzate {
   TextColumn get campi => text().withDefault(const Constant('{}'))();
   BoolColumn get archiviato => boolean().withDefault(const Constant(false))();
   IntColumn get ordine => integer().withDefault(const Constant(0))();
+
+  /// Gruppo scelto dall'utente (es. "Conti", "Risparmi"); `null` = senza gruppo.
+  TextColumn get gruppo => text().nullable()();
+
+  /// Preferito: sempre in evidenza in cima, mai dentro un gruppo chiuso.
+  BoolColumn get preferito => boolean().withDefault(const Constant(false))();
 }
 
 /// Categorie e sottocategorie ad albero senza limiti di profondità.

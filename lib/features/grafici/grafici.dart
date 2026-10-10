@@ -7,9 +7,18 @@ import '../../core/sessione.dart';
 /// Tipi di grafico tra cui l'utente può scegliere.
 enum TipoGrafico {
   barreImpilate('barre_impilate', 'Barre impilate', Icons.stacked_bar_chart),
-  barre('barre', 'Barre', Icons.bar_chart),
+  barre('barre', 'Barre orizzontali', Icons.align_horizontal_left),
+  colonne('colonne', 'Colonne', Icons.bar_chart),
   linee('linee', 'Linee', Icons.show_chart),
+  torta('torta', 'Torta', Icons.pie_chart),
   ciambella('ciambella', 'Ciambella', Icons.donut_large),
+  statoPatrimoniale(
+    'stato_patrimoniale',
+    'Stato patrimoniale',
+    Icons.account_balance_outlined,
+  ),
+  candele('candele', 'Candele', Icons.candlestick_chart),
+  cascata('cascata', 'Cascata (waterfall)', Icons.waterfall_chart),
   tabella('tabella', 'Tabella', Icons.table_rows_outlined);
 
   const TipoGrafico(this.codice, this.etichetta, this.icona);
@@ -248,10 +257,18 @@ class BarreOrizzontali extends StatelessWidget {
 
 /// Ciambella (massimo 6 fette + "Altre") con legenda e valori.
 class Ciambella extends StatelessWidget {
-  const Ciambella({super.key, required this.voci, required this.valuta});
+  const Ciambella({
+    super.key,
+    required this.voci,
+    required this.valuta,
+    this.torta = false,
+  });
 
   final List<VoceValore> voci;
   final String valuta;
+
+  /// `true` = torta piena (senza foro centrale).
+  final bool torta;
 
   @override
   Widget build(BuildContext context) {
@@ -272,7 +289,7 @@ class Ciambella extends StatelessWidget {
           height: 160,
           child: PieChart(
             PieChartData(
-              centerSpaceRadius: 44,
+              centerSpaceRadius: torta ? 0 : 44,
               sectionsSpace: 2,
               sections: [
                 for (final (i, v) in fette.indexed)
@@ -280,7 +297,7 @@ class Ciambella extends StatelessWidget {
                     value: v.valore.toDouble(),
                     color: colore(i, v),
                     showTitle: false,
-                    radius: 30,
+                    radius: torta ? 76 : 30,
                     borderSide: BorderSide(color: superficie, width: 2),
                   ),
               ],
