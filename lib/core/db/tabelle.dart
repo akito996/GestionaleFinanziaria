@@ -186,6 +186,29 @@ class Pianificazioni extends Table with ColonneSincronizzate {
   BoolColumn get attiva => boolean().withDefault(const Constant(true))();
 }
 
+/// Carta di credito: le spese si registrano nel suo portafoglio (saldo negativo =
+/// debito); nel giorno di addebito il conto collegato paga le spese del periodo
+/// chiuso (pagamento programmato con origine `carta`).
+@DataClassName('CartaCredito')
+class CarteCredito extends Table with ColonneSincronizzate {
+  @ReferenceName('cartaDelPortafoglio')
+  TextColumn get portafoglioId => text().references(Portafogli, #id)();
+
+  @ReferenceName('carteAddebitate')
+  TextColumn get contoAddebitoId => text().references(Portafogli, #id)();
+
+  /// Giorno del mese in cui il conto viene addebitato (es. 15).
+  IntColumn get giornoAddebito => integer()();
+
+  /// Ultimo giorno di spese incluse nell'addebito: 0 = fine del mese precedente,
+  /// altrimenti quel giorno del mese precedente all'addebito.
+  IntColumn get giornoChiusura => integer().withDefault(const Constant(0))();
+
+  /// Plafond (fido) in unità minime, facoltativo.
+  IntColumn get plafondMinimo => integer().nullable()();
+  BoolColumn get archiviata => boolean().withDefault(const Constant(false))();
+}
+
 /// Valori ammessi per [Pianificazioni.origine].
 abstract final class OriginePianificazione {
   static const costoVita = 'costo_vita';

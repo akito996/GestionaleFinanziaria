@@ -131,7 +131,7 @@ void main() {
         EffettoSaldo.entrata,
         EffettoSaldo.trasferimento,
       ]);
-      expect(portafoglio, hasLength(4));
+      expect(portafoglio, hasLength(5)); // anche "Carta di credito"
       expect(tipi.every((t) => t.diSistema), isTrue);
     });
 

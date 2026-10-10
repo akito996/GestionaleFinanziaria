@@ -6006,6 +6006,614 @@ class VariazioniMeseCompanion extends UpdateCompanion<VariazioneMese> {
   }
 }
 
+class $CarteCreditoTable extends CarteCredito
+    with TableInfo<$CarteCreditoTable, CartaCredito> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CarteCreditoTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _aggiornatoIlMeta = const VerificationMeta(
+    'aggiornatoIl',
+  );
+  @override
+  late final GeneratedColumn<String> aggiornatoIl = GeneratedColumn<String>(
+    'aggiornato_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eliminatoMeta = const VerificationMeta(
+    'eliminato',
+  );
+  @override
+  late final GeneratedColumn<bool> eliminato = GeneratedColumn<bool>(
+    'eliminato',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("eliminato" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _portafoglioIdMeta = const VerificationMeta(
+    'portafoglioId',
+  );
+  @override
+  late final GeneratedColumn<String> portafoglioId = GeneratedColumn<String>(
+    'portafoglio_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES portafogli (id)',
+    ),
+  );
+  static const VerificationMeta _contoAddebitoIdMeta = const VerificationMeta(
+    'contoAddebitoId',
+  );
+  @override
+  late final GeneratedColumn<String> contoAddebitoId = GeneratedColumn<String>(
+    'conto_addebito_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES portafogli (id)',
+    ),
+  );
+  static const VerificationMeta _giornoAddebitoMeta = const VerificationMeta(
+    'giornoAddebito',
+  );
+  @override
+  late final GeneratedColumn<int> giornoAddebito = GeneratedColumn<int>(
+    'giorno_addebito',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _giornoChiusuraMeta = const VerificationMeta(
+    'giornoChiusura',
+  );
+  @override
+  late final GeneratedColumn<int> giornoChiusura = GeneratedColumn<int>(
+    'giorno_chiusura',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _plafondMinimoMeta = const VerificationMeta(
+    'plafondMinimo',
+  );
+  @override
+  late final GeneratedColumn<int> plafondMinimo = GeneratedColumn<int>(
+    'plafond_minimo',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _archiviataMeta = const VerificationMeta(
+    'archiviata',
+  );
+  @override
+  late final GeneratedColumn<bool> archiviata = GeneratedColumn<bool>(
+    'archiviata',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("archiviata" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    aggiornatoIl,
+    eliminato,
+    portafoglioId,
+    contoAddebitoId,
+    giornoAddebito,
+    giornoChiusura,
+    plafondMinimo,
+    archiviata,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'carte_credito';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CartaCredito> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('aggiornato_il')) {
+      context.handle(
+        _aggiornatoIlMeta,
+        aggiornatoIl.isAcceptableOrUnknown(
+          data['aggiornato_il']!,
+          _aggiornatoIlMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_aggiornatoIlMeta);
+    }
+    if (data.containsKey('eliminato')) {
+      context.handle(
+        _eliminatoMeta,
+        eliminato.isAcceptableOrUnknown(data['eliminato']!, _eliminatoMeta),
+      );
+    }
+    if (data.containsKey('portafoglio_id')) {
+      context.handle(
+        _portafoglioIdMeta,
+        portafoglioId.isAcceptableOrUnknown(
+          data['portafoglio_id']!,
+          _portafoglioIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_portafoglioIdMeta);
+    }
+    if (data.containsKey('conto_addebito_id')) {
+      context.handle(
+        _contoAddebitoIdMeta,
+        contoAddebitoId.isAcceptableOrUnknown(
+          data['conto_addebito_id']!,
+          _contoAddebitoIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contoAddebitoIdMeta);
+    }
+    if (data.containsKey('giorno_addebito')) {
+      context.handle(
+        _giornoAddebitoMeta,
+        giornoAddebito.isAcceptableOrUnknown(
+          data['giorno_addebito']!,
+          _giornoAddebitoMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_giornoAddebitoMeta);
+    }
+    if (data.containsKey('giorno_chiusura')) {
+      context.handle(
+        _giornoChiusuraMeta,
+        giornoChiusura.isAcceptableOrUnknown(
+          data['giorno_chiusura']!,
+          _giornoChiusuraMeta,
+        ),
+      );
+    }
+    if (data.containsKey('plafond_minimo')) {
+      context.handle(
+        _plafondMinimoMeta,
+        plafondMinimo.isAcceptableOrUnknown(
+          data['plafond_minimo']!,
+          _plafondMinimoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('archiviata')) {
+      context.handle(
+        _archiviataMeta,
+        archiviata.isAcceptableOrUnknown(data['archiviata']!, _archiviataMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CartaCredito map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CartaCredito(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      aggiornatoIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}aggiornato_il'],
+      )!,
+      eliminato: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}eliminato'],
+      )!,
+      portafoglioId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}portafoglio_id'],
+      )!,
+      contoAddebitoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}conto_addebito_id'],
+      )!,
+      giornoAddebito: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}giorno_addebito'],
+      )!,
+      giornoChiusura: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}giorno_chiusura'],
+      )!,
+      plafondMinimo: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}plafond_minimo'],
+      ),
+      archiviata: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}archiviata'],
+      )!,
+    );
+  }
+
+  @override
+  $CarteCreditoTable createAlias(String alias) {
+    return $CarteCreditoTable(attachedDatabase, alias);
+  }
+}
+
+class CartaCredito extends DataClass implements Insertable<CartaCredito> {
+  final String id;
+  final String aggiornatoIl;
+  final bool eliminato;
+  final String portafoglioId;
+  final String contoAddebitoId;
+
+  /// Giorno del mese in cui il conto viene addebitato (es. 15).
+  final int giornoAddebito;
+
+  /// Ultimo giorno di spese incluse nell'addebito: 0 = fine del mese precedente,
+  /// altrimenti quel giorno del mese precedente all'addebito.
+  final int giornoChiusura;
+
+  /// Plafond (fido) in unità minime, facoltativo.
+  final int? plafondMinimo;
+  final bool archiviata;
+  const CartaCredito({
+    required this.id,
+    required this.aggiornatoIl,
+    required this.eliminato,
+    required this.portafoglioId,
+    required this.contoAddebitoId,
+    required this.giornoAddebito,
+    required this.giornoChiusura,
+    this.plafondMinimo,
+    required this.archiviata,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['aggiornato_il'] = Variable<String>(aggiornatoIl);
+    map['eliminato'] = Variable<bool>(eliminato);
+    map['portafoglio_id'] = Variable<String>(portafoglioId);
+    map['conto_addebito_id'] = Variable<String>(contoAddebitoId);
+    map['giorno_addebito'] = Variable<int>(giornoAddebito);
+    map['giorno_chiusura'] = Variable<int>(giornoChiusura);
+    if (!nullToAbsent || plafondMinimo != null) {
+      map['plafond_minimo'] = Variable<int>(plafondMinimo);
+    }
+    map['archiviata'] = Variable<bool>(archiviata);
+    return map;
+  }
+
+  CarteCreditoCompanion toCompanion(bool nullToAbsent) {
+    return CarteCreditoCompanion(
+      id: Value(id),
+      aggiornatoIl: Value(aggiornatoIl),
+      eliminato: Value(eliminato),
+      portafoglioId: Value(portafoglioId),
+      contoAddebitoId: Value(contoAddebitoId),
+      giornoAddebito: Value(giornoAddebito),
+      giornoChiusura: Value(giornoChiusura),
+      plafondMinimo: plafondMinimo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(plafondMinimo),
+      archiviata: Value(archiviata),
+    );
+  }
+
+  factory CartaCredito.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CartaCredito(
+      id: serializer.fromJson<String>(json['id']),
+      aggiornatoIl: serializer.fromJson<String>(json['aggiornatoIl']),
+      eliminato: serializer.fromJson<bool>(json['eliminato']),
+      portafoglioId: serializer.fromJson<String>(json['portafoglioId']),
+      contoAddebitoId: serializer.fromJson<String>(json['contoAddebitoId']),
+      giornoAddebito: serializer.fromJson<int>(json['giornoAddebito']),
+      giornoChiusura: serializer.fromJson<int>(json['giornoChiusura']),
+      plafondMinimo: serializer.fromJson<int?>(json['plafondMinimo']),
+      archiviata: serializer.fromJson<bool>(json['archiviata']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'aggiornatoIl': serializer.toJson<String>(aggiornatoIl),
+      'eliminato': serializer.toJson<bool>(eliminato),
+      'portafoglioId': serializer.toJson<String>(portafoglioId),
+      'contoAddebitoId': serializer.toJson<String>(contoAddebitoId),
+      'giornoAddebito': serializer.toJson<int>(giornoAddebito),
+      'giornoChiusura': serializer.toJson<int>(giornoChiusura),
+      'plafondMinimo': serializer.toJson<int?>(plafondMinimo),
+      'archiviata': serializer.toJson<bool>(archiviata),
+    };
+  }
+
+  CartaCredito copyWith({
+    String? id,
+    String? aggiornatoIl,
+    bool? eliminato,
+    String? portafoglioId,
+    String? contoAddebitoId,
+    int? giornoAddebito,
+    int? giornoChiusura,
+    Value<int?> plafondMinimo = const Value.absent(),
+    bool? archiviata,
+  }) => CartaCredito(
+    id: id ?? this.id,
+    aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+    eliminato: eliminato ?? this.eliminato,
+    portafoglioId: portafoglioId ?? this.portafoglioId,
+    contoAddebitoId: contoAddebitoId ?? this.contoAddebitoId,
+    giornoAddebito: giornoAddebito ?? this.giornoAddebito,
+    giornoChiusura: giornoChiusura ?? this.giornoChiusura,
+    plafondMinimo: plafondMinimo.present
+        ? plafondMinimo.value
+        : this.plafondMinimo,
+    archiviata: archiviata ?? this.archiviata,
+  );
+  CartaCredito copyWithCompanion(CarteCreditoCompanion data) {
+    return CartaCredito(
+      id: data.id.present ? data.id.value : this.id,
+      aggiornatoIl: data.aggiornatoIl.present
+          ? data.aggiornatoIl.value
+          : this.aggiornatoIl,
+      eliminato: data.eliminato.present ? data.eliminato.value : this.eliminato,
+      portafoglioId: data.portafoglioId.present
+          ? data.portafoglioId.value
+          : this.portafoglioId,
+      contoAddebitoId: data.contoAddebitoId.present
+          ? data.contoAddebitoId.value
+          : this.contoAddebitoId,
+      giornoAddebito: data.giornoAddebito.present
+          ? data.giornoAddebito.value
+          : this.giornoAddebito,
+      giornoChiusura: data.giornoChiusura.present
+          ? data.giornoChiusura.value
+          : this.giornoChiusura,
+      plafondMinimo: data.plafondMinimo.present
+          ? data.plafondMinimo.value
+          : this.plafondMinimo,
+      archiviata: data.archiviata.present
+          ? data.archiviata.value
+          : this.archiviata,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CartaCredito(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('portafoglioId: $portafoglioId, ')
+          ..write('contoAddebitoId: $contoAddebitoId, ')
+          ..write('giornoAddebito: $giornoAddebito, ')
+          ..write('giornoChiusura: $giornoChiusura, ')
+          ..write('plafondMinimo: $plafondMinimo, ')
+          ..write('archiviata: $archiviata')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    aggiornatoIl,
+    eliminato,
+    portafoglioId,
+    contoAddebitoId,
+    giornoAddebito,
+    giornoChiusura,
+    plafondMinimo,
+    archiviata,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CartaCredito &&
+          other.id == this.id &&
+          other.aggiornatoIl == this.aggiornatoIl &&
+          other.eliminato == this.eliminato &&
+          other.portafoglioId == this.portafoglioId &&
+          other.contoAddebitoId == this.contoAddebitoId &&
+          other.giornoAddebito == this.giornoAddebito &&
+          other.giornoChiusura == this.giornoChiusura &&
+          other.plafondMinimo == this.plafondMinimo &&
+          other.archiviata == this.archiviata);
+}
+
+class CarteCreditoCompanion extends UpdateCompanion<CartaCredito> {
+  final Value<String> id;
+  final Value<String> aggiornatoIl;
+  final Value<bool> eliminato;
+  final Value<String> portafoglioId;
+  final Value<String> contoAddebitoId;
+  final Value<int> giornoAddebito;
+  final Value<int> giornoChiusura;
+  final Value<int?> plafondMinimo;
+  final Value<bool> archiviata;
+  final Value<int> rowid;
+  const CarteCreditoCompanion({
+    this.id = const Value.absent(),
+    this.aggiornatoIl = const Value.absent(),
+    this.eliminato = const Value.absent(),
+    this.portafoglioId = const Value.absent(),
+    this.contoAddebitoId = const Value.absent(),
+    this.giornoAddebito = const Value.absent(),
+    this.giornoChiusura = const Value.absent(),
+    this.plafondMinimo = const Value.absent(),
+    this.archiviata = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CarteCreditoCompanion.insert({
+    required String id,
+    required String aggiornatoIl,
+    this.eliminato = const Value.absent(),
+    required String portafoglioId,
+    required String contoAddebitoId,
+    required int giornoAddebito,
+    this.giornoChiusura = const Value.absent(),
+    this.plafondMinimo = const Value.absent(),
+    this.archiviata = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       aggiornatoIl = Value(aggiornatoIl),
+       portafoglioId = Value(portafoglioId),
+       contoAddebitoId = Value(contoAddebitoId),
+       giornoAddebito = Value(giornoAddebito);
+  static Insertable<CartaCredito> custom({
+    Expression<String>? id,
+    Expression<String>? aggiornatoIl,
+    Expression<bool>? eliminato,
+    Expression<String>? portafoglioId,
+    Expression<String>? contoAddebitoId,
+    Expression<int>? giornoAddebito,
+    Expression<int>? giornoChiusura,
+    Expression<int>? plafondMinimo,
+    Expression<bool>? archiviata,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (aggiornatoIl != null) 'aggiornato_il': aggiornatoIl,
+      if (eliminato != null) 'eliminato': eliminato,
+      if (portafoglioId != null) 'portafoglio_id': portafoglioId,
+      if (contoAddebitoId != null) 'conto_addebito_id': contoAddebitoId,
+      if (giornoAddebito != null) 'giorno_addebito': giornoAddebito,
+      if (giornoChiusura != null) 'giorno_chiusura': giornoChiusura,
+      if (plafondMinimo != null) 'plafond_minimo': plafondMinimo,
+      if (archiviata != null) 'archiviata': archiviata,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CarteCreditoCompanion copyWith({
+    Value<String>? id,
+    Value<String>? aggiornatoIl,
+    Value<bool>? eliminato,
+    Value<String>? portafoglioId,
+    Value<String>? contoAddebitoId,
+    Value<int>? giornoAddebito,
+    Value<int>? giornoChiusura,
+    Value<int?>? plafondMinimo,
+    Value<bool>? archiviata,
+    Value<int>? rowid,
+  }) {
+    return CarteCreditoCompanion(
+      id: id ?? this.id,
+      aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+      eliminato: eliminato ?? this.eliminato,
+      portafoglioId: portafoglioId ?? this.portafoglioId,
+      contoAddebitoId: contoAddebitoId ?? this.contoAddebitoId,
+      giornoAddebito: giornoAddebito ?? this.giornoAddebito,
+      giornoChiusura: giornoChiusura ?? this.giornoChiusura,
+      plafondMinimo: plafondMinimo ?? this.plafondMinimo,
+      archiviata: archiviata ?? this.archiviata,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (aggiornatoIl.present) {
+      map['aggiornato_il'] = Variable<String>(aggiornatoIl.value);
+    }
+    if (eliminato.present) {
+      map['eliminato'] = Variable<bool>(eliminato.value);
+    }
+    if (portafoglioId.present) {
+      map['portafoglio_id'] = Variable<String>(portafoglioId.value);
+    }
+    if (contoAddebitoId.present) {
+      map['conto_addebito_id'] = Variable<String>(contoAddebitoId.value);
+    }
+    if (giornoAddebito.present) {
+      map['giorno_addebito'] = Variable<int>(giornoAddebito.value);
+    }
+    if (giornoChiusura.present) {
+      map['giorno_chiusura'] = Variable<int>(giornoChiusura.value);
+    }
+    if (plafondMinimo.present) {
+      map['plafond_minimo'] = Variable<int>(plafondMinimo.value);
+    }
+    if (archiviata.present) {
+      map['archiviata'] = Variable<bool>(archiviata.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CarteCreditoCompanion(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('portafoglioId: $portafoglioId, ')
+          ..write('contoAddebitoId: $contoAddebitoId, ')
+          ..write('giornoAddebito: $giornoAddebito, ')
+          ..write('giornoChiusura: $giornoChiusura, ')
+          ..write('plafondMinimo: $plafondMinimo, ')
+          ..write('archiviata: $archiviata, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ImpostazioniTable extends Impostazioni
     with TableInfo<$ImpostazioniTable, Impostazione> {
   @override
@@ -6232,6 +6840,7 @@ abstract class _$Archivio extends GeneratedDatabase {
   late final $VociCostoTable vociCosto = $VociCostoTable(this);
   late final $ImportiVoceTable importiVoce = $ImportiVoceTable(this);
   late final $VariazioniMeseTable variazioniMese = $VariazioniMeseTable(this);
+  late final $CarteCreditoTable carteCredito = $CarteCreditoTable(this);
   late final $ImpostazioniTable impostazioni = $ImpostazioniTable(this);
   late final Index movimentiPianificatiUnici = Index(
     'movimenti_pianificati_unici',
@@ -6252,6 +6861,7 @@ abstract class _$Archivio extends GeneratedDatabase {
     vociCosto,
     importiVoce,
     variazioniMese,
+    carteCredito,
     impostazioni,
     movimentiPianificatiUnici,
   ];
@@ -7004,6 +7614,44 @@ final class $$PortafogliTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$CarteCreditoTable, List<CartaCredito>>
+  _cartaDelPortafoglioTable(_$Archivio db) => MultiTypedResultKey.fromTable(
+    db.carteCredito,
+    aliasName: 'portafogli__id__carte_credito__portafoglio_id',
+  );
+
+  $$CarteCreditoTableProcessedTableManager get cartaDelPortafoglio {
+    final manager = $$CarteCreditoTableTableManager(
+      $_db,
+      $_db.carteCredito,
+    ).filter((f) => f.portafoglioId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _cartaDelPortafoglioTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$CarteCreditoTable, List<CartaCredito>>
+  _carteAddebitateTable(_$Archivio db) => MultiTypedResultKey.fromTable(
+    db.carteCredito,
+    aliasName: 'portafogli__id__carte_credito__conto_addebito_id',
+  );
+
+  $$CarteCreditoTableProcessedTableManager get carteAddebitate {
+    final manager = $$CarteCreditoTableTableManager($_db, $_db.carteCredito)
+        .filter(
+          (f) => f.contoAddebitoId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(_carteAddebitateTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$PortafogliTableFilterComposer
@@ -7174,6 +7822,56 @@ class $$PortafogliTableFilterComposer
           }) => $$MovimentiTableFilterComposer(
             $db: $db,
             $table: $db.movimenti,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> cartaDelPortafoglio(
+    Expression<bool> Function($$CarteCreditoTableFilterComposer f) f,
+  ) {
+    final $$CarteCreditoTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.carteCredito,
+      getReferencedColumn: (t) => t.portafoglioId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CarteCreditoTableFilterComposer(
+            $db: $db,
+            $table: $db.carteCredito,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> carteAddebitate(
+    Expression<bool> Function($$CarteCreditoTableFilterComposer f) f,
+  ) {
+    final $$CarteCreditoTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.carteCredito,
+      getReferencedColumn: (t) => t.contoAddebitoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CarteCreditoTableFilterComposer(
+            $db: $db,
+            $table: $db.carteCredito,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7426,6 +8124,56 @@ class $$PortafogliTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> cartaDelPortafoglio<T extends Object>(
+    Expression<T> Function($$CarteCreditoTableAnnotationComposer a) f,
+  ) {
+    final $$CarteCreditoTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.carteCredito,
+      getReferencedColumn: (t) => t.portafoglioId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CarteCreditoTableAnnotationComposer(
+            $db: $db,
+            $table: $db.carteCredito,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> carteAddebitate<T extends Object>(
+    Expression<T> Function($$CarteCreditoTableAnnotationComposer a) f,
+  ) {
+    final $$CarteCreditoTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.carteCredito,
+      getReferencedColumn: (t) => t.contoAddebitoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CarteCreditoTableAnnotationComposer(
+            $db: $db,
+            $table: $db.carteCredito,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$PortafogliTableTableManager
@@ -7447,6 +8195,8 @@ class $$PortafogliTableTableManager
             bool pianificazioniInEntrata,
             bool movimentiInUscita,
             bool movimentiInEntrata,
+            bool cartaDelPortafoglio,
+            bool carteAddebitate,
           })
         > {
   $$PortafogliTableTableManager(_$Archivio db, $PortafogliTable table)
@@ -7527,6 +8277,8 @@ class $$PortafogliTableTableManager
                 pianificazioniInEntrata = false,
                 movimentiInUscita = false,
                 movimentiInEntrata = false,
+                cartaDelPortafoglio = false,
+                carteAddebitate = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -7535,6 +8287,8 @@ class $$PortafogliTableTableManager
                     if (pianificazioniInEntrata) db.pianificazioni,
                     if (movimentiInUscita) db.movimenti,
                     if (movimentiInEntrata) db.movimenti,
+                    if (cartaDelPortafoglio) db.carteCredito,
+                    if (carteAddebitate) db.carteCredito,
                   ],
                   addJoins:
                       <
@@ -7652,6 +8406,48 @@ class $$PortafogliTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (cartaDelPortafoglio)
+                        await $_getPrefetchedData<
+                          Portafoglio,
+                          $PortafogliTable,
+                          CartaCredito
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PortafogliTableReferences
+                              ._cartaDelPortafoglioTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PortafogliTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).cartaDelPortafoglio,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.portafoglioId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (carteAddebitate)
+                        await $_getPrefetchedData<
+                          Portafoglio,
+                          $PortafogliTable,
+                          CartaCredito
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PortafogliTableReferences
+                              ._carteAddebitateTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PortafogliTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).carteAddebitate,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.contoAddebitoId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -7678,6 +8474,8 @@ typedef $$PortafogliTableProcessedTableManager =
         bool pianificazioniInEntrata,
         bool movimentiInUscita,
         bool movimentiInEntrata,
+        bool cartaDelPortafoglio,
+        bool carteAddebitate,
       })
     >;
 typedef $$CategorieTableCreateCompanionBuilder = CategorieCompanion Function({
@@ -12344,6 +13142,492 @@ typedef $$VariazioniMeseTableProcessedTableManager =
       VariazioneMese,
       PrefetchHooks Function({bool voceId})
     >;
+typedef $$CarteCreditoTableCreateCompanionBuilder =
+    CarteCreditoCompanion Function({
+      required String id,
+      required String aggiornatoIl,
+      Value<bool> eliminato,
+      required String portafoglioId,
+      required String contoAddebitoId,
+      required int giornoAddebito,
+      Value<int> giornoChiusura,
+      Value<int?> plafondMinimo,
+      Value<bool> archiviata,
+      Value<int> rowid,
+    });
+typedef $$CarteCreditoTableUpdateCompanionBuilder =
+    CarteCreditoCompanion Function({
+      Value<String> id,
+      Value<String> aggiornatoIl,
+      Value<bool> eliminato,
+      Value<String> portafoglioId,
+      Value<String> contoAddebitoId,
+      Value<int> giornoAddebito,
+      Value<int> giornoChiusura,
+      Value<int?> plafondMinimo,
+      Value<bool> archiviata,
+      Value<int> rowid,
+    });
+
+final class $$CarteCreditoTableReferences
+    extends BaseReferences<_$Archivio, $CarteCreditoTable, CartaCredito> {
+  $$CarteCreditoTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $PortafogliTable _portafoglioIdTable(_$Archivio db) => db.portafogli
+      .createAlias('carte_credito__portafoglio_id__portafogli__id');
+
+  $$PortafogliTableProcessedTableManager get portafoglioId {
+    final $_column = $_itemColumn<String>('portafoglio_id')!;
+
+    final manager = $$PortafogliTableTableManager(
+      $_db,
+      $_db.portafogli,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_portafoglioIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $PortafogliTable _contoAddebitoIdTable(_$Archivio db) => db.portafogli
+      .createAlias('carte_credito__conto_addebito_id__portafogli__id');
+
+  $$PortafogliTableProcessedTableManager get contoAddebitoId {
+    final $_column = $_itemColumn<String>('conto_addebito_id')!;
+
+    final manager = $$PortafogliTableTableManager(
+      $_db,
+      $_db.portafogli,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_contoAddebitoIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$CarteCreditoTableFilterComposer
+    extends Composer<_$Archivio, $CarteCreditoTable> {
+  $$CarteCreditoTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get giornoAddebito => $composableBuilder(
+    column: $table.giornoAddebito,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get giornoChiusura => $composableBuilder(
+    column: $table.giornoChiusura,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get plafondMinimo => $composableBuilder(
+    column: $table.plafondMinimo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get archiviata => $composableBuilder(
+    column: $table.archiviata,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PortafogliTableFilterComposer get portafoglioId {
+    final $$PortafogliTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portafoglioId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableFilterComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PortafogliTableFilterComposer get contoAddebitoId {
+    final $$PortafogliTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.contoAddebitoId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableFilterComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CarteCreditoTableOrderingComposer
+    extends Composer<_$Archivio, $CarteCreditoTable> {
+  $$CarteCreditoTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get giornoAddebito => $composableBuilder(
+    column: $table.giornoAddebito,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get giornoChiusura => $composableBuilder(
+    column: $table.giornoChiusura,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get plafondMinimo => $composableBuilder(
+    column: $table.plafondMinimo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get archiviata => $composableBuilder(
+    column: $table.archiviata,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PortafogliTableOrderingComposer get portafoglioId {
+    final $$PortafogliTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portafoglioId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableOrderingComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PortafogliTableOrderingComposer get contoAddebitoId {
+    final $$PortafogliTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.contoAddebitoId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableOrderingComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CarteCreditoTableAnnotationComposer
+    extends Composer<_$Archivio, $CarteCreditoTable> {
+  $$CarteCreditoTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get eliminato =>
+      $composableBuilder(column: $table.eliminato, builder: (column) => column);
+
+  GeneratedColumn<int> get giornoAddebito => $composableBuilder(
+    column: $table.giornoAddebito,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get giornoChiusura => $composableBuilder(
+    column: $table.giornoChiusura,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get plafondMinimo => $composableBuilder(
+    column: $table.plafondMinimo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get archiviata => $composableBuilder(
+    column: $table.archiviata,
+    builder: (column) => column,
+  );
+
+  $$PortafogliTableAnnotationComposer get portafoglioId {
+    final $$PortafogliTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portafoglioId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableAnnotationComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PortafogliTableAnnotationComposer get contoAddebitoId {
+    final $$PortafogliTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.contoAddebitoId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableAnnotationComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$CarteCreditoTableTableManager
+    extends
+        RootTableManager<
+          _$Archivio,
+          $CarteCreditoTable,
+          CartaCredito,
+          $$CarteCreditoTableFilterComposer,
+          $$CarteCreditoTableOrderingComposer,
+          $$CarteCreditoTableAnnotationComposer,
+          $$CarteCreditoTableCreateCompanionBuilder,
+          $$CarteCreditoTableUpdateCompanionBuilder,
+          (CartaCredito, $$CarteCreditoTableReferences),
+          CartaCredito,
+          PrefetchHooks Function({bool portafoglioId, bool contoAddebitoId})
+        > {
+  $$CarteCreditoTableTableManager(_$Archivio db, $CarteCreditoTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CarteCreditoTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CarteCreditoTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CarteCreditoTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> aggiornatoIl = const Value.absent(),
+                Value<bool> eliminato = const Value.absent(),
+                Value<String> portafoglioId = const Value.absent(),
+                Value<String> contoAddebitoId = const Value.absent(),
+                Value<int> giornoAddebito = const Value.absent(),
+                Value<int> giornoChiusura = const Value.absent(),
+                Value<int?> plafondMinimo = const Value.absent(),
+                Value<bool> archiviata = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CarteCreditoCompanion(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                portafoglioId: portafoglioId,
+                contoAddebitoId: contoAddebitoId,
+                giornoAddebito: giornoAddebito,
+                giornoChiusura: giornoChiusura,
+                plafondMinimo: plafondMinimo,
+                archiviata: archiviata,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String aggiornatoIl,
+                Value<bool> eliminato = const Value.absent(),
+                required String portafoglioId,
+                required String contoAddebitoId,
+                required int giornoAddebito,
+                Value<int> giornoChiusura = const Value.absent(),
+                Value<int?> plafondMinimo = const Value.absent(),
+                Value<bool> archiviata = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CarteCreditoCompanion.insert(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                portafoglioId: portafoglioId,
+                contoAddebitoId: contoAddebitoId,
+                giornoAddebito: giornoAddebito,
+                giornoChiusura: giornoChiusura,
+                plafondMinimo: plafondMinimo,
+                archiviata: archiviata,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$CarteCreditoTable, CartaCredito>(table),
+                  $$CarteCreditoTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({portafoglioId = false, contoAddebitoId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (portafoglioId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.portafoglioId,
+                            referencedTable: $$CarteCreditoTableReferences
+                                ._portafoglioIdTable(db),
+                            referencedColumn: $$CarteCreditoTableReferences
+                                ._portafoglioIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (contoAddebitoId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.contoAddebitoId,
+                            referencedTable: $$CarteCreditoTableReferences
+                                ._contoAddebitoIdTable(db),
+                            referencedColumn: $$CarteCreditoTableReferences
+                                ._contoAddebitoIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$CarteCreditoTableProcessedTableManager =
+    ProcessedTableManager<
+      _$Archivio,
+      $CarteCreditoTable,
+      CartaCredito,
+      $$CarteCreditoTableFilterComposer,
+      $$CarteCreditoTableOrderingComposer,
+      $$CarteCreditoTableAnnotationComposer,
+      $$CarteCreditoTableCreateCompanionBuilder,
+      $$CarteCreditoTableUpdateCompanionBuilder,
+      (CartaCredito, $$CarteCreditoTableReferences),
+      CartaCredito,
+      PrefetchHooks Function({bool portafoglioId, bool contoAddebitoId})
+    >;
 typedef $$ImpostazioniTableCreateCompanionBuilder =
     ImpostazioniCompanion Function({
       required String chiave,
@@ -12520,6 +13804,8 @@ class $ArchivioManager {
       $$ImportiVoceTableTableManager(_db, _db.importiVoce);
   $$VariazioniMeseTableTableManager get variazioniMese =>
       $$VariazioniMeseTableTableManager(_db, _db.variazioniMese);
+  $$CarteCreditoTableTableManager get carteCredito =>
+      $$CarteCreditoTableTableManager(_db, _db.carteCredito);
   $$ImpostazioniTableTableManager get impostazioni =>
       $$ImpostazioniTableTableManager(_db, _db.impostazioni);
 }

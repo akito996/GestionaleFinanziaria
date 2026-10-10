@@ -5,6 +5,7 @@ import 'crypto/keyring.dart';
 import 'crypto/operazioni_chiavi.dart';
 import 'crypto/secret_key.dart';
 import 'db/archivio.dart';
+import 'db/carte_credito.dart';
 import 'db/contabilita.dart';
 import 'db/costo_vita.dart';
 import 'db/deposito_locale.dart';
@@ -49,6 +50,11 @@ class Sessione extends ChangeNotifier {
 
   /// Pagamenti programmati: disponibile solo nella fase [FaseSessione.sbloccata].
   Pianificatore get pianificatore => _pianificatore!;
+
+  CarteCreditoServizio? _carte;
+
+  /// Carte di credito: disponibile solo nella fase [FaseSessione.sbloccata].
+  CarteCreditoServizio get carte => _carte!;
 
   SecureKey? _dek;
 
@@ -162,6 +168,7 @@ class Sessione extends ChangeNotifier {
     _contabilita = null;
     _costoVita = null;
     _pianificatore = null;
+    _carte = null;
     _archivio = null;
     _dek = null;
     await archivio?.close();
@@ -187,6 +194,11 @@ class Sessione extends ChangeNotifier {
     try {
       _contabilita = await Contabilita.apri(archivio);
       _pianificatore = Pianificatore(archivio, _contabilita!.orologio);
+      _carte = CarteCreditoServizio(
+        archivio,
+        _contabilita!.orologio,
+        _pianificatore!,
+      );
       _costoVita = CostoVita(archivio, _contabilita!.orologio, _pianificatore!);
     } catch (_) {
       await archivio.close();

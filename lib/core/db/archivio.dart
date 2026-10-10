@@ -12,6 +12,9 @@ import 'tabelle.dart';
 
 part 'archivio.g.dart';
 
+/// Nome del tipo di portafoglio delle carte di credito.
+const tipoCartaDiCredito = 'Carta di credito';
+
 /// Categorie iniziali: (nome, icona, sottocategorie).
 const categorieProposte = [
   (
@@ -42,6 +45,7 @@ const categorieProposte = [
     ImportiVoce,
     VariazioniMese,
     Pianificazioni,
+    CarteCredito,
     Impostazioni,
   ],
 )
@@ -97,13 +101,14 @@ class Archivio extends _$Archivio {
   Archivio.conEsecutore(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       await m.createAll();
       await _tipiDiSistema();
+      await _tipoCartaDiCredito();
       await _categorieIniziali();
     },
     onUpgrade: (m, da, a) async {
@@ -123,6 +128,11 @@ class Archivio extends _$Archivio {
         await m.addColumn(movimenti, movimenti.pianificazioneId);
         await m.addColumn(movimenti, movimenti.dataPrevista);
         await m.createIndex(movimentiPianificatiUnici);
+      }
+      // v4: carte di credito.
+      if (da < 4) {
+        await m.createTable(carteCredito);
+        await _tipoCartaDiCredito();
       }
     },
     beforeOpen: (_) async {
@@ -158,6 +168,30 @@ class Archivio extends _$Archivio {
         );
       }
     });
+  }
+
+  /// Tipo di portafoglio "Carta di credito" (dalla v4), se non esiste già.
+  Future<void> _tipoCartaDiCredito() async {
+    final esistente =
+        await (select(definizioniTipo)..where(
+              (t) =>
+                  t.ambito.equals(AmbitoTipo.portafoglio) &
+                  t.nome.equals(tipoCartaDiCredito),
+            ))
+            .getSingleOrNull();
+    if (esistente != null) {
+      return;
+    }
+    await into(definizioniTipo).insert(
+      DefinizioniTipoCompanion.insert(
+        id: nuovoId(),
+        aggiornatoIl: '0',
+        ambito: AmbitoTipo.portafoglio,
+        nome: tipoCartaDiCredito,
+        diSistema: const Value(true),
+        ordine: const Value(10),
+      ),
+    );
   }
 
   /// Categorie proposte al primo avvio (modificabili, eliminabili, ampliabili).

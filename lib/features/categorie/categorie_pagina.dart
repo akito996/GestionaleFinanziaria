@@ -99,6 +99,7 @@ class CategoriePagina extends StatelessWidget {
         actions: [PulsanteBlocca(sessione: sessione)],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'fab-categorie',
         onPressed: () => _nuova(context),
         icon: const Icon(Icons.add),
         label: const Text('Categoria'),

@@ -21,7 +21,11 @@ class SchedaInArrivo extends StatefulWidget {
     this.portafoglioId,
     this.giorni = 7,
     this.titolo = 'In arrivo',
+    this.escludiOrigini = const {},
   });
+
+  /// Origini da non mostrare (es. le carte, che hanno un avviso dedicato).
+  final Set<String> escludiOrigini;
 
   final Sessione sessione;
 
@@ -51,7 +55,11 @@ class _SchedaInArrivoState extends State<SchedaInArrivo> {
     return StreamBuilder<List<ScadenzaInArrivo>>(
       stream: _scadenze,
       builder: (context, snapshot) {
-        final scadenze = snapshot.data ?? const [];
+        final scadenze = (snapshot.data ?? const <ScadenzaInArrivo>[])
+            .where(
+              (s) => !widget.escludiOrigini.contains(s.pianificazione.origine),
+            )
+            .toList();
         if (scadenze.isEmpty) {
           return const SizedBox.shrink();
         }

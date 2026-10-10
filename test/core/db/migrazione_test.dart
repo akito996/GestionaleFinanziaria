@@ -7,7 +7,7 @@ import 'package:sqlite3/sqlite3.dart' as sql;
 
 void main() {
   test(
-    'migrazione v1 → v3: dati conservati, nuove tabelle e categorie',
+    'migrazione v1 → v4: dati conservati, nuove tabelle e categorie',
     () async {
       // Lo schema delle tabelle già presenti in v1 non è cambiato: si crea un archivio
       // attuale e lo si riporta com'era in v1 (senza le aggiunte della v2).
@@ -34,6 +34,10 @@ void main() {
           );
       await v2.close();
       grezzo
+        ..execute('DROP TABLE carte_credito')
+        ..execute(
+          "DELETE FROM definizioni_tipo WHERE nome = 'Carta di credito'",
+        )
         ..execute('DROP INDEX movimenti_pianificati_unici')
         ..execute('ALTER TABLE movimenti DROP COLUMN pianificazione_id')
         ..execute('ALTER TABLE movimenti DROP COLUMN data_prevista')
@@ -58,7 +62,12 @@ void main() {
         containsAll(['Casa', 'Bollette', 'Spesa']),
       );
       expect(await db.select(db.pianificazioni).get(), isEmpty);
-      expect(grezzo.userVersion, 3);
+      expect(await db.select(db.carteCredito).get(), isEmpty);
+      expect(
+        (await db.select(db.definizioniTipo).get()).map((t) => t.nome),
+        contains('Carta di credito'),
+      );
+      expect(grezzo.userVersion, 4);
     },
   );
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/db/contabilita.dart';
 import '../../core/importo.dart';
 import '../../core/sessione.dart';
+import '../carte/carte_pagina.dart';
 import '../comuni/in_arrivo.dart';
 import '../movimenti/movimento_modulo.dart';
 import '../movimenti/riga_movimento.dart';
@@ -101,6 +102,7 @@ class PortafoglioPagina extends StatelessWidget {
             ],
           ),
           floatingActionButton: FloatingActionButton.extended(
+            heroTag: 'fab-portafoglio-$portafoglioId',
             onPressed: () => apriModuloMovimento(
               context,
               sessione,
@@ -142,11 +144,20 @@ class PortafoglioPagina extends StatelessWidget {
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: SchedaInArrivo(
-                      sessione: sessione,
-                      portafoglioId: portafoglioId,
-                      giorni: 30,
-                      titolo: 'Addebiti in arrivo su questo portafoglio',
+                    child: Column(
+                      children: [
+                        AvvisiCarte(
+                          sessione: sessione,
+                          portafoglioId: portafoglioId,
+                        ),
+                        SchedaInArrivo(
+                          sessione: sessione,
+                          portafoglioId: portafoglioId,
+                          giorni: 30,
+                          titolo: 'Addebiti in arrivo su questo portafoglio',
+                          escludiOrigini: const {'carta'},
+                        ),
+                      ],
                     ),
                   ),
                   const Divider(height: 1),

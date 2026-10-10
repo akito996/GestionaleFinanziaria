@@ -96,6 +96,7 @@ class _HomePaginaState extends State<HomePagina> {
               floatingActionButton: portafogli == null || vuoto
                   ? null
                   : FloatingActionButton.extended(
+                      heroTag: 'fab-panoramica',
                       onPressed: _nuovoMovimento,
                       tooltip: 'Nuovo movimento (Ctrl+N)',
                       icon: const Icon(Icons.add),
@@ -157,7 +158,11 @@ class _HomePaginaState extends State<HomePagina> {
       for (final p in portafogli)
         Card(
           child: ListTile(
-            leading: const Icon(Icons.account_balance_wallet_outlined),
+            leading: Icon(
+              p.tipo.nome == 'Carta di credito'
+                  ? Icons.credit_card
+                  : Icons.account_balance_wallet_outlined,
+            ),
             title: Text(p.portafoglio.nome),
             subtitle: Text(p.tipo.nome),
             trailing: Text(

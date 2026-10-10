@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/sessione.dart';
+import '../carte/carte_pagina.dart';
 import '../categorie/categorie_pagina.dart';
 import '../costo_vita/costo_vita_pagina.dart';
 import '../home/home_pagina.dart';
@@ -79,6 +80,7 @@ class _GuscioState extends State<Guscio> {
   static const _voci = [
     (Icons.dashboard_outlined, Icons.dashboard, 'Panoramica'),
     (Icons.receipt_long_outlined, Icons.receipt_long, 'Costo della vita'),
+    (Icons.credit_card_outlined, Icons.credit_card, 'Carte'),
     (Icons.category_outlined, Icons.category, 'Categorie'),
   ];
 
@@ -89,6 +91,7 @@ class _GuscioState extends State<Guscio> {
     final pagine = [
       HomePagina(sessione: widget.sessione, apriCostoVita: () => _vaiA(1)),
       CostoVitaPagina(sessione: widget.sessione),
+      CartePagina(sessione: widget.sessione),
       CategoriePagina(sessione: widget.sessione),
     ];
     final corpo = IndexedStack(index: _sezione, children: pagine);
