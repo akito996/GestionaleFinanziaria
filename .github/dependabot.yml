@@ -1,8 +1,19 @@
 # Aggiornamenti automatici delle dipendenze (pull request settimanali).
 # Le azioni sono richiamate per SHA: Dependabot aggiorna anche quelli.
-# Quando arriverà il progetto Flutter si aggiungerà l'ecosistema "pub".
 version: 2
 updates:
+  - package-ecosystem: pub
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: deps
+    groups:
+      librerie:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
   - package-ecosystem: github-actions
     directory: /
     schedule:

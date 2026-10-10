@@ -31,3 +31,16 @@ jobs:
       - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # OSV-Scanner: confronta pubspec.lock con il database pubblico delle vulnerabilità;
+  # i risultati compaiono in Security -> Code scanning.
+  vulnerabilita:
+    name: Librerie vulnerabili (OSV-Scanner)
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@a345acffa64b0eaede81a3d9aae6141214d9c8fc # v2.6.0
+    with:
+      scan-args: |-
+        --lockfile=pubspec.lock

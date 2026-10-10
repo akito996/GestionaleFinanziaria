@@ -1,0 +1,39 @@
+# Verifica del codice a ogni push e pull request: formattazione, analisi statica severa e test.
+# La versione di Flutter è quella scritta in pubspec.yaml (environment.flutter).
+name: Verifica
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verifica-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Analisi e test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+          cache: true
+      - name: Dipendenze (bloccate da pubspec.lock)
+        run: flutter pub get --enforce-lockfile
+      - name: Formattazione
+        run: dart format --output=none --set-exit-if-changed lib test
+      - name: Analisi statica
+        run: flutter analyze --fatal-infos
+      - name: Test
+        run: flutter test

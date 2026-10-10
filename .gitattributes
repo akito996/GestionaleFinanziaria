@@ -1,0 +1,13 @@
+# Fine riga LF nel repository per tutti i file di testo (identici su Windows, Linux e nella pipeline)
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binari
+*.png binary
+*.jpg binary
+*.ico binary
+*.jar binary
+*.ttf binary
+*.otf binary
