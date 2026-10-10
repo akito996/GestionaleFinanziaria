@@ -47,7 +47,18 @@ jobs:
       - name: Analisi statica
         run: flutter analyze --fatal-infos
       - name: Test
-        run: flutter test
+        run: |
+          set -o pipefail
+          flutter test -r expanded 2>&1 | tee "$RUNNER_TEMP/test.log"
+      - name: Motivo dell'errore (test)
+        if: failure()
+        run: |
+          motivo="$(grep -v -E '^\s*$' "$RUNNER_TEMP/test.log" | grep -E -B2 -A20 'EXCEPTION CAUGHT|Expected:|\[E\]' | head -80)"
+          motivo="${motivo//'%'/'%25'}"
+          motivo="${motivo//$'
+'/'%0A'}"
+          motivo="${motivo//$''/}"
+          echo "::error title=Test::${motivo}"
 
   # App Windows da scaricare e provare (Actions -> esecuzione -> Artifacts).
   # Non firmata: Windows SmartScreen mostra un avviso al primo avvio.
