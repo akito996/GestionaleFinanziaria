@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:sodium/sodium_sumo.dart';
 
+import 'crypto/keyring.dart';
 import 'crypto/operazioni_chiavi.dart';
+import 'crypto/secret_key.dart';
 import 'db/archivio.dart';
 import 'db/deposito_locale.dart';
 
@@ -32,8 +34,16 @@ class Sessione extends ChangeNotifier {
 
   SecureKey? _dek;
 
-  /// Archivio nuovo in preparazione: salvato solo dopo la verifica della Recovery Key.
-  ({Uint8List keyring, SecureKey dek})? _inPreparazione;
+  String? _idArchivio;
+
+  /// ID pubblico dell'archivio aperto (es. `GF-7K3P-Q9XW`).
+  String? get idArchivio => _idArchivio;
+
+  /// Messaggio di conferma da mostrare una volta all'apertura (es. "Archivio sbloccato").
+  String? avviso;
+
+  /// Archivio nuovo in preparazione: salvato solo dopo la verifica della Secret Key.
+  ArchivioCreato? _inPreparazione;
 
   Future<void> avvia() async {
     _cambia(
@@ -43,17 +53,34 @@ class Sessione extends ChangeNotifier {
     );
   }
 
-  /// Primo passo del primo avvio: protegge la password e genera la Recovery Key.
-  /// Restituisce le 24 parole da mostrare. Su disco non viene ancora scritto nulla.
-  Future<List<String>> preparaNuovoArchivio(String password) async {
+  /// Primo passo del primo avvio: protegge la password e genera ID e Secret Key
+  /// da far salvare all'utente. Su disco non viene ancora scritto nulla.
+  Future<({String idArchivio, String secretKey})> preparaNuovoArchivio(
+    String password,
+  ) async {
     annullaNuovoArchivio();
     final creato = await OperazioniChiavi.crea(
       sodium,
       password,
       costo: costoArgon2,
     );
-    _inPreparazione = (keyring: creato.keyring, dek: creato.dek);
-    return creato.parole;
+    _inPreparazione = creato;
+    return (idArchivio: creato.idArchivio, secretKey: creato.secretKey);
+  }
+
+  /// La Secret Key caricata o incollata è quella appena creata?
+  /// Lancia `SecretKeyNonValidaException` se il testo non è una Secret Key.
+  bool verificaSecretKey(String testo) {
+    final pronto = _inPreparazione;
+    if (pronto == null) {
+      throw StateError('Nessun archivio in preparazione.');
+    }
+    final letta = SecretKey.daTesto(testo);
+    try {
+      return letta.testo == pronto.secretKey;
+    } finally {
+      letta.cancella();
+    }
   }
 
   void annullaNuovoArchivio() {
@@ -61,7 +88,7 @@ class Sessione extends ChangeNotifier {
     _inPreparazione = null;
   }
 
-  /// Recovery Key verificata: salva il keyring, crea il database e apre l'archivio.
+  /// Secret Key verificata: salva il keyring, crea il database e apre l'archivio.
   Future<void> confermaNuovoArchivio() async {
     final pronto = _inPreparazione;
     if (pronto == null) {
@@ -70,31 +97,36 @@ class Sessione extends ChangeNotifier {
     _inPreparazione = null;
     await deposito.metteDaParteArchivioOrfano();
     await deposito.scriviKeyring(pronto.keyring);
-    _apri(pronto.dek);
+    _apri(pronto.dek, pronto.idArchivio, 'Archivio creato');
   }
 
   /// Lancia `PasswordErrataException` se la password non è giusta.
   Future<void> sblocca(String password) async {
+    final keyring = await deposito.leggiKeyring();
     final dek = await OperazioniChiavi.apriConPassword(
       sodium,
-      await deposito.leggiKeyring(),
+      keyring,
       password,
     );
-    _apri(dek);
+    _apri(dek, Keyring.deserializza(keyring).idArchivio, 'Archivio sbloccato');
   }
 
-  /// Password dimenticata: Recovery Key + nuova password.
-  /// Lancia `RecoveryKeyNonValidaException` se le parole non sono giuste.
-  Future<void> recupera(String paroleRecovery, String nuovaPassword) async {
+  /// Password dimenticata: Secret Key (testo o contenuto del file) + nuova password.
+  /// Lancia `SecretKeyNonValidaException` se la Secret Key non è giusta.
+  Future<void> recupera(String testoSecretKey, String nuovaPassword) async {
     final recuperato = await OperazioniChiavi.recupera(
       sodium,
       await deposito.leggiKeyring(),
-      paroleRecovery,
+      testoSecretKey,
       nuovaPassword,
       costo: costoArgon2,
     );
     await deposito.scriviKeyring(recuperato.keyring);
-    _apri(recuperato.dek);
+    _apri(
+      recuperato.dek,
+      Keyring.deserializza(recuperato.keyring).idArchivio,
+      'Nuova password impostata: archivio sbloccato',
+    );
   }
 
   Future<void> blocca() async {
@@ -102,6 +134,8 @@ class Sessione extends ChangeNotifier {
     _archivio = null;
     _dek?.dispose();
     _dek = null;
+    _idArchivio = null;
+    avviso = null;
     _cambia(FaseSessione.bloccata);
   }
 
@@ -113,7 +147,7 @@ class Sessione extends ChangeNotifier {
     super.dispose();
   }
 
-  void _apri(SecureKey dek) {
+  void _apri(SecureKey dek, String idArchivio, String messaggio) {
     try {
       _archivio = Archivio.apri(deposito.fileArchivio, sodium, dek);
     } catch (_) {
@@ -121,6 +155,8 @@ class Sessione extends ChangeNotifier {
       rethrow;
     }
     _dek = dek;
+    _idArchivio = idArchivio;
+    avviso = messaggio;
     _cambia(FaseSessione.sbloccata);
   }
 

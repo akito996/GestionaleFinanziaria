@@ -4,9 +4,8 @@
 *.cmd text eol=crlf
 *.ps1 text eol=crlf
 
-# Codice generato (drift, lista BIP-39): escluso dalle statistiche e compresso nelle diff
+# Codice generato (drift): escluso dalle statistiche e compresso nelle diff
 *.g.dart linguist-generated=true
-lib/core/crypto/parole_bip39_it.dart linguist-generated=true
 
 # Binari
 *.png binary

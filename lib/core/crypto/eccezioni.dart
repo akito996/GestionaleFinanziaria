@@ -28,8 +28,8 @@ final class PasswordErrataException extends CryptoException {
   const PasswordErrataException() : super('Password errata.');
 }
 
-final class RecoveryKeyNonValidaException extends CryptoException {
-  const RecoveryKeyNonValidaException(super.messaggio);
+final class SecretKeyNonValidaException extends CryptoException {
+  const SecretKeyNonValidaException(super.messaggio);
 }
 
 /// Parametri di derivazione più deboli del minimo ammesso (possibile manomissione).

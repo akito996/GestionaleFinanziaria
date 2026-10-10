@@ -12,7 +12,7 @@ App **open source** di finanza personale per **Windows** e **Android**, pensata 
 
 ## Sicurezza
 - Password principale → Argon2id; dati cifrati con XChaCha20-Poly1305; database locale SQLCipher.
-- Recovery Key di 24 parole per recuperare i dati se perdi la password o il dispositivo.
+- Secret Key (da salvare come file o testo) per recuperare i dati se dimentichi la password.
 - Segnalazione vulnerabilità: vedi [SECURITY.md](SECURITY.md).
 - Decisioni di architettura: [docs/adr](docs/adr).
 

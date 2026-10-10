@@ -17,8 +17,8 @@ Riceverai una prima risposta entro **7 giorni**. La correzione viene pubblicata 
 ## Modello di sicurezza (in breve)
 - **Local-first**: i dati stanno sul dispositivo (database SQLCipher).
 - **Zero-knowledge**: a Google Drive arrivano solo file cifrati (XChaCha20-Poly1305, dati autenticati con utente, dispositivo e sequenza).
-- **Chiavi**: password principale → Argon2id → chiave che protegge la chiave dei dati; copia di emergenza protetta dalla Recovery Key.
+- **Chiavi**: password principale → Argon2id → chiave che protegge la chiave dei dati; copia di emergenza protetta dalla Secret Key (256 bit, conservata dall'utente come file o testo).
 - **Minimo privilegio**: l'app chiede a Google solo l'ambito `drive.appdata` (una cartella nascosta riservata all'app).
 - **Nessun segreto nel repository**: chiavi di firma e credenziali stanno solo nei secret di GitHub Actions.
 
-Fuori ambito: dispositivi già compromessi (malware, root/jailbreak) e perdita contemporanea di password, Recovery Key e di tutti i dispositivi (in quel caso i dati sono irrecuperabili per progetto).
+Fuori ambito: dispositivi già compromessi (malware, root/jailbreak) e perdita contemporanea di password, Secret Key e di tutti i dispositivi (in quel caso i dati sono irrecuperabili per progetto).

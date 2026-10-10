@@ -6,18 +6,19 @@ import 'package:sodium/sodium_sumo.dart';
 import 'cifratura.dart';
 import 'derivazione.dart';
 import 'eccezioni.dart';
-import 'recovery_key.dart';
+import 'secret_key.dart';
 
-/// Keyring (`keyring.bin` su Drive): la chiave dei dati (DEK) avvolta due volte,
-/// con la password principale (Argon2id → KEK) e con la Recovery Key.
+/// Keyring (`keyring.bin`): la chiave dei dati (DEK) avvolta due volte,
+/// con la password principale (Argon2id → KEK) e con la Secret Key.
 ///
 /// Non contiene segreti in chiaro: può stare nel cloud. Chi lo legge senza
-/// password né Recovery Key non ottiene nulla.
+/// password né Secret Key non ottiene nulla.
 class Keyring {
   const Keyring._({
+    required this.idArchivio,
     required this.argon2,
     required this._dekDaPassword,
-    required this._dekDaRecovery,
+    required this._dekDaSecretKey,
   });
 
   factory Keyring.deserializza(Uint8List byte) {
@@ -36,49 +37,66 @@ class Keyring {
           ? VersioneNonSupportataException(versione)
           : const DatiNonValidiException();
     }
+    final id = json['id'];
     final argon2 = json['argon2'];
     final daPassword = json['dek_password'];
-    final daRecovery = json['dek_recovery'];
-    if (argon2 is! Map<String, Object?> ||
+    final daSecretKey = json['dek_secret_key'];
+    if (id is! String ||
+        argon2 is! Map<String, Object?> ||
         daPassword is! String ||
-        daRecovery is! String) {
+        daSecretKey is! String) {
       throw const DatiNonValidiException();
     }
     return Keyring._(
+      idArchivio: id,
       argon2: ParametriArgon2.daJson(argon2),
       dekDaPassword: base64.decode(daPassword),
-      dekDaRecovery: base64.decode(daRecovery),
+      dekDaSecretKey: base64.decode(daSecretKey),
     );
   }
 
   static const int versioneCorrente = 1;
 
+  /// Identificativo pubblico dell'archivio (es. `GF-7K3P-Q9XW`).
+  final String idArchivio;
   final ParametriArgon2 argon2;
   final Uint8List _dekDaPassword;
-  final Uint8List _dekDaRecovery;
+  final Uint8List _dekDaSecretKey;
 
-  /// Primo avvio: nuova DEK casuale e nuova Recovery Key da mostrare all'utente.
-  static ({Keyring keyring, SecureKey dek, RecoveryKey recoveryKey}) crea(
+  /// Primo avvio: nuovo ID, nuova DEK casuale e nuova Secret Key da far salvare all'utente.
+  static ({Keyring keyring, SecureKey dek, SecretKey secretKey}) crea(
     SodiumSumo sodium,
     String password, {
     ParametriArgon2? parametri,
   }) {
-    final cifratore = Cifratore(sodium);
-    final dek = cifratore.nuovaChiave();
-    final recoveryKey = RecoveryKey.genera(sodium);
+    final dek = Cifratore(sodium).nuovaChiave();
+    final secretKey = SecretKey.genera(sodium);
+    final idArchivio = nuovoIdArchivio(sodium);
     final argon2 = parametri ?? ParametriArgon2.nuovi(sodium);
     final keyring = Keyring._(
+      idArchivio: idArchivio,
       argon2: argon2,
-      dekDaPassword: _avvolgiConPassword(sodium, dek, password, argon2),
-      dekDaRecovery: _avvolgiConRecovery(sodium, dek, recoveryKey),
+      dekDaPassword: _avvolgiConPassword(
+        sodium,
+        dek,
+        password,
+        argon2,
+        idArchivio,
+      ),
+      dekDaSecretKey: _avvolgiConSecretKey(sodium, dek, secretKey, idArchivio),
     );
-    return (keyring: keyring, dek: dek, recoveryKey: recoveryKey);
+    return (keyring: keyring, dek: dek, secretKey: secretKey);
   }
 
   SecureKey apriConPassword(SodiumSumo sodium, String password) {
     final kek = argon2.derivaChiave(sodium, password);
     try {
-      return _svolgi(sodium, _dekDaPassword, kek, _aadPassword(argon2));
+      return _svolgi(
+        sodium,
+        _dekDaPassword,
+        kek,
+        _aadPassword(argon2, idArchivio),
+      );
     } on DatiNonValidiException {
       throw const PasswordErrataException();
     } finally {
@@ -86,20 +104,25 @@ class Keyring {
     }
   }
 
-  SecureKey apriConRecoveryKey(SodiumSumo sodium, RecoveryKey recoveryKey) {
-    final chiave = recoveryKey.chiaveDiAvvolgimento(sodium);
+  SecureKey apriConSecretKey(SodiumSumo sodium, SecretKey secretKey) {
+    final chiave = secretKey.chiaveDiAvvolgimento(sodium);
     try {
-      return _svolgi(sodium, _dekDaRecovery, chiave, _aadRecovery);
+      return _svolgi(
+        sodium,
+        _dekDaSecretKey,
+        chiave,
+        _aadSecretKey(idArchivio),
+      );
     } on DatiNonValidiException {
-      throw const RecoveryKeyNonValidaException(
-        'Questa Recovery Key non apre questo archivio.',
+      throw SecretKeyNonValidaException(
+        'Questa Secret Key non è dell\'archivio $idArchivio.',
       );
     } finally {
       chiave.dispose();
     }
   }
 
-  /// Cambio password: nuovo sale e nuovi parametri, la Recovery Key resta valida.
+  /// Cambio password: nuovo sale e nuovi parametri, la Secret Key resta valida.
   Keyring conNuovaPassword(
     SodiumSumo sodium,
     SecureKey dek,
@@ -108,39 +131,48 @@ class Keyring {
   }) {
     final nuoviParametri = parametri ?? ParametriArgon2.nuovi(sodium);
     return Keyring._(
+      idArchivio: idArchivio,
       argon2: nuoviParametri,
       dekDaPassword: _avvolgiConPassword(
         sodium,
         dek,
         nuovaPassword,
         nuoviParametri,
+        idArchivio,
       ),
-      dekDaRecovery: _dekDaRecovery,
+      dekDaSecretKey: _dekDaSecretKey,
     );
   }
 
-  /// Nuova Recovery Key (es. quella vecchia è stata esposta): la precedente smette di funzionare.
-  ({Keyring keyring, RecoveryKey recoveryKey}) conNuovaRecoveryKey(
+  /// Nuova Secret Key (es. quella vecchia è stata esposta): la precedente smette di funzionare.
+  ({Keyring keyring, SecretKey secretKey}) conNuovaSecretKey(
     SodiumSumo sodium,
     SecureKey dek,
   ) {
-    final recoveryKey = RecoveryKey.genera(sodium);
+    final secretKey = SecretKey.genera(sodium);
     return (
       keyring: Keyring._(
+        idArchivio: idArchivio,
         argon2: argon2,
         dekDaPassword: _dekDaPassword,
-        dekDaRecovery: _avvolgiConRecovery(sodium, dek, recoveryKey),
+        dekDaSecretKey: _avvolgiConSecretKey(
+          sodium,
+          dek,
+          secretKey,
+          idArchivio,
+        ),
       ),
-      recoveryKey: recoveryKey,
+      secretKey: secretKey,
     );
   }
 
   Uint8List serializza() => utf8.encode(
     jsonEncode({
       'v': versioneCorrente,
+      'id': idArchivio,
       'argon2': argon2.toJson(),
       'dek_password': base64.encode(_dekDaPassword),
-      'dek_recovery': base64.encode(_dekDaRecovery),
+      'dek_secret_key': base64.encode(_dekDaSecretKey),
     }),
   );
 
@@ -149,23 +181,25 @@ class Keyring {
     SecureKey dek,
     String password,
     ParametriArgon2 argon2,
+    String idArchivio,
   ) {
     final kek = argon2.derivaChiave(sodium, password);
     try {
-      return _avvolgi(sodium, dek, kek, _aadPassword(argon2));
+      return _avvolgi(sodium, dek, kek, _aadPassword(argon2, idArchivio));
     } finally {
       kek.dispose();
     }
   }
 
-  static Uint8List _avvolgiConRecovery(
+  static Uint8List _avvolgiConSecretKey(
     SodiumSumo sodium,
     SecureKey dek,
-    RecoveryKey recoveryKey,
+    SecretKey secretKey,
+    String idArchivio,
   ) {
-    final chiave = recoveryKey.chiaveDiAvvolgimento(sodium);
+    final chiave = secretKey.chiaveDiAvvolgimento(sodium);
     try {
-      return _avvolgi(sodium, dek, chiave, _aadRecovery);
+      return _avvolgi(sodium, dek, chiave, _aadSecretKey(idArchivio));
     } finally {
       chiave.dispose();
     }
@@ -194,12 +228,13 @@ class Keyring {
     }
   }
 
-  /// L'AAD include i parametri Argon2: chi li altera nel file fa fallire l'apertura.
-  static Uint8List _aadPassword(ParametriArgon2 argon2) => utf8.encode(
-    'gf-keyring|v$versioneCorrente|password|${jsonEncode(argon2.toJson())}',
-  );
+  /// L'AAD include ID archivio e parametri Argon2: chi li altera nel file fa fallire l'apertura.
+  static Uint8List _aadPassword(ParametriArgon2 argon2, String idArchivio) =>
+      utf8.encode(
+        'gf-keyring|v$versioneCorrente|$idArchivio|password|'
+        '${jsonEncode(argon2.toJson())}',
+      );
 
-  static final Uint8List _aadRecovery = utf8.encode(
-    'gf-keyring|v$versioneCorrente|recovery',
-  );
+  static Uint8List _aadSecretKey(String idArchivio) =>
+      utf8.encode('gf-keyring|v$versioneCorrente|$idArchivio|secret-key');
 }

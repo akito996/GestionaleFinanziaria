@@ -43,7 +43,7 @@ jobs:
           dart run build_runner build
           git diff --exit-code -- lib
       - name: Formattazione
-        run: dart format --output=none --set-exit-if-changed lib test
+        run: dart format --output=none --set-exit-if-changed lib test integration_test
       - name: Analisi statica
         run: flutter analyze --fatal-infos
       - name: Test
@@ -74,6 +74,8 @@ jobs:
           flutter --version
       - name: Dipendenze (bloccate da pubspec.lock)
         run: flutter pub get --enforce-lockfile
+      - name: Test sull'app vera (primo avvio, blocco, sblocco, recupero)
+        run: flutter test integration_test -d windows
       - name: Build
         run: flutter build windows --release
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gestionale_finanziaria/app.dart';
 import 'package:gestionale_finanziaria/core/crypto/derivazione.dart';
@@ -54,11 +55,17 @@ void main() {
   Future<void> avviaApp(WidgetTester tester) async {
     await tester.binding.setSurfaceSize(const Size(900, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
+    // Appunti di sistema simulati.
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (_) async => null,
+    );
     await tester.runAsync(sessione.avvia);
     await tester.pumpWidget(GestionaleApp(sessione: sessione));
   }
 
-  Future<List<String>> finoAlleParole(WidgetTester tester) async {
+  /// Dal benvenuto alla schermata della Secret Key; restituisce la Secret Key mostrata.
+  Future<String> finoAllaSecretKey(WidgetTester tester) async {
     await avviaApp(tester);
     expect(find.text('Benvenuto in GestionaleFinanziaria'), findsOneWidget);
     await tocca(tester, find.text('Inizia'));
@@ -67,34 +74,13 @@ void main() {
     await tester.enterText(campi.at(0), 'Password-Lunga-1');
     await tester.enterText(campi.at(1), 'Password-Lunga-1');
     await tocca(tester, find.text('Continua'));
-    await attendi(tester, find.text('Le ho scritte e messe al sicuro'));
+    await attendi(tester, find.text('La tua Secret Key'));
 
-    // Le 24 parole mostrate, nell'ordine.
-    final riga = RegExp(r'^\s*(\d+)\. ([a-z]+)$');
-    final parole = <int, String>{};
-    for (final testo in tester.widgetList<RichText>(find.byType(RichText))) {
-      final m = riga.firstMatch(testo.text.toPlainText());
-      if (m != null) {
-        parole[int.parse(m.group(1)!)] = m.group(2)!;
-      }
-    }
-    expect(parole, hasLength(24));
-    return [for (var i = 1; i <= 24; i++) parole[i]!];
-  }
-
-  Future<void> rispondi(
-    WidgetTester tester,
-    String Function(int numero) parolaN,
-  ) async {
-    final etichetta = RegExp(r'Parola n\. (\d+)');
-    final campi = find.byType(TextField);
-    for (var i = 0; i < campi.evaluate().length; i++) {
-      final campo = tester.widget<TextField>(campi.at(i));
-      final numero = int.parse(
-        etichetta.firstMatch(campo.decoration!.labelText!)!.group(1)!,
-      );
-      await tester.enterText(campi.at(i), parolaN(numero));
-    }
+    final testo = tester
+        .widget<SelectableText>(find.byKey(const Key('secret-key')))
+        .data!;
+    expect(testo, startsWith('GF1-'));
+    return testo;
   }
 
   testWidgets('regole della password', (tester) async {
@@ -112,34 +98,87 @@ void main() {
     expect(find.text('Le due password non coincidono.'), findsOneWidget);
   });
 
-  testWidgets('primo avvio completo, poi blocco', (tester) async {
-    final parole = await finoAlleParole(tester);
+  testWidgets('percorso completo: crea, blocca, sblocca, recupera', (
+    tester,
+  ) async {
+    final secretKey = await finoAllaSecretKey(tester);
 
-    // "Continua" resta disattivato finché non si conferma di averle scritte.
+    // "Continua" resta disattivato finché la Secret Key non è salvata o copiata.
     final continua = find.widgetWithText(FilledButton, 'Continua');
     expect(tester.widget<FilledButton>(continua).onPressed, isNull);
-    await tocca(tester, find.text('Le ho scritte e messe al sicuro'));
+    await tocca(tester, find.text('Copia'));
+    await attendi(tester, find.textContaining('Copiata'));
     await tocca(tester, continua);
 
-    // Verifica con le prime 4 lettere in maiuscolo.
-    await rispondi(tester, (n) => parole[n - 1].substring(0, 4).toUpperCase());
+    // Verifica: Secret Key incollata (qui scritta nel campo).
+    await tester.enterText(find.byType(TextField), secretKey);
+    await tester.pump();
+    expect(find.text('Secret Key valida'), findsOneWidget);
     await tocca(tester, find.text('Crea l\'archivio'));
     await attendi(tester, find.text('Archivio aperto'));
-    expect(await DepositoLocale(cartella).esisteKeyring(), isTrue);
+    await tester.pump();
+    expect(find.text('Archivio creato'), findsOneWidget);
+    expect(find.byIcon(Icons.lock_open), findsWidgets);
 
-    await tocca(tester, find.byTooltip('Blocca'));
+    // Blocco e sblocco con conferma visibile.
+    await tocca(tester, find.byTooltip('Archivio aperto: tocca per bloccarlo'));
+    await attendi(tester, find.text('Archivio bloccato'));
+    await tester.enterText(find.byType(TextField), 'Password-Lunga-1');
+    await tocca(tester, find.text('Sblocca'));
+    await attendi(tester, find.text('Archivio sbloccato'));
+
+    // Password dimenticata: Secret Key → nuova password.
+    await tocca(tester, find.byTooltip('Archivio aperto: tocca per bloccarlo'));
+    await attendi(tester, find.text('Archivio bloccato'));
+    await tocca(tester, find.text('Ho dimenticato la password'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Secret Key:  $secretKey');
+    await tester.pump();
+    await tocca(tester, find.widgetWithText(FilledButton, 'Continua'));
+    final campi = find.byType(TextFormField);
+    await tester.enterText(campi.at(0), 'Nuova-Password-2');
+    await tester.enterText(campi.at(1), 'Nuova-Password-2');
+    await tocca(tester, find.text('Recupera l\'archivio'));
+    await attendi(
+      tester,
+      find.text('Nuova password impostata: archivio sbloccato'),
+    );
+    await tocca(tester, find.byTooltip('Archivio aperto: tocca per bloccarlo'));
     await attendi(tester, find.text('Archivio bloccato'));
   });
 
-  testWidgets('verifica sbagliata: archivio non creato', (tester) async {
-    await finoAlleParole(tester);
-    await tocca(tester, find.text('Le ho scritte e messe al sicuro'));
+  testWidgets('verifica con una Secret Key diversa: archivio non creato', (
+    tester,
+  ) async {
+    final secretKey = await finoAllaSecretKey(tester);
+    await tocca(tester, find.text('Copia'));
+    await attendi(tester, find.textContaining('Copiata'));
     await tocca(tester, find.widgetWithText(FilledButton, 'Continua'));
 
-    await rispondi(tester, (_) => 'zzzz');
-    await tocca(tester, find.text('Crea l\'archivio'));
+    // Formato non valido: pulsante disattivato e messaggio immediato.
+    await tester.enterText(find.byType(TextField), 'GF1-123');
+    await tester.pump();
+    expect(find.textContaining('incompleta'), findsOneWidget);
 
-    expect(find.textContaining('non corrisponde'), findsOneWidget);
+    // Secret Key valida ma di un altro archivio.
+    final altra = await tester.runAsync(
+      () => Sessione(
+        sodium: sodium,
+        deposito: DepositoLocale(cartella),
+        costoArgon2: (
+          ops: ParametriArgon2.opsMinimo,
+          mem: ParametriArgon2.memMinima,
+        ),
+      ).preparaNuovoArchivio('Altra-Password-9'),
+    );
+    expect(altra!.secretKey, isNot(secretKey));
+    await tester.enterText(find.byType(TextField), altra.secretKey);
+    await tester.pump();
+    await tocca(tester, find.text('Crea l\'archivio'));
+    expect(
+      find.textContaining('non è la Secret Key appena creata'),
+      findsOneWidget,
+    );
     expect(await DepositoLocale(cartella).esisteKeyring(), isFalse);
     sessione.annullaNuovoArchivio();
   });

@@ -13,7 +13,7 @@ L'app deve sincronizzare i dati tra Windows e Android **senza costi** e **senza 
 
 | File | Contenuto |
 | --- | --- |
-| `keyring.bin` | chiave dei dati cifrata con la password principale e con la Recovery Key |
+| `keyring.bin` | chiave dei dati cifrata con la password principale e con la Secret Key |
 | `devices/<id>/events-<n>.bin` | pacchetti di modifiche cifrati, scritti solo dal dispositivo proprietario |
 | `snapshots/snapshot-<data>.bin` | snapshot completo cifrato (compattazione) |
 | `attachments/<casuale>.bin` | allegati cifrati con nomi casuali |

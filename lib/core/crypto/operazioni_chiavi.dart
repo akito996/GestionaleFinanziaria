@@ -5,7 +5,7 @@ import 'package:sodium/sodium_sumo.dart';
 
 import 'derivazione.dart';
 import 'keyring.dart';
-import 'recovery_key.dart';
+import 'secret_key.dart';
 
 /// Costo di Argon2id: passaggi e memoria in byte.
 typedef CostoArgon2 = ({int ops, int mem});
@@ -15,17 +15,25 @@ const CostoArgon2 costoArgon2Predefinito = (
   mem: ParametriArgon2.memPredefinita,
 );
 
+/// Nuovo archivio appena creato: da salvare solo dopo che l'utente ha messo al sicuro
+/// la Secret Key.
+typedef ArchivioCreato = ({
+  Uint8List keyring,
+  SecureKey dek,
+  String idArchivio,
+  String secretKey,
+});
+
 /// Operazioni sul keyring che usano Argon2id (lente per scelta): girano in un isolate
 /// separato, così l'interfaccia resta fluida. La chiave dei dati torna al chiamante
 /// come [SecureKey] (memoria protetta di libsodium).
 abstract final class OperazioniChiavi {
-  /// Nuovo archivio: keyring da salvare, chiave dei dati e 24 parole da mostrare una volta.
-  static Future<({Uint8List keyring, SecureKey dek, List<String> parole})> crea(
+  static Future<ArchivioCreato> crea(
     SodiumSumo sodium,
     String password, {
     CostoArgon2 costo = costoArgon2Predefinito,
   }) async {
-    final (keyring, dek, parole) = await Isolate.run(() {
+    final (keyring, dek, id, testo) = await Isolate.run(() {
       final creato = Keyring.crea(
         sodium,
         password,
@@ -35,18 +43,20 @@ abstract final class OperazioniChiavi {
           memLimit: costo.mem,
         ),
       );
-      final parole = creato.recoveryKey.parole;
-      creato.recoveryKey.cancella();
+      final testo = creato.secretKey.testo;
+      creato.secretKey.cancella();
       return (
         creato.keyring.serializza(),
         _trasferibile(sodium, creato.dek),
-        parole,
+        creato.keyring.idArchivio,
+        testo,
       );
     });
     return (
       keyring: keyring,
       dek: sodium.materializeTransferrableSecureKey(dek),
-      parole: parole,
+      idArchivio: id,
+      secretKey: testo,
     );
   }
 
@@ -64,23 +74,23 @@ abstract final class OperazioniChiavi {
     return sodium.materializeTransferrableSecureKey(dek);
   }
 
-  /// Password dimenticata: apre con la Recovery Key e imposta una nuova password.
-  /// La Recovery Key resta la stessa.
+  /// Password dimenticata: apre con la Secret Key e imposta una nuova password.
+  /// La Secret Key resta la stessa.
   static Future<({Uint8List keyring, SecureKey dek})> recupera(
     SodiumSumo sodium,
     Uint8List keyring,
-    String paroleRecovery,
+    String testoSecretKey,
     String nuovaPassword, {
     CostoArgon2 costo = costoArgon2Predefinito,
   }) async {
-    // Controllo veloce delle parole prima del lavoro pesante (errori immediati).
-    RecoveryKey.daParole(paroleRecovery).cancella();
+    // Controllo veloce del formato prima del lavoro pesante (errori immediati).
+    SecretKey.daTesto(testoSecretKey).cancella();
 
     final (nuovoKeyring, dek) = await Isolate.run(() {
       final vecchio = Keyring.deserializza(keyring);
-      final recoveryKey = RecoveryKey.daParole(paroleRecovery);
-      final dek = vecchio.apriConRecoveryKey(sodium, recoveryKey);
-      recoveryKey.cancella();
+      final secretKey = SecretKey.daTesto(testoSecretKey);
+      final dek = vecchio.apriConSecretKey(sodium, secretKey);
+      secretKey.cancella();
       final nuovo = vecchio.conNuovaPassword(
         sodium,
         dek,

@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gestionale_finanziaria/core/crypto/derivazione.dart';
 import 'package:gestionale_finanziaria/core/crypto/eccezioni.dart';
 import 'package:gestionale_finanziaria/core/crypto/keyring.dart';
-import 'package:gestionale_finanziaria/core/crypto/recovery_key.dart';
+import 'package:gestionale_finanziaria/core/crypto/secret_key.dart';
 import 'package:sodium/sodium_sumo.dart';
 
 void main() {
@@ -21,6 +21,10 @@ void main() {
   setUpAll(() async {
     sodium = await SodiumSumoInit.init();
   });
+
+  Map<String, Object?> json(Keyring k) =>
+      jsonDecode(utf8.decode(k.serializza())) as Map<String, Object?>;
+  Uint8List byte(Map<String, Object?> j) => utf8.encode(jsonEncode(j));
 
   test('si apre con la password e restituisce la stessa chiave dei dati', () {
     final creato = Keyring.crea(
@@ -43,41 +47,50 @@ void main() {
     );
   });
 
-  test('si apre con la Recovery Key scritta a mano', () {
+  test('si apre con la Secret Key letta dal testo', () {
     final creato = Keyring.crea(sodium, 'giusta', parametri: minimi());
-    final scritta = RecoveryKey.daParole(creato.recoveryKey.parole.join(' '));
-    final dek = creato.keyring.apriConRecoveryKey(sodium, scritta);
+    final letta = SecretKey.daTesto(creato.secretKey.testo);
+    final dek = creato.keyring.apriConSecretKey(sodium, letta);
     addTearDown(dek.dispose);
 
     expect(dek, equals(creato.dek));
   });
 
-  test('una Recovery Key di un altro archivio non apre', () {
+  test('una Secret Key di un altro archivio non apre, e lo dice', () {
     final creato = Keyring.crea(sodium, 'giusta', parametri: minimi());
     expect(
-      () =>
-          creato.keyring.apriConRecoveryKey(sodium, RecoveryKey.genera(sodium)),
-      throwsA(isA<RecoveryKeyNonValidaException>()),
+      () => creato.keyring.apriConSecretKey(sodium, SecretKey.genera(sodium)),
+      throwsA(
+        isA<SecretKeyNonValidaException>().having(
+          (e) => e.messaggio,
+          'messaggio',
+          contains(creato.keyring.idArchivio),
+        ),
+      ),
     );
+  });
+
+  test('ID archivio salvato nel keyring', () {
+    final creato = Keyring.crea(sodium, 'giusta', parametri: minimi());
+    final riletto = Keyring.deserializza(creato.keyring.serializza());
+    expect(riletto.idArchivio, creato.keyring.idArchivio);
+    expect(riletto.idArchivio, startsWith('GF-'));
   });
 
   test('serializza e rilegge (keyring.bin) senza segreti in chiaro', () {
     final creato = Keyring.crea(sodium, 'giusta', parametri: minimi());
-    final byte = creato.keyring.serializza();
-    final testo = utf8.decode(byte);
+    final testo = utf8.decode(creato.keyring.serializza());
 
     expect(testo, isNot(contains('giusta')));
-    for (final parola in creato.recoveryKey.parole) {
-      expect(testo, isNot(contains('"$parola"')));
-    }
+    expect(testo, isNot(contains(creato.secretKey.testo)));
 
-    final riletto = Keyring.deserializza(byte);
+    final riletto = Keyring.deserializza(creato.keyring.serializza());
     final dek = riletto.apriConPassword(sodium, 'giusta');
     addTearDown(dek.dispose);
     expect(dek, equals(creato.dek));
   });
 
-  test('cambio password: la vecchia non apre più, la Recovery Key sì', () {
+  test('cambio password: la vecchia non apre più, la Secret Key sì', () {
     final creato = Keyring.crea(sodium, 'vecchia', parametri: minimi());
     final nuovo = creato.keyring.conNuovaPassword(
       sodium,
@@ -91,34 +104,27 @@ void main() {
       throwsA(isA<PasswordErrataException>()),
     );
     final daPassword = nuovo.apriConPassword(sodium, 'nuova');
-    final daRecovery = nuovo.apriConRecoveryKey(sodium, creato.recoveryKey);
+    final daSecretKey = nuovo.apriConSecretKey(sodium, creato.secretKey);
     addTearDown(daPassword.dispose);
-    addTearDown(daRecovery.dispose);
+    addTearDown(daSecretKey.dispose);
     expect(daPassword, equals(creato.dek));
-    expect(daRecovery, equals(creato.dek));
+    expect(daSecretKey, equals(creato.dek));
   });
 
-  test('nuova Recovery Key: la vecchia smette di funzionare', () {
+  test('nuova Secret Key: la vecchia smette di funzionare', () {
     final creato = Keyring.crea(sodium, 'giusta', parametri: minimi());
-    final rinnovato = creato.keyring.conNuovaRecoveryKey(sodium, creato.dek);
+    final rinnovato = creato.keyring.conNuovaSecretKey(sodium, creato.dek);
 
     expect(
-      () => rinnovato.keyring.apriConRecoveryKey(sodium, creato.recoveryKey),
-      throwsA(isA<RecoveryKeyNonValidaException>()),
+      () => rinnovato.keyring.apriConSecretKey(sodium, creato.secretKey),
+      throwsA(isA<SecretKeyNonValidaException>()),
     );
-    final dek = rinnovato.keyring.apriConRecoveryKey(
-      sodium,
-      rinnovato.recoveryKey,
-    );
+    final dek = rinnovato.keyring.apriConSecretKey(sodium, rinnovato.secretKey);
     addTearDown(dek.dispose);
     expect(dek, equals(creato.dek));
   });
 
   group('manomissioni del file', () {
-    Map<String, Object?> json(Keyring k) =>
-        jsonDecode(utf8.decode(k.serializza())) as Map<String, Object?>;
-    Uint8List byte(Map<String, Object?> j) => utf8.encode(jsonEncode(j));
-
     test('parametri Argon2 abbassati sotto il minimo: rifiutati', () {
       final j = json(
         Keyring.crea(sodium, 'giusta', parametri: minimi()).keyring,
@@ -141,6 +147,21 @@ void main() {
       expect(
         () => Keyring.deserializza(byte(j)).apriConPassword(sodium, 'giusta'),
         throwsA(isA<PasswordErrataException>()),
+      );
+    });
+
+    test('ID archivio cambiato: non apre', () {
+      final creato = Keyring.crea(sodium, 'giusta', parametri: minimi());
+      final j = json(creato.keyring)..['id'] = 'GF-0000-0000';
+      final alterato = Keyring.deserializza(byte(j));
+
+      expect(
+        () => alterato.apriConPassword(sodium, 'giusta'),
+        throwsA(isA<PasswordErrataException>()),
+      );
+      expect(
+        () => alterato.apriConSecretKey(sodium, creato.secretKey),
+        throwsA(isA<SecretKeyNonValidaException>()),
       );
     });
 

@@ -37,13 +37,22 @@ void main() {
     await sessione.avvia();
     expect(sessione.fase, FaseSessione.primoAvvio);
 
-    // Primo avvio: nulla su disco finché la Recovery Key non è verificata.
-    final parole = await sessione.preparaNuovoArchivio('Password-Lunga-1');
-    expect(parole, hasLength(24));
+    // Primo avvio: nulla su disco finché la Secret Key non è verificata.
+    final creata = await sessione.preparaNuovoArchivio('Password-Lunga-1');
+    expect(creata.idArchivio, startsWith('GF-'));
+    expect(creata.secretKey, startsWith('GF1-'));
     expect(await DepositoLocale(cartella).esisteKeyring(), isFalse);
+
+    expect(sessione.verificaSecretKey(creata.secretKey.toLowerCase()), isTrue);
+    expect(
+      () => sessione.verificaSecretKey('niente'),
+      throwsA(isA<SecretKeyNonValidaException>()),
+    );
 
     await sessione.confermaNuovoArchivio();
     expect(sessione.fase, FaseSessione.sbloccata);
+    expect(sessione.idArchivio, creata.idArchivio);
+    expect(sessione.avviso, 'Archivio creato');
     expect(
       await sessione.archivio.select(sessione.archivio.definizioniTipo).get(),
       isNotEmpty,
@@ -62,14 +71,19 @@ void main() {
     );
     await riavvio.sblocca('Password-Lunga-1');
     expect(riavvio.fase, FaseSessione.sbloccata);
+    expect(riavvio.avviso, 'Archivio sbloccato');
+    expect(riavvio.idArchivio, creata.idArchivio);
     await riavvio.blocca();
 
-    // Password dimenticata: Recovery Key + nuova password.
+    // Password dimenticata: Secret Key (anche il file intero) + nuova password.
     await expectLater(
-      riavvio.recupera('abaco abaco', 'Nuova-Password-2'),
-      throwsA(isA<RecoveryKeyNonValidaException>()),
+      riavvio.recupera('GF1-sbagliata', 'Nuova-Password-2'),
+      throwsA(isA<SecretKeyNonValidaException>()),
     );
-    await riavvio.recupera(parole.join(' '), 'Nuova-Password-2');
+    await riavvio.recupera(
+      'ID archivio: ${creata.idArchivio}\nSecret Key:  ${creata.secretKey}\n',
+      'Nuova-Password-2',
+    );
     expect(riavvio.fase, FaseSessione.sbloccata);
     await riavvio.blocca();
 

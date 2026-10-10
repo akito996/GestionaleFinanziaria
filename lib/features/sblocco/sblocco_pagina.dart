@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/crypto/eccezioni.dart';
 import '../../core/sessione.dart';
+import '../comuni/campo_secret_key.dart';
+import '../comuni/errori.dart';
 import '../comuni/nuova_password.dart';
 
 /// Archivio bloccato: si apre con la password principale.
@@ -27,7 +29,11 @@ class _SbloccoPaginaState extends State<SbloccoPagina> {
   }
 
   Future<void> _sblocca() async {
-    if (_password.text.isEmpty || _occupato) {
+    if (_occupato) {
+      return;
+    }
+    if (_password.text.isEmpty) {
+      setState(() => _errore = 'Scrivi la password principale.');
       return;
     }
     setState(() {
@@ -42,6 +48,11 @@ class _SbloccoPaginaState extends State<SbloccoPagina> {
           _errore = e.messaggio;
           _occupato = false;
         });
+      }
+    } catch (e, stack) {
+      if (mounted) {
+        setState(() => _occupato = false);
+        await mostraErroreImprevisto(context, e, stack);
       }
     }
   }
@@ -77,7 +88,7 @@ class _SbloccoPaginaState extends State<SbloccoPagina> {
         ),
         const SizedBox(height: 24),
         if (_occupato)
-          const Center(child: CircularProgressIndicator())
+          const InCorso(testo: 'Sto aprendo l\'archivio…')
         else
           FilledButton(onPressed: _sblocca, child: const Text('Sblocca')),
         const SizedBox(height: 8),
@@ -96,7 +107,7 @@ class _SbloccoPaginaState extends State<SbloccoPagina> {
   }
 }
 
-/// Password dimenticata: si apre con la Recovery Key e si sceglie una nuova password.
+/// Password dimenticata, in due passi: 1) Secret Key (file o incolla) 2) nuova password.
 class RecuperoPagina extends StatefulWidget {
   const RecuperoPagina({super.key, required this.sessione});
 
@@ -108,15 +119,17 @@ class RecuperoPagina extends StatefulWidget {
 
 class _RecuperoPaginaState extends State<RecuperoPagina> {
   final _form = GlobalKey<FormState>();
-  final _parole = TextEditingController();
+  final _secretKey = TextEditingController();
   final _password = TextEditingController();
   final _conferma = TextEditingController();
+  bool _secretKeyValida = false;
+  bool _passoPassword = false;
   bool _occupato = false;
-  String? _errore;
+  String? _erroreSecretKey;
 
   @override
   void dispose() {
-    _parole.dispose();
+    _secretKey.dispose();
     _password.dispose();
     _conferma.dispose();
     super.dispose();
@@ -126,75 +139,96 @@ class _RecuperoPaginaState extends State<RecuperoPagina> {
     if (!_form.currentState!.validate()) {
       return;
     }
-    setState(() {
-      _occupato = true;
-      _errore = null;
-    });
+    setState(() => _occupato = true);
     try {
-      await widget.sessione.recupera(_parole.text, _password.text);
+      await widget.sessione.recupera(_secretKey.text, _password.text);
+      _secretKey.clear();
       if (mounted) {
         Navigator.of(context).pop();
       }
     } on CryptoException catch (e) {
+      // Secret Key di un altro archivio: si torna al primo passo.
       if (mounted) {
         setState(() {
-          _errore = e.messaggio;
+          _erroreSecretKey = e.messaggio;
+          _passoPassword = false;
           _occupato = false;
         });
+      }
+    } catch (e, stack) {
+      if (mounted) {
+        setState(() => _occupato = false);
+        await mostraErroreImprevisto(context, e, stack);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final testo = Theme.of(context).textTheme.bodyLarge;
     return PaginaCentrata(
-      appBar: AppBar(title: const Text('Recupera con la Recovery Key')),
-      children: [
-        Text(
-          'Scrivi le 24 parole della Recovery Key, nell\'ordine, separate da spazi '
-          '(bastano le prime 4 lettere). Poi scegli una nuova password.',
-          style: Theme.of(context).textTheme.bodyLarge,
+      appBar: AppBar(
+        title: Text(
+          _passoPassword ? 'Nuova password (2 di 2)' : 'Secret Key (1 di 2)',
         ),
-        const SizedBox(height: 16),
-        Form(
-          key: _form,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                controller: _parole,
-                minLines: 3,
-                maxLines: 6,
-                autocorrect: false,
-                enableSuggestions: false,
-                decoration: InputDecoration(
-                  labelText: 'Le 24 parole',
-                  errorText: _errore,
-                  errorMaxLines: 3,
-                  alignLabelWithHint: true,
-                ),
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Inserisci le parole della Recovery Key.'
-                    : null,
+        leading: BackButton(
+          onPressed: _occupato
+              ? null
+              : _passoPassword
+              ? () => setState(() => _passoPassword = false)
+              : () => Navigator.of(context).pop(),
+        ),
+      ),
+      children: _passoPassword
+          ? [
+              Text(
+                'Secret Key valida. Ora scegli una nuova password principale.',
+                style: testo,
               ),
               const SizedBox(height: 24),
-              CampiNuovaPassword(
-                password: _password,
-                conferma: _conferma,
-                etichetta: 'Nuova password principale',
+              Form(
+                key: _form,
+                child: AutofillGroup(
+                  child: CampiNuovaPassword(
+                    password: _password,
+                    conferma: _conferma,
+                    etichetta: 'Nuova password principale',
+                    onInvio: _occupato ? null : _recupera,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              if (_occupato)
+                const InCorso(testo: 'Sto recuperando l\'archivio…')
+              else
+                FilledButton(
+                  onPressed: _recupera,
+                  child: const Text('Recupera l\'archivio'),
+                ),
+            ]
+          : [
+              Text(
+                'Scegli il file della Secret Key che hai salvato, '
+                'oppure incolla la Secret Key.',
+                style: testo,
+              ),
+              const SizedBox(height: 16),
+              CampoSecretKey(
+                controller: _secretKey,
+                errore: _erroreSecretKey,
+                onValidita: (valida) => setState(() {
+                  _secretKeyValida = valida;
+                  _erroreSecretKey = null;
+                }),
+              ),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: _secretKeyValida
+                    ? () => setState(() => _passoPassword = true)
+                    : null,
+                child: const Text('Continua'),
               ),
             ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        if (_occupato)
-          const Center(child: CircularProgressIndicator())
-        else
-          FilledButton(
-            onPressed: _recupera,
-            child: const Text('Recupera l\'archivio'),
-          ),
-      ],
     );
   }
 }

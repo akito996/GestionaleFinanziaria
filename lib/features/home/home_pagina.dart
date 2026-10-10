@@ -5,37 +5,78 @@ import '../../core/sessione.dart';
 
 /// Schermata principale (provvisoria): conferma che l'archivio cifrato è aperto.
 /// Portafogli e movimenti arrivano nel prossimo passo.
-class HomePagina extends StatelessWidget {
+class HomePagina extends StatefulWidget {
   const HomePagina({super.key, required this.sessione});
 
   final Sessione sessione;
 
   @override
+  State<HomePagina> createState() => _HomePaginaState();
+}
+
+class _HomePaginaState extends State<HomePagina> {
+  late final Future<List<DefinizioneTipo>> _tipi;
+
+  @override
+  void initState() {
+    super.initState();
+    final archivio = widget.sessione.archivio;
+    _tipi = archivio.select(archivio.definizioniTipo).get();
+
+    // Conferma visibile dell'apertura ("Archivio sbloccato", "Archivio creato", ...).
+    final avviso = widget.sessione.avviso;
+    widget.sessione.avviso = null;
+    if (avviso != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+            ..clearSnackBars()
+            ..showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.lock_open, color: Colors.white),
+                    const SizedBox(width: 12),
+                    Text(avviso),
+                  ],
+                ),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+        }
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final archivio = sessione.archivio;
     return Scaffold(
       appBar: AppBar(
         title: const Text('GestionaleFinanziaria'),
         actions: [
           IconButton(
-            tooltip: 'Blocca',
-            icon: const Icon(Icons.lock),
-            onPressed: sessione.blocca,
+            tooltip: 'Archivio aperto: tocca per bloccarlo',
+            icon: const Icon(Icons.lock_open),
+            onPressed: () {
+              ScaffoldMessenger.of(context).clearSnackBars();
+              widget.sessione.blocca();
+            },
           ),
         ],
       ),
       body: FutureBuilder<List<DefinizioneTipo>>(
-        future: archivio.select(archivio.definizioniTipo).get(),
+        future: _tipi,
         builder: (context, snapshot) {
           final tipi = snapshot.data ?? const [];
           return ListView(
             padding: const EdgeInsets.all(24),
             children: [
-              const ListTile(
-                leading: Icon(Icons.verified_user),
-                title: Text('Archivio aperto'),
+              ListTile(
+                leading: const Icon(Icons.lock_open),
+                title: const Text('Archivio aperto'),
                 subtitle: Text(
-                  'I dati sono cifrati con SQLCipher sul dispositivo.',
+                  'ID ${widget.sessione.idArchivio ?? ''} · '
+                  'dati cifrati con SQLCipher sul dispositivo',
                 ),
               ),
               const Divider(),

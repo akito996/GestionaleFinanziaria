@@ -38,7 +38,7 @@ abstract interface class SyncBackend {
 
   Future<void> scollega();
 
-  /// `keyring.bin`: chiave dei dati avvolta da password e Recovery Key. `null` se non esiste.
+  /// `keyring.bin`: chiave dei dati avvolta da password e Secret Key. `null` se non esiste.
   Future<Uint8List?> leggiKeyring();
 
   Future<void> scriviKeyring(Uint8List datiCifrati);

@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "io.github.akito996" "\0"
-            VALUE "FileDescription", "gestionale_finanziaria" "\0"
+            VALUE "FileDescription", "GestionaleFinanziaria - finanza personale privacy-first" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "gestionale_finanziaria" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 io.github.akito996. All rights reserved." "\0"
-            VALUE "OriginalFilename", "gestionale_finanziaria.exe" "\0"
-            VALUE "ProductName", "gestionale_finanziaria" "\0"
+            VALUE "InternalName", "GestionaleFinanziaria" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 akito996 - Licenza GNU AGPL-3.0" "\0"
+            VALUE "OriginalFilename", "GestionaleFinanziaria.exe" "\0"
+            VALUE "ProductName", "GestionaleFinanziaria" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
