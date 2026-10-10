@@ -55,9 +55,8 @@ jobs:
         run: |
           motivo="$(grep -v -E '^\s*$' "$RUNNER_TEMP/test.log" | grep -E -B2 -A20 'EXCEPTION CAUGHT|Expected:|\[E\]' | head -80)"
           motivo="${motivo//'%'/'%25'}"
-          motivo="${motivo//$'
-'/'%0A'}"
-          motivo="${motivo//$''/}"
+          motivo="${motivo//$'\n'/'%0A'}"
+          motivo="${motivo//$'\r'/}"
           echo "::error title=Test::${motivo}"
 
   # App Windows da scaricare e provare (Actions -> esecuzione -> Artifacts).
