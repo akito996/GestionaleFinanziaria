@@ -7,16 +7,44 @@ import 'features/primo_avvio/primo_avvio_pagina.dart';
 import 'features/sblocco/sblocco_pagina.dart';
 
 /// Radice dell'app: tema, lingua italiana e schermata in base allo stato della [sessione].
-class GestionaleApp extends StatelessWidget {
+class GestionaleApp extends StatefulWidget {
   const GestionaleApp({super.key, required this.sessione});
 
   final Sessione sessione;
 
+  @override
+  State<GestionaleApp> createState() => _GestionaleAppState();
+}
+
+class _GestionaleAppState extends State<GestionaleApp> {
   static const _colore = Color(0xFF1B6E5A);
+  final _navigatore = GlobalKey<NavigatorState>();
+
+  @override
+  void initState() {
+    super.initState();
+    widget.sessione.addListener(_alCambioFase);
+  }
+
+  @override
+  void dispose() {
+    widget.sessione.removeListener(_alCambioFase);
+    super.dispose();
+  }
+
+  /// Archivio bloccato: si chiudono tutte le pagine aperte sopra la principale
+  /// (dettagli, moduli), così nessun dato resta visibile sopra lo sblocco.
+  void _alCambioFase() {
+    if (widget.sessione.fase != FaseSessione.sbloccata) {
+      _navigatore.currentState?.popUntil((rotta) => rotta.isFirst);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final sessione = widget.sessione;
     return MaterialApp(
+      navigatorKey: _navigatore,
       title: 'GestionaleFinanziaria',
       debugShowCheckedModeBanner: false,
       locale: const Locale('it', 'IT'),

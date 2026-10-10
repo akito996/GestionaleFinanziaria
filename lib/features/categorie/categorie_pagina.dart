@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/db/archivio.dart';
 import '../../core/db/contabilita.dart';
 import '../../core/sessione.dart';
+import '../comuni/dialogo_testo.dart';
 import '../comuni/navigazione.dart';
 import 'scelta_categoria.dart';
 
@@ -17,36 +18,12 @@ class CategoriePagina extends StatelessWidget {
     BuildContext context, {
     required String titolo,
     String iniziale = '',
-  }) {
-    final testo = TextEditingController(text: iniziale);
-    return showDialog<String>(
-      context: context,
-      builder: (context) {
-        void conferma() {
-          if (testo.text.trim().isNotEmpty) {
-            Navigator.of(context).pop(testo.text.trim());
-          }
-        }
-
-        return AlertDialog(
-          title: Text(titolo),
-          content: TextField(
-            controller: testo,
-            autofocus: true,
-            onSubmitted: (_) => conferma(),
-            decoration: const InputDecoration(labelText: 'Nome'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Annulla'),
-            ),
-            FilledButton(onPressed: conferma, child: const Text('Salva')),
-          ],
-        );
-      },
-    ).whenComplete(testo.dispose);
-  }
+  }) => chiediTesto(
+    context,
+    titolo: titolo,
+    etichetta: 'Nome',
+    iniziale: iniziale,
+  );
 
   Future<void> _nuova(BuildContext context, {Categoria? padre}) async {
     final nome = await _chiediNome(

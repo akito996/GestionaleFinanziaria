@@ -10,6 +10,7 @@ import 'db/contabilita.dart';
 import 'db/costo_vita.dart';
 import 'db/deposito_locale.dart';
 import 'db/pianificatore.dart';
+import 'db/prestiti.dart';
 
 enum FaseSessione { caricamento, primoAvvio, bloccata, sbloccata }
 
@@ -55,6 +56,11 @@ class Sessione extends ChangeNotifier {
 
   /// Carte di credito: disponibile solo nella fase [FaseSessione.sbloccata].
   CarteCreditoServizio get carte => _carte!;
+
+  PrestitiServizio? _prestiti;
+
+  /// Prestiti e rate: disponibile solo nella fase [FaseSessione.sbloccata].
+  PrestitiServizio get prestiti => _prestiti!;
 
   SecureKey? _dek;
 
@@ -169,6 +175,7 @@ class Sessione extends ChangeNotifier {
     _costoVita = null;
     _pianificatore = null;
     _carte = null;
+    _prestiti = null;
     _archivio = null;
     _dek = null;
     await archivio?.close();
@@ -195,6 +202,11 @@ class Sessione extends ChangeNotifier {
       _contabilita = await Contabilita.apri(archivio);
       _pianificatore = Pianificatore(archivio, _contabilita!.orologio);
       _carte = CarteCreditoServizio(
+        archivio,
+        _contabilita!.orologio,
+        _pianificatore!,
+      );
+      _prestiti = PrestitiServizio(
         archivio,
         _contabilita!.orologio,
         _pianificatore!,

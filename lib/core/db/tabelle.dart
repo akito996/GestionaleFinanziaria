@@ -209,6 +209,47 @@ class CarteCredito extends Table with ColonneSincronizzate {
   BoolColumn get archiviata => boolean().withDefault(const Constant(false))();
 }
 
+/// Prestito, mutuo o acquisto a rate: le rate diventano pagamenti programmati
+/// (origine `prestito`) e si registrano da sole nel giorno previsto.
+@DataClassName('Prestito')
+class Prestiti extends Table with ColonneSincronizzate {
+  TextColumn get nome => text().withLength(min: 1, max: 100)();
+
+  /// Vedi [TipoPrestito].
+  TextColumn get tipo => text()();
+  TextColumn get finanziatore => text().withDefault(const Constant(''))();
+
+  /// Capitale finanziato, in unità minime.
+  IntColumn get capitaleMinimo => integer()();
+  IntColumn get numeroRate => integer()();
+  IntColumn get importoRataMinimo => integer()();
+
+  /// Tassi in punti base (1% = 100), facoltativi.
+  IntColumn get tanPuntiBase => integer().nullable()();
+  IntColumn get taegPuntiBase => integer().nullable()();
+
+  /// AAAA-MM-GG della prima rata.
+  TextColumn get primaRata => text().withLength(min: 10, max: 10)();
+  TextColumn get frequenza => text().withDefault(const Constant('mensile'))();
+
+  /// Conto da cui escono le rate (senza: solo promemoria).
+  TextColumn get portafoglioId =>
+      text().nullable().references(Portafogli, #id)();
+  TextColumn get categoriaId => text().nullable().references(Categorie, #id)();
+  TextColumn get valuta =>
+      text().withLength(min: 3, max: 10).withDefault(const Constant('EUR'))();
+  TextColumn get note => text().withDefault(const Constant(''))();
+  BoolColumn get archiviato => boolean().withDefault(const Constant(false))();
+}
+
+/// Valori ammessi per [Prestiti.tipo].
+abstract final class TipoPrestito {
+  static const mutuo = 'mutuo';
+  static const prestito = 'prestito';
+  static const rate = 'rate';
+  static const privato = 'privato';
+}
+
 /// Valori ammessi per [Pianificazioni.origine].
 abstract final class OriginePianificazione {
   static const costoVita = 'costo_vita';

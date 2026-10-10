@@ -24,7 +24,7 @@ IconData iconaEffetto(String? effetto) => switch (effetto) {
   _ => Icons.swap_horiz,
 };
 
-/// "Oggi", "Ieri" oppure la data breve in italiano.
+/// "Oggi", "Ieri" oppure la data breve in italiano (con l'anno se diverso).
 String dataLeggibile(BuildContext context, DateTime data) {
   final oggi = DateUtils.dateOnly(DateTime.now());
   final giorno = DateUtils.dateOnly(data);
@@ -34,7 +34,9 @@ String dataLeggibile(BuildContext context, DateTime data) {
   if (giorno == oggi.subtract(const Duration(days: 1))) {
     return 'Ieri';
   }
-  return MaterialLocalizations.of(context).formatMediumDate(giorno);
+  final breve = MaterialLocalizations.of(context).formatMediumDate(giorno);
+  // L'anno si mostra solo se non è quello in corso ("sab 5 dic 2030").
+  return giorno.year == oggi.year ? breve : '$breve ${giorno.year}';
 }
 
 /// Una riga dell'elenco movimenti. Tocco = modifica; menu = modifica / elimina

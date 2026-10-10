@@ -13,6 +13,7 @@ IconData iconaCategoria(String? chiave) => switch (chiave) {
   'svago' => Icons.celebration_outlined,
   'persona' => Icons.person_outline,
   'tasse' => Icons.account_balance_outlined,
+  'finanziamenti' => Icons.request_quote_outlined,
   'entrate' => Icons.savings_outlined,
   _ => Icons.label_outline,
 };

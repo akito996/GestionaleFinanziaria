@@ -12,6 +12,10 @@ import 'tabelle.dart';
 
 part 'archivio.g.dart';
 
+/// Categoria delle rate di prestiti e mutui.
+const categoriaFinanziamenti = 'Finanziamenti';
+const sottocategorieFinanziamenti = ['Mutuo', 'Prestiti', 'Pagamenti a rate'];
+
 /// Nome del tipo di portafoglio delle carte di credito.
 const tipoCartaDiCredito = 'Carta di credito';
 
@@ -29,6 +33,7 @@ const categorieProposte = [
   ('Svago', 'svago', ['Viaggi', 'Hobby', 'Regali']),
   ('Persona', 'persona', ['Abbigliamento', 'Cura personale', 'Istruzione']),
   ('Tasse e assicurazioni', 'tasse', ['Tasse', 'Assicurazioni']),
+  (categoriaFinanziamenti, 'finanziamenti', sottocategorieFinanziamenti),
   ('Entrate', 'entrate', ['Stipendio', 'Rimborsi', 'Altre entrate']),
 ];
 
@@ -46,6 +51,7 @@ const categorieProposte = [
     VariazioniMese,
     Pianificazioni,
     CarteCredito,
+    Prestiti,
     Impostazioni,
   ],
 )
@@ -101,7 +107,7 @@ class Archivio extends _$Archivio {
   Archivio.conEsecutore(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -133,6 +139,11 @@ class Archivio extends _$Archivio {
       if (da < 4) {
         await m.createTable(carteCredito);
         await _tipoCartaDiCredito();
+      }
+      // v5: prestiti e rate, categoria "Finanziamenti".
+      if (da < 5) {
+        await m.createTable(prestiti);
+        await _categoriaFinanziamenti();
       }
     },
     beforeOpen: (_) async {
@@ -192,6 +203,43 @@ class Archivio extends _$Archivio {
         ordine: const Value(10),
       ),
     );
+  }
+
+  /// Categoria "Finanziamenti" (dalla v5) per chi ha già le categorie.
+  Future<void> _categoriaFinanziamenti() async {
+    final esistente =
+        await (select(categorie)..where(
+              (c) => c.nome.equals(categoriaFinanziamenti) & c.padreId.isNull(),
+            ))
+            .getSingleOrNull();
+    if (esistente != null) {
+      return;
+    }
+    final padre = nuovoId();
+    await batch((b) {
+      b.insert(
+        categorie,
+        CategorieCompanion.insert(
+          id: padre,
+          aggiornatoIl: '0',
+          nome: categoriaFinanziamenti,
+          icona: const Value('finanziamenti'),
+          ordine: const Value(8),
+        ),
+      );
+      for (final (i, nome) in sottocategorieFinanziamenti.indexed) {
+        b.insert(
+          categorie,
+          CategorieCompanion.insert(
+            id: nuovoId(),
+            aggiornatoIl: '0',
+            nome: nome,
+            padreId: Value(padre),
+            ordine: Value(i),
+          ),
+        );
+      }
+    });
   }
 
   /// Categorie proposte al primo avvio (modificabili, eliminabili, ampliabili).
