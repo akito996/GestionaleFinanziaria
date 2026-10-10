@@ -3394,6 +3394,1445 @@ class MovimentiEtichetteCompanion extends UpdateCompanion<MovimentoEtichetta> {
   }
 }
 
+class $VociCostoTable extends VociCosto
+    with TableInfo<$VociCostoTable, VoceCosto> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VociCostoTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _aggiornatoIlMeta = const VerificationMeta(
+    'aggiornatoIl',
+  );
+  @override
+  late final GeneratedColumn<String> aggiornatoIl = GeneratedColumn<String>(
+    'aggiornato_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eliminatoMeta = const VerificationMeta(
+    'eliminato',
+  );
+  @override
+  late final GeneratedColumn<bool> eliminato = GeneratedColumn<bool>(
+    'eliminato',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("eliminato" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _nomeMeta = const VerificationMeta('nome');
+  @override
+  late final GeneratedColumn<String> nome = GeneratedColumn<String>(
+    'nome',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 100,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tipoMeta = const VerificationMeta('tipo');
+  @override
+  late final GeneratedColumn<String> tipo = GeneratedColumn<String>(
+    'tipo',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _categoriaIdMeta = const VerificationMeta(
+    'categoriaId',
+  );
+  @override
+  late final GeneratedColumn<String> categoriaId = GeneratedColumn<String>(
+    'categoria_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES categorie (id)',
+    ),
+  );
+  static const VerificationMeta _valutaMeta = const VerificationMeta('valuta');
+  @override
+  late final GeneratedColumn<String> valuta = GeneratedColumn<String>(
+    'valuta',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 3,
+      maxTextLength: 10,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('EUR'),
+  );
+  static const VerificationMeta _archiviataMeta = const VerificationMeta(
+    'archiviata',
+  );
+  @override
+  late final GeneratedColumn<bool> archiviata = GeneratedColumn<bool>(
+    'archiviata',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("archiviata" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _ordineMeta = const VerificationMeta('ordine');
+  @override
+  late final GeneratedColumn<int> ordine = GeneratedColumn<int>(
+    'ordine',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    aggiornatoIl,
+    eliminato,
+    nome,
+    tipo,
+    categoriaId,
+    valuta,
+    archiviata,
+    ordine,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'voci_costo';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<VoceCosto> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('aggiornato_il')) {
+      context.handle(
+        _aggiornatoIlMeta,
+        aggiornatoIl.isAcceptableOrUnknown(
+          data['aggiornato_il']!,
+          _aggiornatoIlMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_aggiornatoIlMeta);
+    }
+    if (data.containsKey('eliminato')) {
+      context.handle(
+        _eliminatoMeta,
+        eliminato.isAcceptableOrUnknown(data['eliminato']!, _eliminatoMeta),
+      );
+    }
+    if (data.containsKey('nome')) {
+      context.handle(
+        _nomeMeta,
+        nome.isAcceptableOrUnknown(data['nome']!, _nomeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nomeMeta);
+    }
+    if (data.containsKey('tipo')) {
+      context.handle(
+        _tipoMeta,
+        tipo.isAcceptableOrUnknown(data['tipo']!, _tipoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tipoMeta);
+    }
+    if (data.containsKey('categoria_id')) {
+      context.handle(
+        _categoriaIdMeta,
+        categoriaId.isAcceptableOrUnknown(
+          data['categoria_id']!,
+          _categoriaIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('valuta')) {
+      context.handle(
+        _valutaMeta,
+        valuta.isAcceptableOrUnknown(data['valuta']!, _valutaMeta),
+      );
+    }
+    if (data.containsKey('archiviata')) {
+      context.handle(
+        _archiviataMeta,
+        archiviata.isAcceptableOrUnknown(data['archiviata']!, _archiviataMeta),
+      );
+    }
+    if (data.containsKey('ordine')) {
+      context.handle(
+        _ordineMeta,
+        ordine.isAcceptableOrUnknown(data['ordine']!, _ordineMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  VoceCosto map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return VoceCosto(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      aggiornatoIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}aggiornato_il'],
+      )!,
+      eliminato: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}eliminato'],
+      )!,
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      )!,
+      tipo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tipo'],
+      )!,
+      categoriaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}categoria_id'],
+      ),
+      valuta: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}valuta'],
+      )!,
+      archiviata: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}archiviata'],
+      )!,
+      ordine: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ordine'],
+      )!,
+    );
+  }
+
+  @override
+  $VociCostoTable createAlias(String alias) {
+    return $VociCostoTable(attachedDatabase, alias);
+  }
+}
+
+class VoceCosto extends DataClass implements Insertable<VoceCosto> {
+  final String id;
+  final String aggiornatoIl;
+  final bool eliminato;
+  final String nome;
+
+  /// Vedi [TipoVoce].
+  final String tipo;
+
+  /// Per le variabili: le spese reali sono i movimenti di questa categoria
+  /// (e delle sue sottocategorie).
+  final String? categoriaId;
+  final String valuta;
+  final bool archiviata;
+  final int ordine;
+  const VoceCosto({
+    required this.id,
+    required this.aggiornatoIl,
+    required this.eliminato,
+    required this.nome,
+    required this.tipo,
+    this.categoriaId,
+    required this.valuta,
+    required this.archiviata,
+    required this.ordine,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['aggiornato_il'] = Variable<String>(aggiornatoIl);
+    map['eliminato'] = Variable<bool>(eliminato);
+    map['nome'] = Variable<String>(nome);
+    map['tipo'] = Variable<String>(tipo);
+    if (!nullToAbsent || categoriaId != null) {
+      map['categoria_id'] = Variable<String>(categoriaId);
+    }
+    map['valuta'] = Variable<String>(valuta);
+    map['archiviata'] = Variable<bool>(archiviata);
+    map['ordine'] = Variable<int>(ordine);
+    return map;
+  }
+
+  VociCostoCompanion toCompanion(bool nullToAbsent) {
+    return VociCostoCompanion(
+      id: Value(id),
+      aggiornatoIl: Value(aggiornatoIl),
+      eliminato: Value(eliminato),
+      nome: Value(nome),
+      tipo: Value(tipo),
+      categoriaId: categoriaId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(categoriaId),
+      valuta: Value(valuta),
+      archiviata: Value(archiviata),
+      ordine: Value(ordine),
+    );
+  }
+
+  factory VoceCosto.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return VoceCosto(
+      id: serializer.fromJson<String>(json['id']),
+      aggiornatoIl: serializer.fromJson<String>(json['aggiornatoIl']),
+      eliminato: serializer.fromJson<bool>(json['eliminato']),
+      nome: serializer.fromJson<String>(json['nome']),
+      tipo: serializer.fromJson<String>(json['tipo']),
+      categoriaId: serializer.fromJson<String?>(json['categoriaId']),
+      valuta: serializer.fromJson<String>(json['valuta']),
+      archiviata: serializer.fromJson<bool>(json['archiviata']),
+      ordine: serializer.fromJson<int>(json['ordine']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'aggiornatoIl': serializer.toJson<String>(aggiornatoIl),
+      'eliminato': serializer.toJson<bool>(eliminato),
+      'nome': serializer.toJson<String>(nome),
+      'tipo': serializer.toJson<String>(tipo),
+      'categoriaId': serializer.toJson<String?>(categoriaId),
+      'valuta': serializer.toJson<String>(valuta),
+      'archiviata': serializer.toJson<bool>(archiviata),
+      'ordine': serializer.toJson<int>(ordine),
+    };
+  }
+
+  VoceCosto copyWith({
+    String? id,
+    String? aggiornatoIl,
+    bool? eliminato,
+    String? nome,
+    String? tipo,
+    Value<String?> categoriaId = const Value.absent(),
+    String? valuta,
+    bool? archiviata,
+    int? ordine,
+  }) => VoceCosto(
+    id: id ?? this.id,
+    aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+    eliminato: eliminato ?? this.eliminato,
+    nome: nome ?? this.nome,
+    tipo: tipo ?? this.tipo,
+    categoriaId: categoriaId.present ? categoriaId.value : this.categoriaId,
+    valuta: valuta ?? this.valuta,
+    archiviata: archiviata ?? this.archiviata,
+    ordine: ordine ?? this.ordine,
+  );
+  VoceCosto copyWithCompanion(VociCostoCompanion data) {
+    return VoceCosto(
+      id: data.id.present ? data.id.value : this.id,
+      aggiornatoIl: data.aggiornatoIl.present
+          ? data.aggiornatoIl.value
+          : this.aggiornatoIl,
+      eliminato: data.eliminato.present ? data.eliminato.value : this.eliminato,
+      nome: data.nome.present ? data.nome.value : this.nome,
+      tipo: data.tipo.present ? data.tipo.value : this.tipo,
+      categoriaId: data.categoriaId.present
+          ? data.categoriaId.value
+          : this.categoriaId,
+      valuta: data.valuta.present ? data.valuta.value : this.valuta,
+      archiviata: data.archiviata.present
+          ? data.archiviata.value
+          : this.archiviata,
+      ordine: data.ordine.present ? data.ordine.value : this.ordine,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VoceCosto(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('nome: $nome, ')
+          ..write('tipo: $tipo, ')
+          ..write('categoriaId: $categoriaId, ')
+          ..write('valuta: $valuta, ')
+          ..write('archiviata: $archiviata, ')
+          ..write('ordine: $ordine')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    aggiornatoIl,
+    eliminato,
+    nome,
+    tipo,
+    categoriaId,
+    valuta,
+    archiviata,
+    ordine,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is VoceCosto &&
+          other.id == this.id &&
+          other.aggiornatoIl == this.aggiornatoIl &&
+          other.eliminato == this.eliminato &&
+          other.nome == this.nome &&
+          other.tipo == this.tipo &&
+          other.categoriaId == this.categoriaId &&
+          other.valuta == this.valuta &&
+          other.archiviata == this.archiviata &&
+          other.ordine == this.ordine);
+}
+
+class VociCostoCompanion extends UpdateCompanion<VoceCosto> {
+  final Value<String> id;
+  final Value<String> aggiornatoIl;
+  final Value<bool> eliminato;
+  final Value<String> nome;
+  final Value<String> tipo;
+  final Value<String?> categoriaId;
+  final Value<String> valuta;
+  final Value<bool> archiviata;
+  final Value<int> ordine;
+  final Value<int> rowid;
+  const VociCostoCompanion({
+    this.id = const Value.absent(),
+    this.aggiornatoIl = const Value.absent(),
+    this.eliminato = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.tipo = const Value.absent(),
+    this.categoriaId = const Value.absent(),
+    this.valuta = const Value.absent(),
+    this.archiviata = const Value.absent(),
+    this.ordine = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  VociCostoCompanion.insert({
+    required String id,
+    required String aggiornatoIl,
+    this.eliminato = const Value.absent(),
+    required String nome,
+    required String tipo,
+    this.categoriaId = const Value.absent(),
+    this.valuta = const Value.absent(),
+    this.archiviata = const Value.absent(),
+    this.ordine = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       aggiornatoIl = Value(aggiornatoIl),
+       nome = Value(nome),
+       tipo = Value(tipo);
+  static Insertable<VoceCosto> custom({
+    Expression<String>? id,
+    Expression<String>? aggiornatoIl,
+    Expression<bool>? eliminato,
+    Expression<String>? nome,
+    Expression<String>? tipo,
+    Expression<String>? categoriaId,
+    Expression<String>? valuta,
+    Expression<bool>? archiviata,
+    Expression<int>? ordine,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (aggiornatoIl != null) 'aggiornato_il': aggiornatoIl,
+      if (eliminato != null) 'eliminato': eliminato,
+      if (nome != null) 'nome': nome,
+      if (tipo != null) 'tipo': tipo,
+      if (categoriaId != null) 'categoria_id': categoriaId,
+      if (valuta != null) 'valuta': valuta,
+      if (archiviata != null) 'archiviata': archiviata,
+      if (ordine != null) 'ordine': ordine,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  VociCostoCompanion copyWith({
+    Value<String>? id,
+    Value<String>? aggiornatoIl,
+    Value<bool>? eliminato,
+    Value<String>? nome,
+    Value<String>? tipo,
+    Value<String?>? categoriaId,
+    Value<String>? valuta,
+    Value<bool>? archiviata,
+    Value<int>? ordine,
+    Value<int>? rowid,
+  }) {
+    return VociCostoCompanion(
+      id: id ?? this.id,
+      aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+      eliminato: eliminato ?? this.eliminato,
+      nome: nome ?? this.nome,
+      tipo: tipo ?? this.tipo,
+      categoriaId: categoriaId ?? this.categoriaId,
+      valuta: valuta ?? this.valuta,
+      archiviata: archiviata ?? this.archiviata,
+      ordine: ordine ?? this.ordine,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (aggiornatoIl.present) {
+      map['aggiornato_il'] = Variable<String>(aggiornatoIl.value);
+    }
+    if (eliminato.present) {
+      map['eliminato'] = Variable<bool>(eliminato.value);
+    }
+    if (nome.present) {
+      map['nome'] = Variable<String>(nome.value);
+    }
+    if (tipo.present) {
+      map['tipo'] = Variable<String>(tipo.value);
+    }
+    if (categoriaId.present) {
+      map['categoria_id'] = Variable<String>(categoriaId.value);
+    }
+    if (valuta.present) {
+      map['valuta'] = Variable<String>(valuta.value);
+    }
+    if (archiviata.present) {
+      map['archiviata'] = Variable<bool>(archiviata.value);
+    }
+    if (ordine.present) {
+      map['ordine'] = Variable<int>(ordine.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VociCostoCompanion(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('nome: $nome, ')
+          ..write('tipo: $tipo, ')
+          ..write('categoriaId: $categoriaId, ')
+          ..write('valuta: $valuta, ')
+          ..write('archiviata: $archiviata, ')
+          ..write('ordine: $ordine, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ImportiVoceTable extends ImportiVoce
+    with TableInfo<$ImportiVoceTable, ImportoVoce> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ImportiVoceTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _aggiornatoIlMeta = const VerificationMeta(
+    'aggiornatoIl',
+  );
+  @override
+  late final GeneratedColumn<String> aggiornatoIl = GeneratedColumn<String>(
+    'aggiornato_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eliminatoMeta = const VerificationMeta(
+    'eliminato',
+  );
+  @override
+  late final GeneratedColumn<bool> eliminato = GeneratedColumn<bool>(
+    'eliminato',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("eliminato" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _voceIdMeta = const VerificationMeta('voceId');
+  @override
+  late final GeneratedColumn<String> voceId = GeneratedColumn<String>(
+    'voce_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES voci_costo (id)',
+    ),
+  );
+  static const VerificationMeta _importoMinimoMeta = const VerificationMeta(
+    'importoMinimo',
+  );
+  @override
+  late final GeneratedColumn<int> importoMinimo = GeneratedColumn<int>(
+    'importo_minimo',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _validoDalMeta = const VerificationMeta(
+    'validoDal',
+  );
+  @override
+  late final GeneratedColumn<String> validoDal = GeneratedColumn<String>(
+    'valido_dal',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 10,
+      maxTextLength: 10,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    aggiornatoIl,
+    eliminato,
+    voceId,
+    importoMinimo,
+    validoDal,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'importi_voce';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ImportoVoce> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('aggiornato_il')) {
+      context.handle(
+        _aggiornatoIlMeta,
+        aggiornatoIl.isAcceptableOrUnknown(
+          data['aggiornato_il']!,
+          _aggiornatoIlMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_aggiornatoIlMeta);
+    }
+    if (data.containsKey('eliminato')) {
+      context.handle(
+        _eliminatoMeta,
+        eliminato.isAcceptableOrUnknown(data['eliminato']!, _eliminatoMeta),
+      );
+    }
+    if (data.containsKey('voce_id')) {
+      context.handle(
+        _voceIdMeta,
+        voceId.isAcceptableOrUnknown(data['voce_id']!, _voceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_voceIdMeta);
+    }
+    if (data.containsKey('importo_minimo')) {
+      context.handle(
+        _importoMinimoMeta,
+        importoMinimo.isAcceptableOrUnknown(
+          data['importo_minimo']!,
+          _importoMinimoMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_importoMinimoMeta);
+    }
+    if (data.containsKey('valido_dal')) {
+      context.handle(
+        _validoDalMeta,
+        validoDal.isAcceptableOrUnknown(data['valido_dal']!, _validoDalMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_validoDalMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ImportoVoce map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ImportoVoce(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      aggiornatoIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}aggiornato_il'],
+      )!,
+      eliminato: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}eliminato'],
+      )!,
+      voceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}voce_id'],
+      )!,
+      importoMinimo: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}importo_minimo'],
+      )!,
+      validoDal: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}valido_dal'],
+      )!,
+    );
+  }
+
+  @override
+  $ImportiVoceTable createAlias(String alias) {
+    return $ImportiVoceTable(attachedDatabase, alias);
+  }
+}
+
+class ImportoVoce extends DataClass implements Insertable<ImportoVoce> {
+  final String id;
+  final String aggiornatoIl;
+  final bool eliminato;
+  final String voceId;
+  final int importoMinimo;
+
+  /// AAAA-MM-GG: da questo giorno vale il nuovo importo.
+  final String validoDal;
+  const ImportoVoce({
+    required this.id,
+    required this.aggiornatoIl,
+    required this.eliminato,
+    required this.voceId,
+    required this.importoMinimo,
+    required this.validoDal,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['aggiornato_il'] = Variable<String>(aggiornatoIl);
+    map['eliminato'] = Variable<bool>(eliminato);
+    map['voce_id'] = Variable<String>(voceId);
+    map['importo_minimo'] = Variable<int>(importoMinimo);
+    map['valido_dal'] = Variable<String>(validoDal);
+    return map;
+  }
+
+  ImportiVoceCompanion toCompanion(bool nullToAbsent) {
+    return ImportiVoceCompanion(
+      id: Value(id),
+      aggiornatoIl: Value(aggiornatoIl),
+      eliminato: Value(eliminato),
+      voceId: Value(voceId),
+      importoMinimo: Value(importoMinimo),
+      validoDal: Value(validoDal),
+    );
+  }
+
+  factory ImportoVoce.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ImportoVoce(
+      id: serializer.fromJson<String>(json['id']),
+      aggiornatoIl: serializer.fromJson<String>(json['aggiornatoIl']),
+      eliminato: serializer.fromJson<bool>(json['eliminato']),
+      voceId: serializer.fromJson<String>(json['voceId']),
+      importoMinimo: serializer.fromJson<int>(json['importoMinimo']),
+      validoDal: serializer.fromJson<String>(json['validoDal']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'aggiornatoIl': serializer.toJson<String>(aggiornatoIl),
+      'eliminato': serializer.toJson<bool>(eliminato),
+      'voceId': serializer.toJson<String>(voceId),
+      'importoMinimo': serializer.toJson<int>(importoMinimo),
+      'validoDal': serializer.toJson<String>(validoDal),
+    };
+  }
+
+  ImportoVoce copyWith({
+    String? id,
+    String? aggiornatoIl,
+    bool? eliminato,
+    String? voceId,
+    int? importoMinimo,
+    String? validoDal,
+  }) => ImportoVoce(
+    id: id ?? this.id,
+    aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+    eliminato: eliminato ?? this.eliminato,
+    voceId: voceId ?? this.voceId,
+    importoMinimo: importoMinimo ?? this.importoMinimo,
+    validoDal: validoDal ?? this.validoDal,
+  );
+  ImportoVoce copyWithCompanion(ImportiVoceCompanion data) {
+    return ImportoVoce(
+      id: data.id.present ? data.id.value : this.id,
+      aggiornatoIl: data.aggiornatoIl.present
+          ? data.aggiornatoIl.value
+          : this.aggiornatoIl,
+      eliminato: data.eliminato.present ? data.eliminato.value : this.eliminato,
+      voceId: data.voceId.present ? data.voceId.value : this.voceId,
+      importoMinimo: data.importoMinimo.present
+          ? data.importoMinimo.value
+          : this.importoMinimo,
+      validoDal: data.validoDal.present ? data.validoDal.value : this.validoDal,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImportoVoce(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('voceId: $voceId, ')
+          ..write('importoMinimo: $importoMinimo, ')
+          ..write('validoDal: $validoDal')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    aggiornatoIl,
+    eliminato,
+    voceId,
+    importoMinimo,
+    validoDal,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ImportoVoce &&
+          other.id == this.id &&
+          other.aggiornatoIl == this.aggiornatoIl &&
+          other.eliminato == this.eliminato &&
+          other.voceId == this.voceId &&
+          other.importoMinimo == this.importoMinimo &&
+          other.validoDal == this.validoDal);
+}
+
+class ImportiVoceCompanion extends UpdateCompanion<ImportoVoce> {
+  final Value<String> id;
+  final Value<String> aggiornatoIl;
+  final Value<bool> eliminato;
+  final Value<String> voceId;
+  final Value<int> importoMinimo;
+  final Value<String> validoDal;
+  final Value<int> rowid;
+  const ImportiVoceCompanion({
+    this.id = const Value.absent(),
+    this.aggiornatoIl = const Value.absent(),
+    this.eliminato = const Value.absent(),
+    this.voceId = const Value.absent(),
+    this.importoMinimo = const Value.absent(),
+    this.validoDal = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ImportiVoceCompanion.insert({
+    required String id,
+    required String aggiornatoIl,
+    this.eliminato = const Value.absent(),
+    required String voceId,
+    required int importoMinimo,
+    required String validoDal,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       aggiornatoIl = Value(aggiornatoIl),
+       voceId = Value(voceId),
+       importoMinimo = Value(importoMinimo),
+       validoDal = Value(validoDal);
+  static Insertable<ImportoVoce> custom({
+    Expression<String>? id,
+    Expression<String>? aggiornatoIl,
+    Expression<bool>? eliminato,
+    Expression<String>? voceId,
+    Expression<int>? importoMinimo,
+    Expression<String>? validoDal,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (aggiornatoIl != null) 'aggiornato_il': aggiornatoIl,
+      if (eliminato != null) 'eliminato': eliminato,
+      if (voceId != null) 'voce_id': voceId,
+      if (importoMinimo != null) 'importo_minimo': importoMinimo,
+      if (validoDal != null) 'valido_dal': validoDal,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ImportiVoceCompanion copyWith({
+    Value<String>? id,
+    Value<String>? aggiornatoIl,
+    Value<bool>? eliminato,
+    Value<String>? voceId,
+    Value<int>? importoMinimo,
+    Value<String>? validoDal,
+    Value<int>? rowid,
+  }) {
+    return ImportiVoceCompanion(
+      id: id ?? this.id,
+      aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+      eliminato: eliminato ?? this.eliminato,
+      voceId: voceId ?? this.voceId,
+      importoMinimo: importoMinimo ?? this.importoMinimo,
+      validoDal: validoDal ?? this.validoDal,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (aggiornatoIl.present) {
+      map['aggiornato_il'] = Variable<String>(aggiornatoIl.value);
+    }
+    if (eliminato.present) {
+      map['eliminato'] = Variable<bool>(eliminato.value);
+    }
+    if (voceId.present) {
+      map['voce_id'] = Variable<String>(voceId.value);
+    }
+    if (importoMinimo.present) {
+      map['importo_minimo'] = Variable<int>(importoMinimo.value);
+    }
+    if (validoDal.present) {
+      map['valido_dal'] = Variable<String>(validoDal.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImportiVoceCompanion(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('voceId: $voceId, ')
+          ..write('importoMinimo: $importoMinimo, ')
+          ..write('validoDal: $validoDal, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $VariazioniMeseTable extends VariazioniMese
+    with TableInfo<$VariazioniMeseTable, VariazioneMese> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VariazioniMeseTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _aggiornatoIlMeta = const VerificationMeta(
+    'aggiornatoIl',
+  );
+  @override
+  late final GeneratedColumn<String> aggiornatoIl = GeneratedColumn<String>(
+    'aggiornato_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eliminatoMeta = const VerificationMeta(
+    'eliminato',
+  );
+  @override
+  late final GeneratedColumn<bool> eliminato = GeneratedColumn<bool>(
+    'eliminato',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("eliminato" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _voceIdMeta = const VerificationMeta('voceId');
+  @override
+  late final GeneratedColumn<String> voceId = GeneratedColumn<String>(
+    'voce_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES voci_costo (id)',
+    ),
+  );
+  static const VerificationMeta _meseMeta = const VerificationMeta('mese');
+  @override
+  late final GeneratedColumn<String> mese = GeneratedColumn<String>(
+    'mese',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 7,
+      maxTextLength: 7,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _importoMinimoMeta = const VerificationMeta(
+    'importoMinimo',
+  );
+  @override
+  late final GeneratedColumn<int> importoMinimo = GeneratedColumn<int>(
+    'importo_minimo',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    aggiornatoIl,
+    eliminato,
+    voceId,
+    mese,
+    importoMinimo,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'variazioni_mese';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<VariazioneMese> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('aggiornato_il')) {
+      context.handle(
+        _aggiornatoIlMeta,
+        aggiornatoIl.isAcceptableOrUnknown(
+          data['aggiornato_il']!,
+          _aggiornatoIlMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_aggiornatoIlMeta);
+    }
+    if (data.containsKey('eliminato')) {
+      context.handle(
+        _eliminatoMeta,
+        eliminato.isAcceptableOrUnknown(data['eliminato']!, _eliminatoMeta),
+      );
+    }
+    if (data.containsKey('voce_id')) {
+      context.handle(
+        _voceIdMeta,
+        voceId.isAcceptableOrUnknown(data['voce_id']!, _voceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_voceIdMeta);
+    }
+    if (data.containsKey('mese')) {
+      context.handle(
+        _meseMeta,
+        mese.isAcceptableOrUnknown(data['mese']!, _meseMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_meseMeta);
+    }
+    if (data.containsKey('importo_minimo')) {
+      context.handle(
+        _importoMinimoMeta,
+        importoMinimo.isAcceptableOrUnknown(
+          data['importo_minimo']!,
+          _importoMinimoMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_importoMinimoMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  VariazioneMese map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return VariazioneMese(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      aggiornatoIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}aggiornato_il'],
+      )!,
+      eliminato: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}eliminato'],
+      )!,
+      voceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}voce_id'],
+      )!,
+      mese: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mese'],
+      )!,
+      importoMinimo: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}importo_minimo'],
+      )!,
+    );
+  }
+
+  @override
+  $VariazioniMeseTable createAlias(String alias) {
+    return $VariazioniMeseTable(attachedDatabase, alias);
+  }
+}
+
+class VariazioneMese extends DataClass implements Insertable<VariazioneMese> {
+  final String id;
+  final String aggiornatoIl;
+  final bool eliminato;
+  final String voceId;
+
+  /// AAAA-MM.
+  final String mese;
+  final int importoMinimo;
+  const VariazioneMese({
+    required this.id,
+    required this.aggiornatoIl,
+    required this.eliminato,
+    required this.voceId,
+    required this.mese,
+    required this.importoMinimo,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['aggiornato_il'] = Variable<String>(aggiornatoIl);
+    map['eliminato'] = Variable<bool>(eliminato);
+    map['voce_id'] = Variable<String>(voceId);
+    map['mese'] = Variable<String>(mese);
+    map['importo_minimo'] = Variable<int>(importoMinimo);
+    return map;
+  }
+
+  VariazioniMeseCompanion toCompanion(bool nullToAbsent) {
+    return VariazioniMeseCompanion(
+      id: Value(id),
+      aggiornatoIl: Value(aggiornatoIl),
+      eliminato: Value(eliminato),
+      voceId: Value(voceId),
+      mese: Value(mese),
+      importoMinimo: Value(importoMinimo),
+    );
+  }
+
+  factory VariazioneMese.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return VariazioneMese(
+      id: serializer.fromJson<String>(json['id']),
+      aggiornatoIl: serializer.fromJson<String>(json['aggiornatoIl']),
+      eliminato: serializer.fromJson<bool>(json['eliminato']),
+      voceId: serializer.fromJson<String>(json['voceId']),
+      mese: serializer.fromJson<String>(json['mese']),
+      importoMinimo: serializer.fromJson<int>(json['importoMinimo']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'aggiornatoIl': serializer.toJson<String>(aggiornatoIl),
+      'eliminato': serializer.toJson<bool>(eliminato),
+      'voceId': serializer.toJson<String>(voceId),
+      'mese': serializer.toJson<String>(mese),
+      'importoMinimo': serializer.toJson<int>(importoMinimo),
+    };
+  }
+
+  VariazioneMese copyWith({
+    String? id,
+    String? aggiornatoIl,
+    bool? eliminato,
+    String? voceId,
+    String? mese,
+    int? importoMinimo,
+  }) => VariazioneMese(
+    id: id ?? this.id,
+    aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+    eliminato: eliminato ?? this.eliminato,
+    voceId: voceId ?? this.voceId,
+    mese: mese ?? this.mese,
+    importoMinimo: importoMinimo ?? this.importoMinimo,
+  );
+  VariazioneMese copyWithCompanion(VariazioniMeseCompanion data) {
+    return VariazioneMese(
+      id: data.id.present ? data.id.value : this.id,
+      aggiornatoIl: data.aggiornatoIl.present
+          ? data.aggiornatoIl.value
+          : this.aggiornatoIl,
+      eliminato: data.eliminato.present ? data.eliminato.value : this.eliminato,
+      voceId: data.voceId.present ? data.voceId.value : this.voceId,
+      mese: data.mese.present ? data.mese.value : this.mese,
+      importoMinimo: data.importoMinimo.present
+          ? data.importoMinimo.value
+          : this.importoMinimo,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VariazioneMese(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('voceId: $voceId, ')
+          ..write('mese: $mese, ')
+          ..write('importoMinimo: $importoMinimo')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, aggiornatoIl, eliminato, voceId, mese, importoMinimo);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is VariazioneMese &&
+          other.id == this.id &&
+          other.aggiornatoIl == this.aggiornatoIl &&
+          other.eliminato == this.eliminato &&
+          other.voceId == this.voceId &&
+          other.mese == this.mese &&
+          other.importoMinimo == this.importoMinimo);
+}
+
+class VariazioniMeseCompanion extends UpdateCompanion<VariazioneMese> {
+  final Value<String> id;
+  final Value<String> aggiornatoIl;
+  final Value<bool> eliminato;
+  final Value<String> voceId;
+  final Value<String> mese;
+  final Value<int> importoMinimo;
+  final Value<int> rowid;
+  const VariazioniMeseCompanion({
+    this.id = const Value.absent(),
+    this.aggiornatoIl = const Value.absent(),
+    this.eliminato = const Value.absent(),
+    this.voceId = const Value.absent(),
+    this.mese = const Value.absent(),
+    this.importoMinimo = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  VariazioniMeseCompanion.insert({
+    required String id,
+    required String aggiornatoIl,
+    this.eliminato = const Value.absent(),
+    required String voceId,
+    required String mese,
+    required int importoMinimo,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       aggiornatoIl = Value(aggiornatoIl),
+       voceId = Value(voceId),
+       mese = Value(mese),
+       importoMinimo = Value(importoMinimo);
+  static Insertable<VariazioneMese> custom({
+    Expression<String>? id,
+    Expression<String>? aggiornatoIl,
+    Expression<bool>? eliminato,
+    Expression<String>? voceId,
+    Expression<String>? mese,
+    Expression<int>? importoMinimo,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (aggiornatoIl != null) 'aggiornato_il': aggiornatoIl,
+      if (eliminato != null) 'eliminato': eliminato,
+      if (voceId != null) 'voce_id': voceId,
+      if (mese != null) 'mese': mese,
+      if (importoMinimo != null) 'importo_minimo': importoMinimo,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  VariazioniMeseCompanion copyWith({
+    Value<String>? id,
+    Value<String>? aggiornatoIl,
+    Value<bool>? eliminato,
+    Value<String>? voceId,
+    Value<String>? mese,
+    Value<int>? importoMinimo,
+    Value<int>? rowid,
+  }) {
+    return VariazioniMeseCompanion(
+      id: id ?? this.id,
+      aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+      eliminato: eliminato ?? this.eliminato,
+      voceId: voceId ?? this.voceId,
+      mese: mese ?? this.mese,
+      importoMinimo: importoMinimo ?? this.importoMinimo,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (aggiornatoIl.present) {
+      map['aggiornato_il'] = Variable<String>(aggiornatoIl.value);
+    }
+    if (eliminato.present) {
+      map['eliminato'] = Variable<bool>(eliminato.value);
+    }
+    if (voceId.present) {
+      map['voce_id'] = Variable<String>(voceId.value);
+    }
+    if (mese.present) {
+      map['mese'] = Variable<String>(mese.value);
+    }
+    if (importoMinimo.present) {
+      map['importo_minimo'] = Variable<int>(importoMinimo.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VariazioniMeseCompanion(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('voceId: $voceId, ')
+          ..write('mese: $mese, ')
+          ..write('importoMinimo: $importoMinimo, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ImpostazioniTable extends Impostazioni
     with TableInfo<$ImpostazioniTable, Impostazione> {
   @override
@@ -3616,6 +5055,9 @@ abstract class _$Archivio extends GeneratedDatabase {
   late final $EtichetteTable etichette = $EtichetteTable(this);
   late final $MovimentiEtichetteTable movimentiEtichette =
       $MovimentiEtichetteTable(this);
+  late final $VociCostoTable vociCosto = $VociCostoTable(this);
+  late final $ImportiVoceTable importiVoce = $ImportiVoceTable(this);
+  late final $VariazioniMeseTable variazioniMese = $VariazioniMeseTable(this);
   late final $ImpostazioniTable impostazioni = $ImpostazioniTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -3628,6 +5070,9 @@ abstract class _$Archivio extends GeneratedDatabase {
     movimenti,
     etichette,
     movimentiEtichette,
+    vociCosto,
+    importiVoce,
+    variazioniMese,
     impostazioni,
   ];
 }
@@ -4826,6 +6271,24 @@ final class $$CategorieTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$VociCostoTable, List<VoceCosto>>
+  _vociCostoRefsTable(_$Archivio db) => MultiTypedResultKey.fromTable(
+    db.vociCosto,
+    aliasName: 'categorie__id__voci_costo__categoria_id',
+  );
+
+  $$VociCostoTableProcessedTableManager get vociCostoRefs {
+    final manager = $$VociCostoTableTableManager(
+      $_db,
+      $_db.vociCosto,
+    ).filter((f) => f.categoriaId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_vociCostoRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$CategorieTableFilterComposer
@@ -4916,6 +6379,31 @@ class $$CategorieTableFilterComposer
           }) => $$MovimentiTableFilterComposer(
             $db: $db,
             $table: $db.movimenti,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> vociCostoRefs(
+    Expression<bool> Function($$VociCostoTableFilterComposer f) f,
+  ) {
+    final $$VociCostoTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.vociCosto,
+      getReferencedColumn: (t) => t.categoriaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VociCostoTableFilterComposer(
+            $db: $db,
+            $table: $db.vociCosto,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -5083,6 +6571,31 @@ class $$CategorieTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> vociCostoRefs<T extends Object>(
+    Expression<T> Function($$VociCostoTableAnnotationComposer a) f,
+  ) {
+    final $$VociCostoTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.vociCosto,
+      getReferencedColumn: (t) => t.categoriaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VociCostoTableAnnotationComposer(
+            $db: $db,
+            $table: $db.vociCosto,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$CategorieTableTableManager
@@ -5098,7 +6611,11 @@ class $$CategorieTableTableManager
           $$CategorieTableUpdateCompanionBuilder,
           (Categoria, $$CategorieTableReferences),
           Categoria,
-          PrefetchHooks Function({bool padreId, bool movimentiRefs})
+          PrefetchHooks Function({
+            bool padreId,
+            bool movimentiRefs,
+            bool vociCostoRefs,
+          })
         > {
   $$CategorieTableTableManager(_$Archivio db, $CategorieTable table)
     : super(
@@ -5167,67 +6684,96 @@ class $$CategorieTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({padreId = false, movimentiRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (movimentiRefs) db.movimenti],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (padreId) {
-                      state = state.withJoin(
-                        currentTable: table,
-                        currentColumn: table.padreId,
-                        referencedTable: $$CategorieTableReferences
-                            ._padreIdTable(db),
-                        referencedColumn: $$CategorieTableReferences
-                            ._padreIdTable(db)
-                            .id,
-                      ) as T;
-                    }
+          prefetchHooksCallback:
+              ({
+                padreId = false,
+                movimentiRefs = false,
+                vociCostoRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (movimentiRefs) db.movimenti,
+                    if (vociCostoRefs) db.vociCosto,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (padreId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.padreId,
+                            referencedTable: $$CategorieTableReferences
+                                ._padreIdTable(db),
+                            referencedColumn: $$CategorieTableReferences
+                                ._padreIdTable(db)
+                                .id,
+                          ) as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (movimentiRefs)
+                        await $_getPrefetchedData<
+                          Categoria,
+                          $CategorieTable,
+                          Movimento
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CategorieTableReferences
+                              ._movimentiRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CategorieTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).movimentiRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.categoriaId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (vociCostoRefs)
+                        await $_getPrefetchedData<
+                          Categoria,
+                          $CategorieTable,
+                          VoceCosto
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CategorieTableReferences
+                              ._vociCostoRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CategorieTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).vociCostoRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.categoriaId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (movimentiRefs)
-                    await $_getPrefetchedData<
-                      Categoria,
-                      $CategorieTable,
-                      Movimento
-                    >(
-                      currentTable: table,
-                      referencedTable: $$CategorieTableReferences
-                          ._movimentiRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$CategorieTableReferences(
-                            db,
-                            table,
-                            p0,
-                          ).movimentiRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where(
-                            (e) => e.categoriaId == item.id,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -5244,7 +6790,11 @@ typedef $$CategorieTableProcessedTableManager =
       $$CategorieTableUpdateCompanionBuilder,
       (Categoria, $$CategorieTableReferences),
       Categoria,
-      PrefetchHooks Function({bool padreId, bool movimentiRefs})
+      PrefetchHooks Function({
+        bool padreId,
+        bool movimentiRefs,
+        bool vociCostoRefs,
+      })
     >;
 typedef $$MovimentiTableCreateCompanionBuilder = MovimentiCompanion Function({
   required String id,
@@ -6895,6 +8445,1274 @@ typedef $$MovimentiEtichetteTableProcessedTableManager =
       MovimentoEtichetta,
       PrefetchHooks Function({bool movimentoId, bool etichettaId})
     >;
+typedef $$VociCostoTableCreateCompanionBuilder = VociCostoCompanion Function({
+  required String id,
+  required String aggiornatoIl,
+  Value<bool> eliminato,
+  required String nome,
+  required String tipo,
+  Value<String?> categoriaId,
+  Value<String> valuta,
+  Value<bool> archiviata,
+  Value<int> ordine,
+  Value<int> rowid,
+});
+typedef $$VociCostoTableUpdateCompanionBuilder = VociCostoCompanion Function({
+  Value<String> id,
+  Value<String> aggiornatoIl,
+  Value<bool> eliminato,
+  Value<String> nome,
+  Value<String> tipo,
+  Value<String?> categoriaId,
+  Value<String> valuta,
+  Value<bool> archiviata,
+  Value<int> ordine,
+  Value<int> rowid,
+});
+
+final class $$VociCostoTableReferences
+    extends BaseReferences<_$Archivio, $VociCostoTable, VoceCosto> {
+  $$VociCostoTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $CategorieTable _categoriaIdTable(_$Archivio db) =>
+      db.categorie.createAlias('voci_costo__categoria_id__categorie__id');
+
+  $$CategorieTableProcessedTableManager? get categoriaId {
+    final $_column = $_itemColumn<String>('categoria_id');
+    if ($_column == null) return null;
+    final manager = $$CategorieTableTableManager(
+      $_db,
+      $_db.categorie,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_categoriaIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$ImportiVoceTable, List<ImportoVoce>>
+  _importiVoceRefsTable(_$Archivio db) => MultiTypedResultKey.fromTable(
+    db.importiVoce,
+    aliasName: 'voci_costo__id__importi_voce__voce_id',
+  );
+
+  $$ImportiVoceTableProcessedTableManager get importiVoceRefs {
+    final manager = $$ImportiVoceTableTableManager(
+      $_db,
+      $_db.importiVoce,
+    ).filter((f) => f.voceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_importiVoceRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$VariazioniMeseTable, List<VariazioneMese>>
+  _variazioniMeseRefsTable(_$Archivio db) => MultiTypedResultKey.fromTable(
+    db.variazioniMese,
+    aliasName: 'voci_costo__id__variazioni_mese__voce_id',
+  );
+
+  $$VariazioniMeseTableProcessedTableManager get variazioniMeseRefs {
+    final manager = $$VariazioniMeseTableTableManager(
+      $_db,
+      $_db.variazioniMese,
+    ).filter((f) => f.voceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_variazioniMeseRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$VociCostoTableFilterComposer
+    extends Composer<_$Archivio, $VociCostoTable> {
+  $$VociCostoTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tipo => $composableBuilder(
+    column: $table.tipo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get valuta => $composableBuilder(
+    column: $table.valuta,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get archiviata => $composableBuilder(
+    column: $table.archiviata,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get ordine => $composableBuilder(
+    column: $table.ordine,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$CategorieTableFilterComposer get categoriaId {
+    final $$CategorieTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoriaId,
+      referencedTable: $db.categorie,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategorieTableFilterComposer(
+            $db: $db,
+            $table: $db.categorie,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> importiVoceRefs(
+    Expression<bool> Function($$ImportiVoceTableFilterComposer f) f,
+  ) {
+    final $$ImportiVoceTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.importiVoce,
+      getReferencedColumn: (t) => t.voceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ImportiVoceTableFilterComposer(
+            $db: $db,
+            $table: $db.importiVoce,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> variazioniMeseRefs(
+    Expression<bool> Function($$VariazioniMeseTableFilterComposer f) f,
+  ) {
+    final $$VariazioniMeseTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.variazioniMese,
+      getReferencedColumn: (t) => t.voceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VariazioniMeseTableFilterComposer(
+            $db: $db,
+            $table: $db.variazioniMese,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$VociCostoTableOrderingComposer
+    extends Composer<_$Archivio, $VociCostoTable> {
+  $$VociCostoTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tipo => $composableBuilder(
+    column: $table.tipo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get valuta => $composableBuilder(
+    column: $table.valuta,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get archiviata => $composableBuilder(
+    column: $table.archiviata,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get ordine => $composableBuilder(
+    column: $table.ordine,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$CategorieTableOrderingComposer get categoriaId {
+    final $$CategorieTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoriaId,
+      referencedTable: $db.categorie,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategorieTableOrderingComposer(
+            $db: $db,
+            $table: $db.categorie,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VociCostoTableAnnotationComposer
+    extends Composer<_$Archivio, $VociCostoTable> {
+  $$VociCostoTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get eliminato =>
+      $composableBuilder(column: $table.eliminato, builder: (column) => column);
+
+  GeneratedColumn<String> get nome =>
+      $composableBuilder(column: $table.nome, builder: (column) => column);
+
+  GeneratedColumn<String> get tipo =>
+      $composableBuilder(column: $table.tipo, builder: (column) => column);
+
+  GeneratedColumn<String> get valuta =>
+      $composableBuilder(column: $table.valuta, builder: (column) => column);
+
+  GeneratedColumn<bool> get archiviata => $composableBuilder(
+    column: $table.archiviata,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get ordine =>
+      $composableBuilder(column: $table.ordine, builder: (column) => column);
+
+  $$CategorieTableAnnotationComposer get categoriaId {
+    final $$CategorieTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoriaId,
+      referencedTable: $db.categorie,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategorieTableAnnotationComposer(
+            $db: $db,
+            $table: $db.categorie,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> importiVoceRefs<T extends Object>(
+    Expression<T> Function($$ImportiVoceTableAnnotationComposer a) f,
+  ) {
+    final $$ImportiVoceTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.importiVoce,
+      getReferencedColumn: (t) => t.voceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ImportiVoceTableAnnotationComposer(
+            $db: $db,
+            $table: $db.importiVoce,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> variazioniMeseRefs<T extends Object>(
+    Expression<T> Function($$VariazioniMeseTableAnnotationComposer a) f,
+  ) {
+    final $$VariazioniMeseTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.variazioniMese,
+      getReferencedColumn: (t) => t.voceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VariazioniMeseTableAnnotationComposer(
+            $db: $db,
+            $table: $db.variazioniMese,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$VociCostoTableTableManager
+    extends
+        RootTableManager<
+          _$Archivio,
+          $VociCostoTable,
+          VoceCosto,
+          $$VociCostoTableFilterComposer,
+          $$VociCostoTableOrderingComposer,
+          $$VociCostoTableAnnotationComposer,
+          $$VociCostoTableCreateCompanionBuilder,
+          $$VociCostoTableUpdateCompanionBuilder,
+          (VoceCosto, $$VociCostoTableReferences),
+          VoceCosto,
+          PrefetchHooks Function({
+            bool categoriaId,
+            bool importiVoceRefs,
+            bool variazioniMeseRefs,
+          })
+        > {
+  $$VociCostoTableTableManager(_$Archivio db, $VociCostoTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VociCostoTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VociCostoTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$VociCostoTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> aggiornatoIl = const Value.absent(),
+                Value<bool> eliminato = const Value.absent(),
+                Value<String> nome = const Value.absent(),
+                Value<String> tipo = const Value.absent(),
+                Value<String?> categoriaId = const Value.absent(),
+                Value<String> valuta = const Value.absent(),
+                Value<bool> archiviata = const Value.absent(),
+                Value<int> ordine = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VociCostoCompanion(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                nome: nome,
+                tipo: tipo,
+                categoriaId: categoriaId,
+                valuta: valuta,
+                archiviata: archiviata,
+                ordine: ordine,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String aggiornatoIl,
+                Value<bool> eliminato = const Value.absent(),
+                required String nome,
+                required String tipo,
+                Value<String?> categoriaId = const Value.absent(),
+                Value<String> valuta = const Value.absent(),
+                Value<bool> archiviata = const Value.absent(),
+                Value<int> ordine = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VociCostoCompanion.insert(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                nome: nome,
+                tipo: tipo,
+                categoriaId: categoriaId,
+                valuta: valuta,
+                archiviata: archiviata,
+                ordine: ordine,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$VociCostoTable, VoceCosto>(table),
+                  $$VociCostoTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                categoriaId = false,
+                importiVoceRefs = false,
+                variazioniMeseRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (importiVoceRefs) db.importiVoce,
+                    if (variazioniMeseRefs) db.variazioniMese,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (categoriaId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.categoriaId,
+                            referencedTable: $$VociCostoTableReferences
+                                ._categoriaIdTable(db),
+                            referencedColumn: $$VociCostoTableReferences
+                                ._categoriaIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (importiVoceRefs)
+                        await $_getPrefetchedData<
+                          VoceCosto,
+                          $VociCostoTable,
+                          ImportoVoce
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VociCostoTableReferences
+                              ._importiVoceRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VociCostoTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).importiVoceRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.voceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (variazioniMeseRefs)
+                        await $_getPrefetchedData<
+                          VoceCosto,
+                          $VociCostoTable,
+                          VariazioneMese
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VociCostoTableReferences
+                              ._variazioniMeseRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VociCostoTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).variazioniMeseRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.voceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$VociCostoTableProcessedTableManager =
+    ProcessedTableManager<
+      _$Archivio,
+      $VociCostoTable,
+      VoceCosto,
+      $$VociCostoTableFilterComposer,
+      $$VociCostoTableOrderingComposer,
+      $$VociCostoTableAnnotationComposer,
+      $$VociCostoTableCreateCompanionBuilder,
+      $$VociCostoTableUpdateCompanionBuilder,
+      (VoceCosto, $$VociCostoTableReferences),
+      VoceCosto,
+      PrefetchHooks Function({
+        bool categoriaId,
+        bool importiVoceRefs,
+        bool variazioniMeseRefs,
+      })
+    >;
+typedef $$ImportiVoceTableCreateCompanionBuilder =
+    ImportiVoceCompanion Function({
+      required String id,
+      required String aggiornatoIl,
+      Value<bool> eliminato,
+      required String voceId,
+      required int importoMinimo,
+      required String validoDal,
+      Value<int> rowid,
+    });
+typedef $$ImportiVoceTableUpdateCompanionBuilder =
+    ImportiVoceCompanion Function({
+      Value<String> id,
+      Value<String> aggiornatoIl,
+      Value<bool> eliminato,
+      Value<String> voceId,
+      Value<int> importoMinimo,
+      Value<String> validoDal,
+      Value<int> rowid,
+    });
+
+final class $$ImportiVoceTableReferences
+    extends BaseReferences<_$Archivio, $ImportiVoceTable, ImportoVoce> {
+  $$ImportiVoceTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $VociCostoTable _voceIdTable(_$Archivio db) =>
+      db.vociCosto.createAlias('importi_voce__voce_id__voci_costo__id');
+
+  $$VociCostoTableProcessedTableManager get voceId {
+    final $_column = $_itemColumn<String>('voce_id')!;
+
+    final manager = $$VociCostoTableTableManager(
+      $_db,
+      $_db.vociCosto,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_voceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ImportiVoceTableFilterComposer
+    extends Composer<_$Archivio, $ImportiVoceTable> {
+  $$ImportiVoceTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get importoMinimo => $composableBuilder(
+    column: $table.importoMinimo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get validoDal => $composableBuilder(
+    column: $table.validoDal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$VociCostoTableFilterComposer get voceId {
+    final $$VociCostoTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voceId,
+      referencedTable: $db.vociCosto,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VociCostoTableFilterComposer(
+            $db: $db,
+            $table: $db.vociCosto,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ImportiVoceTableOrderingComposer
+    extends Composer<_$Archivio, $ImportiVoceTable> {
+  $$ImportiVoceTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get importoMinimo => $composableBuilder(
+    column: $table.importoMinimo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get validoDal => $composableBuilder(
+    column: $table.validoDal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$VociCostoTableOrderingComposer get voceId {
+    final $$VociCostoTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voceId,
+      referencedTable: $db.vociCosto,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VociCostoTableOrderingComposer(
+            $db: $db,
+            $table: $db.vociCosto,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ImportiVoceTableAnnotationComposer
+    extends Composer<_$Archivio, $ImportiVoceTable> {
+  $$ImportiVoceTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get eliminato =>
+      $composableBuilder(column: $table.eliminato, builder: (column) => column);
+
+  GeneratedColumn<int> get importoMinimo => $composableBuilder(
+    column: $table.importoMinimo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get validoDal =>
+      $composableBuilder(column: $table.validoDal, builder: (column) => column);
+
+  $$VociCostoTableAnnotationComposer get voceId {
+    final $$VociCostoTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voceId,
+      referencedTable: $db.vociCosto,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VociCostoTableAnnotationComposer(
+            $db: $db,
+            $table: $db.vociCosto,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ImportiVoceTableTableManager
+    extends
+        RootTableManager<
+          _$Archivio,
+          $ImportiVoceTable,
+          ImportoVoce,
+          $$ImportiVoceTableFilterComposer,
+          $$ImportiVoceTableOrderingComposer,
+          $$ImportiVoceTableAnnotationComposer,
+          $$ImportiVoceTableCreateCompanionBuilder,
+          $$ImportiVoceTableUpdateCompanionBuilder,
+          (ImportoVoce, $$ImportiVoceTableReferences),
+          ImportoVoce,
+          PrefetchHooks Function({bool voceId})
+        > {
+  $$ImportiVoceTableTableManager(_$Archivio db, $ImportiVoceTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ImportiVoceTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ImportiVoceTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ImportiVoceTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> aggiornatoIl = const Value.absent(),
+                Value<bool> eliminato = const Value.absent(),
+                Value<String> voceId = const Value.absent(),
+                Value<int> importoMinimo = const Value.absent(),
+                Value<String> validoDal = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ImportiVoceCompanion(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                voceId: voceId,
+                importoMinimo: importoMinimo,
+                validoDal: validoDal,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String aggiornatoIl,
+                Value<bool> eliminato = const Value.absent(),
+                required String voceId,
+                required int importoMinimo,
+                required String validoDal,
+                Value<int> rowid = const Value.absent(),
+              }) => ImportiVoceCompanion.insert(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                voceId: voceId,
+                importoMinimo: importoMinimo,
+                validoDal: validoDal,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ImportiVoceTable, ImportoVoce>(table),
+                  $$ImportiVoceTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({voceId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (voceId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.voceId,
+                        referencedTable: $$ImportiVoceTableReferences
+                            ._voceIdTable(db),
+                        referencedColumn: $$ImportiVoceTableReferences
+                            ._voceIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ImportiVoceTableProcessedTableManager =
+    ProcessedTableManager<
+      _$Archivio,
+      $ImportiVoceTable,
+      ImportoVoce,
+      $$ImportiVoceTableFilterComposer,
+      $$ImportiVoceTableOrderingComposer,
+      $$ImportiVoceTableAnnotationComposer,
+      $$ImportiVoceTableCreateCompanionBuilder,
+      $$ImportiVoceTableUpdateCompanionBuilder,
+      (ImportoVoce, $$ImportiVoceTableReferences),
+      ImportoVoce,
+      PrefetchHooks Function({bool voceId})
+    >;
+typedef $$VariazioniMeseTableCreateCompanionBuilder =
+    VariazioniMeseCompanion Function({
+      required String id,
+      required String aggiornatoIl,
+      Value<bool> eliminato,
+      required String voceId,
+      required String mese,
+      required int importoMinimo,
+      Value<int> rowid,
+    });
+typedef $$VariazioniMeseTableUpdateCompanionBuilder =
+    VariazioniMeseCompanion Function({
+      Value<String> id,
+      Value<String> aggiornatoIl,
+      Value<bool> eliminato,
+      Value<String> voceId,
+      Value<String> mese,
+      Value<int> importoMinimo,
+      Value<int> rowid,
+    });
+
+final class $$VariazioniMeseTableReferences
+    extends BaseReferences<_$Archivio, $VariazioniMeseTable, VariazioneMese> {
+  $$VariazioniMeseTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $VociCostoTable _voceIdTable(_$Archivio db) =>
+      db.vociCosto.createAlias('variazioni_mese__voce_id__voci_costo__id');
+
+  $$VociCostoTableProcessedTableManager get voceId {
+    final $_column = $_itemColumn<String>('voce_id')!;
+
+    final manager = $$VociCostoTableTableManager(
+      $_db,
+      $_db.vociCosto,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_voceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$VariazioniMeseTableFilterComposer
+    extends Composer<_$Archivio, $VariazioniMeseTable> {
+  $$VariazioniMeseTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mese => $composableBuilder(
+    column: $table.mese,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get importoMinimo => $composableBuilder(
+    column: $table.importoMinimo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$VociCostoTableFilterComposer get voceId {
+    final $$VociCostoTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voceId,
+      referencedTable: $db.vociCosto,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VociCostoTableFilterComposer(
+            $db: $db,
+            $table: $db.vociCosto,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VariazioniMeseTableOrderingComposer
+    extends Composer<_$Archivio, $VariazioniMeseTable> {
+  $$VariazioniMeseTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mese => $composableBuilder(
+    column: $table.mese,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get importoMinimo => $composableBuilder(
+    column: $table.importoMinimo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$VociCostoTableOrderingComposer get voceId {
+    final $$VociCostoTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voceId,
+      referencedTable: $db.vociCosto,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VociCostoTableOrderingComposer(
+            $db: $db,
+            $table: $db.vociCosto,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VariazioniMeseTableAnnotationComposer
+    extends Composer<_$Archivio, $VariazioniMeseTable> {
+  $$VariazioniMeseTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get eliminato =>
+      $composableBuilder(column: $table.eliminato, builder: (column) => column);
+
+  GeneratedColumn<String> get mese =>
+      $composableBuilder(column: $table.mese, builder: (column) => column);
+
+  GeneratedColumn<int> get importoMinimo => $composableBuilder(
+    column: $table.importoMinimo,
+    builder: (column) => column,
+  );
+
+  $$VociCostoTableAnnotationComposer get voceId {
+    final $$VociCostoTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voceId,
+      referencedTable: $db.vociCosto,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VociCostoTableAnnotationComposer(
+            $db: $db,
+            $table: $db.vociCosto,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VariazioniMeseTableTableManager
+    extends
+        RootTableManager<
+          _$Archivio,
+          $VariazioniMeseTable,
+          VariazioneMese,
+          $$VariazioniMeseTableFilterComposer,
+          $$VariazioniMeseTableOrderingComposer,
+          $$VariazioniMeseTableAnnotationComposer,
+          $$VariazioniMeseTableCreateCompanionBuilder,
+          $$VariazioniMeseTableUpdateCompanionBuilder,
+          (VariazioneMese, $$VariazioniMeseTableReferences),
+          VariazioneMese,
+          PrefetchHooks Function({bool voceId})
+        > {
+  $$VariazioniMeseTableTableManager(_$Archivio db, $VariazioniMeseTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VariazioniMeseTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VariazioniMeseTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$VariazioniMeseTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> aggiornatoIl = const Value.absent(),
+                Value<bool> eliminato = const Value.absent(),
+                Value<String> voceId = const Value.absent(),
+                Value<String> mese = const Value.absent(),
+                Value<int> importoMinimo = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VariazioniMeseCompanion(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                voceId: voceId,
+                mese: mese,
+                importoMinimo: importoMinimo,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String aggiornatoIl,
+                Value<bool> eliminato = const Value.absent(),
+                required String voceId,
+                required String mese,
+                required int importoMinimo,
+                Value<int> rowid = const Value.absent(),
+              }) => VariazioniMeseCompanion.insert(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                voceId: voceId,
+                mese: mese,
+                importoMinimo: importoMinimo,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$VariazioniMeseTable, VariazioneMese>(table),
+                  $$VariazioniMeseTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({voceId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (voceId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.voceId,
+                        referencedTable: $$VariazioniMeseTableReferences
+                            ._voceIdTable(db),
+                        referencedColumn: $$VariazioniMeseTableReferences
+                            ._voceIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$VariazioniMeseTableProcessedTableManager =
+    ProcessedTableManager<
+      _$Archivio,
+      $VariazioniMeseTable,
+      VariazioneMese,
+      $$VariazioniMeseTableFilterComposer,
+      $$VariazioniMeseTableOrderingComposer,
+      $$VariazioniMeseTableAnnotationComposer,
+      $$VariazioniMeseTableCreateCompanionBuilder,
+      $$VariazioniMeseTableUpdateCompanionBuilder,
+      (VariazioneMese, $$VariazioniMeseTableReferences),
+      VariazioneMese,
+      PrefetchHooks Function({bool voceId})
+    >;
 typedef $$ImpostazioniTableCreateCompanionBuilder =
     ImpostazioniCompanion Function({
       required String chiave,
@@ -7063,6 +9881,12 @@ class $ArchivioManager {
       $$EtichetteTableTableManager(_db, _db.etichette);
   $$MovimentiEtichetteTableTableManager get movimentiEtichette =>
       $$MovimentiEtichetteTableTableManager(_db, _db.movimentiEtichette);
+  $$VociCostoTableTableManager get vociCosto =>
+      $$VociCostoTableTableManager(_db, _db.vociCosto);
+  $$ImportiVoceTableTableManager get importiVoce =>
+      $$ImportiVoceTableTableManager(_db, _db.importiVoce);
+  $$VariazioniMeseTableTableManager get variazioniMese =>
+      $$VariazioniMeseTableTableManager(_db, _db.variazioniMese);
   $$ImpostazioniTableTableManager get impostazioni =>
       $$ImpostazioniTableTableManager(_db, _db.impostazioni);
 }

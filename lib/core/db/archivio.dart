@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:meta/meta.dart' show visibleForTesting;
 import 'package:sodium/sodium.dart';
 import 'package:sqlite3/sqlite3.dart' show Database, sqlite3;
 
@@ -10,6 +11,23 @@ import 'id.dart';
 import 'tabelle.dart';
 
 part 'archivio.g.dart';
+
+/// Categorie iniziali: (nome, icona, sottocategorie).
+const categorieProposte = [
+  (
+    'Casa',
+    'casa',
+    ['Affitto o mutuo', 'Bollette', 'Condominio', 'Manutenzione'],
+  ),
+  ('Alimentari', 'alimentari', ['Spesa', 'Ristoranti e bar']),
+  ('Trasporti', 'trasporti', ['Carburante', 'Mezzi pubblici', 'Auto']),
+  ('Salute', 'salute', ['Farmacia', 'Visite mediche']),
+  ('Abbonamenti', 'abbonamenti', ['Telefono e internet', 'Streaming']),
+  ('Svago', 'svago', ['Viaggi', 'Hobby', 'Regali']),
+  ('Persona', 'persona', ['Abbigliamento', 'Cura personale', 'Istruzione']),
+  ('Tasse e assicurazioni', 'tasse', ['Tasse', 'Assicurazioni']),
+  ('Entrate', 'entrate', ['Stipendio', 'Rimborsi', 'Altre entrate']),
+];
 
 /// Database locale cifrato con SQLCipher (ADR-003).
 @DriftDatabase(
@@ -20,6 +38,9 @@ part 'archivio.g.dart';
     Movimenti,
     Etichette,
     MovimentiEtichette,
+    VociCosto,
+    ImportiVoce,
+    VariazioniMese,
     Impostazioni,
   ],
 )
@@ -70,14 +91,31 @@ class Archivio extends _$Archivio {
   /// Solo per i test: database in memoria, non cifrato.
   Archivio.inMemoria() : super(NativeDatabase.memory());
 
+  /// Solo per i test: database su un esecutore dato (es. test di migrazione).
+  @visibleForTesting
+  Archivio.conEsecutore(super.e);
+
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       await m.createAll();
       await _tipiDiSistema();
+      await _categorieIniziali();
+    },
+    onUpgrade: (m, da, a) async {
+      // v2: categorie iniziali e costo della vita. I dati esistenti restano.
+      if (da < 2) {
+        await m.createTable(vociCosto);
+        await m.createTable(importiVoce);
+        await m.createTable(variazioniMese);
+        final categorieEsistenti = await select(categorie).get();
+        if (categorieEsistenti.isEmpty) {
+          await _categorieIniziali();
+        }
+      }
     },
     beforeOpen: (_) async {
       await customStatement('PRAGMA foreign_keys = ON;');
@@ -110,6 +148,38 @@ class Archivio extends _$Archivio {
             ordine: Value(i),
           ),
         );
+      }
+    });
+  }
+
+  /// Categorie proposte al primo avvio (modificabili, eliminabili, ampliabili).
+  Future<void> _categorieIniziali() async {
+    const orologioIniziale = '0';
+    await batch((b) {
+      for (final (i, (nome, icona, figli)) in categorieProposte.indexed) {
+        final padre = nuovoId();
+        b.insert(
+          categorie,
+          CategorieCompanion.insert(
+            id: padre,
+            aggiornatoIl: orologioIniziale,
+            nome: nome,
+            icona: Value(icona),
+            ordine: Value(i),
+          ),
+        );
+        for (final (j, figlio) in figli.indexed) {
+          b.insert(
+            categorie,
+            CategorieCompanion.insert(
+              id: nuovoId(),
+              aggiornatoIl: orologioIniziale,
+              nome: figlio,
+              padreId: Value(padre),
+              ordine: Value(j),
+            ),
+          );
+        }
       }
     });
   }

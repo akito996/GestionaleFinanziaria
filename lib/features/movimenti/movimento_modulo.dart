@@ -6,6 +6,7 @@ import '../../core/db/contabilita.dart';
 import '../../core/db/tabelle.dart';
 import '../../core/importo.dart';
 import '../../core/sessione.dart';
+import '../categorie/scelta_categoria.dart';
 import '../comuni/errori.dart';
 import 'riga_movimento.dart';
 
@@ -56,6 +57,7 @@ class _MovimentoModuloState extends State<_MovimentoModulo> {
   DefinizioneTipo? _tipo;
   String? _portafoglio;
   String? _destinazione;
+  String? _categoria;
   DateTime _data = DateTime.now();
   bool _salvataggio = false;
 
@@ -84,6 +86,7 @@ class _MovimentoModuloState extends State<_MovimentoModulo> {
         _tipo = tipi.where((t) => t.id == m.tipoId).firstOrNull ?? tipi.first;
         _portafoglio = m.portafoglioId;
         _destinazione = m.portafoglioDestinazioneId;
+        _categoria = m.categoriaId;
         _data = Contabilita.daGiorno(m.data);
         _importo.text = Importo.perModifica(m.importoMinimo);
         _descrizione.text = m.descrizione;
@@ -122,11 +125,15 @@ class _MovimentoModuloState extends State<_MovimentoModulo> {
     setState(() => _salvataggio = true);
     try {
       final destinazione = _trasferimento ? _destinazione : null;
+      if (_trasferimento) {
+        _categoria = null;
+      }
       if (widget.esistente == null) {
         await contabilita.registraMovimento(
           tipoId: _tipo!.id,
           portafoglioId: portafoglio.id,
           destinazioneId: destinazione,
+          categoriaId: _categoria,
           importo: importo,
           valuta: portafoglio.valuta,
           data: _data,
@@ -138,6 +145,7 @@ class _MovimentoModuloState extends State<_MovimentoModulo> {
           tipoId: _tipo!.id,
           portafoglioId: portafoglio.id,
           destinazioneId: destinazione,
+          categoriaId: _categoria,
           importo: importo,
           valuta: portafoglio.valuta,
           data: _data,
@@ -254,6 +262,14 @@ class _MovimentoModuloState extends State<_MovimentoModulo> {
                             // Per ora i trasferimenti sono tra portafogli con la
                             // stessa valuta (il cambio arriverà con i tassi BCE).
                             soloValuta: valuta,
+                          ),
+                        ],
+                        if (!_trasferimento) ...[
+                          const SizedBox(height: 16),
+                          CampoCategoria(
+                            sessione: widget.sessione,
+                            valore: _categoria,
+                            onChanged: (c) => setState(() => _categoria = c),
                           ),
                         ],
                         const SizedBox(height: 16),

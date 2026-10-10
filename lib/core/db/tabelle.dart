@@ -97,6 +97,45 @@ class MovimentiEtichette extends Table with ColonneSincronizzate {
   TextColumn get etichettaId => text().references(Etichette, #id)();
 }
 
+/// Costo della vita: una voce di spesa ricorrente, fissa (affitto, luce, ...) o
+/// variabile con una stima (spesa alimentare, carburante, ...).
+@DataClassName('VoceCosto')
+class VociCosto extends Table with ColonneSincronizzate {
+  TextColumn get nome => text().withLength(min: 1, max: 100)();
+
+  /// Vedi [TipoVoce].
+  TextColumn get tipo => text()();
+
+  /// Per le variabili: le spese reali sono i movimenti di questa categoria
+  /// (e delle sue sottocategorie).
+  TextColumn get categoriaId => text().nullable().references(Categorie, #id)();
+  TextColumn get valuta =>
+      text().withLength(min: 3, max: 10).withDefault(const Constant('EUR'))();
+  BoolColumn get archiviata => boolean().withDefault(const Constant(false))();
+  IntColumn get ordine => integer().withDefault(const Constant(0))();
+}
+
+/// Importo predefinito mensile di una voce, con la data da cui vale.
+/// Ogni modifica aggiunge una riga: lo storico dei mesi passati non cambia.
+@DataClassName('ImportoVoce')
+class ImportiVoce extends Table with ColonneSincronizzate {
+  TextColumn get voceId => text().references(VociCosto, #id)();
+  IntColumn get importoMinimo => integer()();
+
+  /// AAAA-MM-GG: da questo giorno vale il nuovo importo.
+  TextColumn get validoDal => text().withLength(min: 10, max: 10)();
+}
+
+/// Importo diverso solo per un mese (es. bolletta più alta a gennaio).
+@DataClassName('VariazioneMese')
+class VariazioniMese extends Table with ColonneSincronizzate {
+  TextColumn get voceId => text().references(VociCosto, #id)();
+
+  /// AAAA-MM.
+  TextColumn get mese => text().withLength(min: 7, max: 7)();
+  IntColumn get importoMinimo => integer()();
+}
+
 /// Impostazioni locali del dispositivo (non sincronizzate): id dispositivo, contatori, ...
 @DataClassName('Impostazione')
 class Impostazioni extends Table {
@@ -113,6 +152,12 @@ abstract final class AmbitoTipo {
   static const movimento = 'movimento';
   static const finanziamento = 'finanziamento';
   static const raccoltaFondi = 'raccolta_fondi';
+}
+
+/// Valori ammessi per [VociCosto.tipo].
+abstract final class TipoVoce {
+  static const fissa = 'fissa';
+  static const variabile = 'variabile';
 }
 
 /// Valori ammessi per [DefinizioniTipo.effetto] (solo tipi di movimento).

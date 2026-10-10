@@ -106,6 +106,7 @@ class RigaMovimento extends StatelessWidget {
       ),
       title: Text(titolo, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text(
+        '${dettaglio.categoria == null ? '' : '${dettaglio.categoria!.nome} · '}'
         '$portafogli · '
         '${dataLeggibile(context, Contabilita.daGiorno(m.data))}',
         maxLines: 1,

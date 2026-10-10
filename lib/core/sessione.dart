@@ -6,6 +6,7 @@ import 'crypto/operazioni_chiavi.dart';
 import 'crypto/secret_key.dart';
 import 'db/archivio.dart';
 import 'db/contabilita.dart';
+import 'db/costo_vita.dart';
 import 'db/deposito_locale.dart';
 
 enum FaseSessione { caricamento, primoAvvio, bloccata, sbloccata }
@@ -37,6 +38,11 @@ class Sessione extends ChangeNotifier {
 
   /// Portafogli e movimenti: disponibile solo nella fase [FaseSessione.sbloccata].
   Contabilita get contabilita => _contabilita!;
+
+  CostoVita? _costoVita;
+
+  /// Costo della vita: disponibile solo nella fase [FaseSessione.sbloccata].
+  CostoVita get costoVita => _costoVita!;
 
   SecureKey? _dek;
 
@@ -141,6 +147,7 @@ class Sessione extends ChangeNotifier {
 
   Future<void> blocca() async {
     _contabilita = null;
+    _costoVita = null;
     await _archivio?.close();
     _archivio = null;
     _dek?.dispose();
@@ -168,6 +175,7 @@ class Sessione extends ChangeNotifier {
     }
     try {
       _contabilita = await Contabilita.apri(archivio);
+      _costoVita = CostoVita(archivio, _contabilita!.orologio);
     } catch (_) {
       await archivio.close();
       dek.dispose();

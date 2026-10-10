@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/db/contabilita.dart';
+import '../../core/db/costo_vita.dart';
 import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import '../comuni/icone.dart';
+import '../comuni/navigazione.dart';
+import '../costo_vita/costo_vita_pagina.dart';
+import '../costo_vita/grafico_costo_vita.dart';
 import '../movimenti/movimento_modulo.dart';
 import '../movimenti/riga_movimento.dart';
 import '../portafogli/portafoglio_modulo.dart';
@@ -13,9 +17,12 @@ import '../portafogli/portafoglio_pagina.dart';
 /// Panoramica: totale, portafogli con saldo, ultimi movimenti e "+ Movimento".
 /// Su Windows: Ctrl+N = nuovo movimento.
 class HomePagina extends StatefulWidget {
-  const HomePagina({super.key, required this.sessione});
+  const HomePagina({super.key, required this.sessione, this.apriCostoVita});
 
   final Sessione sessione;
+
+  /// Porta alla sezione Costo della vita (dalla scheda della Panoramica).
+  final VoidCallback? apriCostoVita;
 
   @override
   State<HomePagina> createState() => _HomePaginaState();
@@ -24,6 +31,7 @@ class HomePagina extends StatefulWidget {
 class _HomePaginaState extends State<HomePagina> {
   late final Stream<List<PortafoglioConSaldo>> _portafogli;
   late final Stream<List<MovimentoDettaglio>> _movimenti;
+  late final Stream<List<RiepilogoMese>> _costoVita;
 
   Sessione get _sessione => widget.sessione;
 
@@ -32,6 +40,10 @@ class _HomePaginaState extends State<HomePagina> {
     super.initState();
     _portafogli = _sessione.contabilita.osservaPortafogli();
     _movimenti = _sessione.contabilita.osservaMovimenti(limite: 30);
+    final oggi = DateTime.now();
+    _costoVita = _sessione.costoVita.osservaStorico(
+      finoA: DateTime(oggi.year, oggi.month),
+    );
 
     // Conferma visibile dell'apertura ("Archivio sbloccato", "Archivio creato", ...).
     final avviso = _sessione.avviso;
@@ -60,11 +72,6 @@ class _HomePaginaState extends State<HomePagina> {
 
   void _nuovoMovimento() => apriModuloMovimento(context, _sessione);
 
-  void _blocca() {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    _sessione.blocca();
-  }
-
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<PortafoglioConSaldo>>(
@@ -83,13 +90,7 @@ class _HomePaginaState extends State<HomePagina> {
             child: Scaffold(
               appBar: AppBar(
                 title: const Text('GestionaleFinanziaria'),
-                actions: [
-                  IconButton(
-                    tooltip: 'Archivio aperto: tocca per bloccarlo',
-                    icon: const LucchettoAperto(),
-                    onPressed: _blocca,
-                  ),
-                ],
+                actions: [PulsanteBlocca(sessione: _sessione)],
               ),
               floatingActionButton: portafogli == null || vuoto
                   ? null
@@ -176,7 +177,72 @@ class _HomePaginaState extends State<HomePagina> {
         ),
     ];
 
+    final schedaCostoVita = StreamBuilder<List<RiepilogoMese>>(
+      stream: _costoVita,
+      builder: (context, snapshot) {
+        final storico = snapshot.data;
+        final mese = storico?.last;
+        return Card(
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: widget.apriCostoVita,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Costo della vita',
+                          style: testo.labelLarge,
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right),
+                    ],
+                  ),
+                  if (storico == null)
+                    const LinearProgressIndicator()
+                  else if (storico.every((m) => m.voci.isEmpty))
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(
+                        'Configura le spese fisse e variabili per vedere quanto '
+                        'ti costa vivere ogni mese.',
+                      ),
+                    )
+                  else ...[
+                    Text(
+                      '${Importo.formatta(mese!.totalePrevisto, 'EUR')} al mese',
+                      style: testo.headlineMedium,
+                    ),
+                    Text(
+                      'Fisse ${Importo.formatta(mese.fisse, 'EUR')} · '
+                      'variabili previste '
+                      '${Importo.formatta(mese.variabiliPreviste, 'EUR')} · '
+                      'spese finora ${Importo.formatta(mese.variabiliReali, 'EUR')}',
+                      style: testo.bodySmall,
+                    ),
+                    const SizedBox(height: 12),
+                    GraficoCostoVita(
+                      mesi: storico,
+                      nomeMese: (m) => meseBreve(context, m),
+                      altezza: 140,
+                      compatto: true,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
     final colonnaMovimenti = [
+      schedaCostoVita,
+      const SizedBox(height: 16),
       const _Intestazione(titolo: 'Ultimi movimenti'),
       StreamBuilder<List<MovimentoDettaglio>>(
         stream: _movimenti,

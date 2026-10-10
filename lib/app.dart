@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/sessione.dart';
-import 'features/home/home_pagina.dart';
+import 'features/comuni/navigazione.dart';
 import 'features/primo_avvio/primo_avvio_pagina.dart';
 import 'features/sblocco/sblocco_pagina.dart';
 
@@ -36,7 +36,7 @@ class GestionaleApp extends StatelessWidget {
           ),
           FaseSessione.primoAvvio => PrimoAvvioPagina(sessione: sessione),
           FaseSessione.bloccata => SbloccoPagina(sessione: sessione),
-          FaseSessione.sbloccata => HomePagina(sessione: sessione),
+          FaseSessione.sbloccata => Guscio(sessione: sessione),
         },
       ),
     );
