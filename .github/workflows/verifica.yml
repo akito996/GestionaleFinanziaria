@@ -82,7 +82,7 @@ jobs:
       - name: Motivo dell'errore
         if: failure()
         run: |
-          motivo="$(grep -v -E '^\s*$' "$RUNNER_TEMP/integration.log" | grep -E -A25 'EXCEPTION CAUGHT|Expected:|\[E\]|Error' | head -60)"
+          motivo="$( (grep -E 'SCHERMO:|FINESTRA:' "$RUNNER_TEMP/integration.log"; grep -v -E '^\s*$' "$RUNNER_TEMP/integration.log" | grep -E -A25 'EXCEPTION CAUGHT|Expected:|\[E\]|Error') | head -70)"
           motivo="${motivo//'%'/'%25'}"
           motivo="${motivo//$'\n'/'%0A'}"
           motivo="${motivo//$'\r'/}"

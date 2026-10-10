@@ -22,6 +22,18 @@ void main() {
     for (var i = 0; i < secondi * 10 && cosa.evaluate().isEmpty; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
+    if (cosa.evaluate().isEmpty) {
+      // Diagnostica: cosa c'è sullo schermo quando l'attesa fallisce.
+      final testi = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((t) => t.data ?? t.textSpan?.toPlainText() ?? '')
+          .where((t) => t.trim().isNotEmpty)
+          .join(' | ');
+      debugPrint('SCHERMO: $testi');
+      debugPrint(
+        'FINESTRA: ${tester.view.physicalSize / tester.view.devicePixelRatio}',
+      );
+    }
     expect(cosa, findsWidgets);
   }
 
@@ -77,7 +89,7 @@ void main() {
     await tester.enterText(nelDialogo(find.byType(TextFormField)).last, '50');
     await tocca(tester, find.text('Crea'));
     await attendi(tester, find.text('50,00 €'));
-    await tocca(tester, find.text('Movimento'));
+    await tocca(tester, find.byTooltip('Nuovo movimento (Ctrl+N)'));
     await attendi(tester, nelDialogo(find.text('Importo')));
     await tester.enterText(
       nelDialogo(find.byType(TextFormField)).first,
