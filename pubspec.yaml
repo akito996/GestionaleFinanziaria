@@ -11,6 +11,7 @@ environment:
   flutter: 3.47.7
 
 dependencies:
+  archive: ^4.4.0
   crypto: ^3.0.7
   drift: ^2.35.2
   file_selector: ^1.1.0
@@ -37,6 +38,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    # Carattere incorporato nei report PDF (Apache 2.0, vedi LICENSE-Roboto.txt)
+    - assets/fonts/Roboto-Regular.ttf
+    - assets/fonts/Roboto-Bold.ttf
 
 hooks:
   user_defines:

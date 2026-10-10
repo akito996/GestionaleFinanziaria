@@ -292,6 +292,50 @@ class Contabilita {
     );
   }
 
+  /// Movimenti tra [da] e [a] (inclusi), dal più vecchio (per l'export).
+  Future<List<MovimentoDettaglio>> movimentiTra(DateTime da, DateTime a) async {
+    final destinazione = _db.alias(_db.portafogli, 'destinazione');
+    final query =
+        _db.select(_db.movimenti).join([
+            innerJoin(
+              _db.definizioniTipo,
+              _db.definizioniTipo.id.equalsExp(_db.movimenti.tipoId),
+            ),
+            innerJoin(
+              _db.portafogli,
+              _db.portafogli.id.equalsExp(_db.movimenti.portafoglioId),
+            ),
+            leftOuterJoin(
+              destinazione,
+              destinazione.id.equalsExp(
+                _db.movimenti.portafoglioDestinazioneId,
+              ),
+            ),
+            leftOuterJoin(
+              _db.categorie,
+              _db.categorie.id.equalsExp(_db.movimenti.categoriaId),
+            ),
+          ])
+          ..where(
+            _db.movimenti.eliminato.equals(false) &
+                _db.movimenti.data.isBetweenValues(giorno(da), giorno(a)),
+          )
+          ..orderBy([
+            OrderingTerm.asc(_db.movimenti.data),
+            OrderingTerm.asc(_db.movimenti.aggiornatoIl),
+          ]);
+    return [
+      for (final r in await query.get())
+        MovimentoDettaglio(
+          r.readTable(_db.movimenti),
+          r.readTable(_db.definizioniTipo),
+          r.readTable(_db.portafogli),
+          r.readTableOrNull(destinazione),
+          r.readTableOrNull(_db.categorie),
+        ),
+    ];
+  }
+
   Future<String> registraMovimento({
     required String tipoId,
     required String portafoglioId,

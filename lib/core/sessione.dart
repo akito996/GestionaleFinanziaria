@@ -12,6 +12,7 @@ import 'db/deposito_locale.dart';
 import 'db/obiettivi.dart';
 import 'db/pianificatore.dart';
 import 'db/prestiti.dart';
+import 'db/statistiche.dart';
 
 enum FaseSessione { caricamento, primoAvvio, bloccata, sbloccata }
 
@@ -67,6 +68,11 @@ class Sessione extends ChangeNotifier {
 
   /// Obiettivi e collette: disponibile solo nella fase [FaseSessione.sbloccata].
   ObiettiviServizio get obiettivi => _obiettivi!;
+
+  StatisticheServizio? _statistiche;
+
+  /// Dati per grafici ed export: disponibile solo nella fase [FaseSessione.sbloccata].
+  StatisticheServizio get statistiche => _statistiche!;
 
   SecureKey? _dek;
 
@@ -183,6 +189,7 @@ class Sessione extends ChangeNotifier {
     _carte = null;
     _prestiti = null;
     _obiettivi = null;
+    _statistiche = null;
     _archivio = null;
     _dek = null;
     await archivio?.close();
@@ -219,6 +226,7 @@ class Sessione extends ChangeNotifier {
         _pianificatore!,
       );
       _obiettivi = ObiettiviServizio(archivio, _contabilita!.orologio);
+      _statistiche = StatisticheServizio(archivio);
       _costoVita = CostoVita(archivio, _contabilita!.orologio, _pianificatore!);
     } catch (_) {
       await archivio.close();

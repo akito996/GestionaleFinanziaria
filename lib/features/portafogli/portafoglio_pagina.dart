@@ -5,6 +5,9 @@ import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import '../carte/carte_pagina.dart';
 import '../comuni/in_arrivo.dart';
+import '../comuni/navigazione.dart';
+import '../costo_vita/costo_vita_pagina.dart' show meseBreve;
+import '../grafici/grafici.dart';
 import '../movimenti/movimento_modulo.dart';
 import '../movimenti/riga_movimento.dart';
 import 'portafoglio_modulo.dart';
@@ -160,6 +163,14 @@ class PortafoglioPagina extends StatelessWidget {
                       ],
                     ),
                   ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: _AndamentoSaldo(
+                      sessione: sessione,
+                      portafoglioId: portafoglioId,
+                      valuta: p.portafoglio.valuta,
+                    ),
+                  ),
                   const Divider(height: 1),
                   if (movimenti.isEmpty && snapshot.hasData)
                     const Padding(
@@ -179,6 +190,69 @@ class PortafoglioPagina extends StatelessWidget {
               );
             },
           ),
+        );
+      },
+    );
+  }
+}
+
+/// Saldo di fine mese degli ultimi 12 mesi (linea; in alternativa tabella).
+class _AndamentoSaldo extends StatefulWidget {
+  const _AndamentoSaldo({
+    required this.sessione,
+    required this.portafoglioId,
+    required this.valuta,
+  });
+
+  final Sessione sessione;
+  final String portafoglioId;
+  final String valuta;
+
+  @override
+  State<_AndamentoSaldo> createState() => _AndamentoSaldoState();
+}
+
+class _AndamentoSaldoState extends State<_AndamentoSaldo> {
+  late final _saldi = widget.sessione.statistiche.osservaSaldoMensile(
+    widget.portafoglioId,
+    finoA: DateTime.now(),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder(
+      stream: _saldi,
+      builder: (context, snapshot) {
+        final saldi = snapshot.data;
+        if (saldi == null) {
+          return const SizedBox.shrink();
+        }
+        return SchedaGrafico(
+          sessione: widget.sessione,
+          chiave: 'portafoglio.andamento',
+          titolo: 'Andamento del saldo',
+          sottotitolo: 'Saldo a fine mese, ultimi 12 mesi',
+          tipi: const [TipoGrafico.linee, TipoGrafico.tabella],
+          costruisci: (context, tipo) => tipo == TipoGrafico.tabella
+              ? TabellaDati(
+                  colonne: const ['Mese', 'Saldo'],
+                  righe: [
+                    for (final s in saldi)
+                      [
+                        meseLeggibile(context, s.mese),
+                        Importo.formatta(s.saldo, widget.valuta),
+                      ],
+                  ],
+                )
+              : GraficoLinee(
+                  etichette: [
+                    for (final s in saldi) meseBreve(context, s.mese),
+                  ],
+                  valuta: widget.valuta,
+                  serie: [
+                    SerieTempo('Saldo', [for (final s in saldi) s.saldo]),
+                  ],
+                ),
         );
       },
     );

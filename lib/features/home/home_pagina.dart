@@ -3,13 +3,16 @@ import 'package:flutter/services.dart';
 
 import '../../core/db/contabilita.dart';
 import '../../core/db/costo_vita.dart';
+import '../../core/db/statistiche.dart';
 import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import '../comuni/icone.dart';
 import '../comuni/in_arrivo.dart';
 import '../comuni/navigazione.dart';
 import '../costo_vita/costo_vita_pagina.dart';
+import '../export/export_dialogo.dart';
 import '../costo_vita/grafico_costo_vita.dart';
+import '../grafici/grafici.dart';
 import '../movimenti/movimento_modulo.dart';
 import '../movimenti/riga_movimento.dart';
 import '../portafogli/portafoglio_modulo.dart';
@@ -33,6 +36,7 @@ class _HomePaginaState extends State<HomePagina> {
   late final Stream<List<PortafoglioConSaldo>> _portafogli;
   late final Stream<List<MovimentoDettaglio>> _movimenti;
   late final Stream<List<RiepilogoMese>> _costoVita;
+  late final Stream<List<SpesaCategoria>> _spese;
 
   Sessione get _sessione => widget.sessione;
 
@@ -44,6 +48,10 @@ class _HomePaginaState extends State<HomePagina> {
     final oggi = DateTime.now();
     _costoVita = _sessione.costoVita.osservaStorico(
       finoA: DateTime(oggi.year, oggi.month),
+    );
+    _spese = _sessione.statistiche.osservaSpesePerCategoria(
+      DateTime(oggi.year, oggi.month),
+      DateTime(oggi.year, oggi.month + 1, 0),
     );
 
     // Conferma visibile dell'apertura ("Archivio sbloccato", "Archivio creato", ...).
@@ -91,7 +99,14 @@ class _HomePaginaState extends State<HomePagina> {
             child: Scaffold(
               appBar: AppBar(
                 title: const Text('GestionaleFinanziaria'),
-                actions: [PulsanteBlocca(sessione: _sessione)],
+                actions: [
+                  IconButton(
+                    tooltip: 'Esporta (PDF o Excel)',
+                    icon: const Icon(Icons.file_download_outlined),
+                    onPressed: () => apriExport(context, _sessione),
+                  ),
+                  PulsanteBlocca(sessione: _sessione),
+                ],
               ),
               floatingActionButton: portafogli == null || vuoto
                   ? null
@@ -247,8 +262,51 @@ class _HomePaginaState extends State<HomePagina> {
       },
     );
 
+    final schedaSpese = StreamBuilder<List<SpesaCategoria>>(
+      stream: _spese,
+      builder: (context, snapshot) {
+        final spese = snapshot.data ?? const [];
+        if (spese.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        final voci = [
+          for (final s in spese)
+            VoceValore(s.categoria ?? 'Senza categoria', s.totale),
+        ];
+        final totale = voci.fold<int>(0, (t, v) => t + v.valore);
+        return Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: SchedaGrafico(
+            sessione: _sessione,
+            chiave: 'panoramica.spese_categoria',
+            titolo:
+                'Spese di ${meseLeggibile(context, DateTime.now()).toLowerCase()}',
+            sottotitolo:
+                'Per categoria · totale ${Importo.formatta(totale, 'EUR')}',
+            tipi: const [
+              TipoGrafico.barre,
+              TipoGrafico.ciambella,
+              TipoGrafico.tabella,
+            ],
+            costruisci: (context, tipo) => switch (tipo) {
+              TipoGrafico.ciambella => Ciambella(voci: voci, valuta: 'EUR'),
+              TipoGrafico.tabella => TabellaDati(
+                colonne: const ['Categoria', 'Speso'],
+                righe: [
+                  for (final v in voci)
+                    [v.etichetta, Importo.formatta(v.valore, 'EUR')],
+                ],
+              ),
+              _ => BarreOrizzontali(voci: voci, valuta: 'EUR'),
+            },
+          ),
+        );
+      },
+    );
+
     final colonnaMovimenti = [
       schedaCostoVita,
+      schedaSpese,
       const SizedBox(height: 16),
       const _Intestazione(titolo: 'Ultimi movimenti'),
       StreamBuilder<List<MovimentoDettaglio>>(

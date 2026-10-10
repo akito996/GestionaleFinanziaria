@@ -6,6 +6,7 @@ import '../../core/db/tabelle.dart';
 import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import '../comuni/navigazione.dart';
+import '../grafici/grafici.dart';
 import 'grafico_costo_vita.dart';
 import 'voce_modulo.dart';
 
@@ -124,24 +125,54 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
               else ...[
                 _Riepilogo(mese: mese),
                 const SizedBox(height: 16),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Ultimi 6 mesi',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 12),
-                        GraficoCostoVita(
-                          mesi: storico,
-                          nomeMese: (m) => meseBreve(context, m),
-                        ),
+                SchedaGrafico(
+                  sessione: widget.sessione,
+                  chiave: 'costo_vita.storico',
+                  titolo: 'Ultimi 6 mesi',
+                  tipi: const [
+                    TipoGrafico.barreImpilate,
+                    TipoGrafico.linee,
+                    TipoGrafico.tabella,
+                  ],
+                  costruisci: (context, tipo) => switch (tipo) {
+                    TipoGrafico.linee => GraficoLinee(
+                      etichette: [
+                        for (final m in storico) meseBreve(context, m.mese),
+                      ],
+                      valuta: 'EUR',
+                      serie: [
+                        SerieTempo('Previsto', [
+                          for (final m in storico) m.totalePrevisto,
+                        ]),
+                        SerieTempo('Speso davvero (fisse + variabili)', [
+                          for (final m in storico) m.fisse + m.variabiliReali,
+                        ]),
                       ],
                     ),
-                  ),
+                    TipoGrafico.tabella => TabellaDati(
+                      colonne: const [
+                        'Mese',
+                        'Fisse',
+                        'Variabili previste',
+                        'Variabili reali',
+                        'Totale previsto',
+                      ],
+                      righe: [
+                        for (final m in storico)
+                          [
+                            meseLeggibile(context, m.mese),
+                            Importo.formatta(m.fisse, 'EUR'),
+                            Importo.formatta(m.variabiliPreviste, 'EUR'),
+                            Importo.formatta(m.variabiliReali, 'EUR'),
+                            Importo.formatta(m.totalePrevisto, 'EUR'),
+                          ],
+                      ],
+                    ),
+                    _ => GraficoCostoVita(
+                      mesi: storico,
+                      nomeMese: (m) => meseBreve(context, m),
+                    ),
+                  },
                 ),
                 const SizedBox(height: 16),
                 _ElencoVoci(
