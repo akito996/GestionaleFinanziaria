@@ -21,6 +21,8 @@ credentials*.json
 *.key
 
 # --- Dati personali: la documentazione Word resta fuori dal repo ---
+# istruzioni locali per Claude (riferimenti personali)
+CLAUDE.local.md
 *.docx
 docs-src/
 *.db
