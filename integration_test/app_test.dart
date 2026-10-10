@@ -33,6 +33,17 @@ void main() {
       debugPrint(
         'FINESTRA: ${tester.view.physicalSize / tester.view.devicePixelRatio}',
       );
+      for (final fab in find.byType(FloatingActionButton).evaluate()) {
+        final box = fab.renderObject! as RenderBox;
+        final centro = box.localToGlobal(box.size.center(Offset.zero));
+        final colpiti = tester
+            .hitTestOnBinding(centro)
+            .path
+            .take(6)
+            .map((e) => e.target.runtimeType)
+            .join(' > ');
+        debugPrint('PULSANTE: $centro ${box.size} -> $colpiti');
+      }
     }
     expect(cosa, findsWidgets);
   }
