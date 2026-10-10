@@ -1,0 +1,33 @@
+# Controlli di sicurezza a ogni push e pull request, e ogni lunedì.
+# gitleaks: cerca password, chiavi e token finiti per errore nel codice o nella storia git.
+# Le azioni sono richiamate per SHA completo (regola del repository); Dependabot le aggiorna.
+name: Sicurezza
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sicurezza-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  segreti:
+    name: Segreti nel codice (gitleaks)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
