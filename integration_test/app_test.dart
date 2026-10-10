@@ -48,11 +48,25 @@ void main() {
     expect(cosa, findsWidgets);
   }
 
+  /// Tocca [cosa] solo quando è davvero toccabile: sull'app vera i pulsanti
+  /// compaiono con un'animazione e un tocco anticipato andrebbe a vuoto.
   Future<void> tocca(WidgetTester tester, Finder cosa) async {
     await tester.pump(const Duration(milliseconds: 400));
     await tester.ensureVisible(cosa);
     await tester.pump();
-    await tester.tap(cosa);
+    for (var i = 0; i < 50; i++) {
+      final oggetto = tester.renderObject(cosa.first);
+      final centro = tester.getCenter(cosa.first);
+      final colpito = tester
+          .hitTestOnBinding(centro)
+          .path
+          .any((e) => e.target == oggetto);
+      if (colpito) {
+        break;
+      }
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await tester.tap(cosa.first);
     await tester.pump(const Duration(milliseconds: 100));
   }
 
