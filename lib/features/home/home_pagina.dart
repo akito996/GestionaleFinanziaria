@@ -6,6 +6,7 @@ import '../../core/db/costo_vita.dart';
 import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import '../comuni/icone.dart';
+import '../comuni/in_arrivo.dart';
 import '../comuni/navigazione.dart';
 import '../costo_vita/costo_vita_pagina.dart';
 import '../costo_vita/grafico_costo_vita.dart';
@@ -127,6 +128,7 @@ class _HomePaginaState extends State<HomePagina> {
     final testo = Theme.of(context).textTheme;
 
     final colonnaPortafogli = [
+      SchedaInArrivo(sessione: _sessione),
       Card(
         child: Padding(
           padding: const EdgeInsets.all(20),

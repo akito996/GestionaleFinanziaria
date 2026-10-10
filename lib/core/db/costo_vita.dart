@@ -1,9 +1,12 @@
 import 'package:drift/drift.dart';
 
+import '../ricorrenza.dart';
+
 import 'archivio.dart';
 import 'contabilita.dart';
 import 'id.dart';
 import 'orologio.dart';
+import 'pianificatore.dart';
 import 'tabelle.dart';
 
 /// Da quando vale un nuovo importo predefinito (scelta dell'utente).
@@ -18,7 +21,14 @@ class VoceDelMese {
     required this.variato,
     this.reale,
     this.prossimaModifica,
-  });
+    this.addebito,
+    this.dateAddebito = const [],
+    int? importoUnitario,
+  }) : importoUnitario = importoUnitario ?? predefinito;
+
+  /// Importo di un singolo addebito (per le voci non mensili diverso dal totale
+  /// del mese).
+  final int importoUnitario;
 
   final VoceCosto voce;
 
@@ -36,6 +46,12 @@ class VoceDelMese {
 
   /// Modifica già programmata (es. "da domani 850 €"), per mostrarla all'utente.
   final ({int importo, String dal})? prossimaModifica;
+
+  /// Data di addebito e regola (se impostate): da qui nascono i movimenti automatici.
+  final Pianificazione? addebito;
+
+  /// Giorni del mese in cui scalano i soldi.
+  final List<DateTime> dateAddebito;
 
   bool get fissa => voce.tipo == TipoVoce.fissa;
 }
@@ -69,12 +85,87 @@ class RiepilogoMese {
 /// del primo giorno. Così una modifica "da domani" si vede dal giorno dopo e lo
 /// storico dei mesi già chiusi non cambia.
 class CostoVita {
-  CostoVita(this._db, this._orologio, {DateTime Function()? adesso})
-    : _adesso = adesso ?? DateTime.now;
+  CostoVita(
+    this._db,
+    this._orologio,
+    this._pianificatore, {
+    DateTime Function()? adesso,
+  }) : _adesso = adesso ?? DateTime.now {
+    // Importo di ogni addebito: variazione del mese se c'è, altrimenti il
+    // predefinito in vigore quel giorno.
+    _pianificatore.registraCalcolo(
+      OriginePianificazione.costoVita,
+      (p, data) async =>
+          p.origineId == null ? null : importoAl(p.origineId!, data),
+    );
+  }
 
   final Archivio _db;
   final OrologioLogico _orologio;
+  final Pianificatore _pianificatore;
   final DateTime Function() _adesso;
+
+  // ------------------------------------------------------------ addebito
+
+  /// Imposta (o toglie, con [ricorrenza] `null`) la data in cui scalano i soldi.
+  /// Con un [portafoglioId] il movimento viene registrato da solo nel giorno
+  /// previsto; senza, è solo un promemoria.
+  Future<void> impostaAddebito(
+    String voceId, {
+    Ricorrenza? ricorrenza,
+    String? portafoglioId,
+  }) async {
+    if (ricorrenza == null) {
+      await _pianificatore.rimuovi(OriginePianificazione.costoVita, voceId);
+      return;
+    }
+    final voce = await (_db.select(
+      _db.vociCosto,
+    )..where((v) => v.id.equals(voceId))).getSingle();
+    String? valuta;
+    if (portafoglioId != null) {
+      valuta = (await (_db.select(
+        _db.portafogli,
+      )..where((p) => p.id.equals(portafoglioId))).getSingle()).valuta;
+    }
+    await _pianificatore.salva(
+      DatiPianificazione(
+        origine: OriginePianificazione.costoVita,
+        origineId: voceId,
+        ricorrenza: ricorrenza,
+        portafoglioId: portafoglioId,
+        categoriaId: voce.categoriaId,
+        descrizione: voce.nome,
+        valuta: valuta ?? voce.valuta,
+      ),
+    );
+  }
+
+  /// Importo di un addebito di [voceId] nel giorno [data].
+  Future<int?> importoAl(String voceId, DateTime data) async {
+    final variazione =
+        await (_db.select(_db.variazioniMese)..where(
+              (v) =>
+                  v.voceId.equals(voceId) &
+                  v.mese.equals(_chiaveMese(data)) &
+                  v.eliminato.equals(false),
+            ))
+            .getSingleOrNull();
+    if (variazione != null) {
+      return variazione.importoMinimo;
+    }
+    final storia =
+        await (_db.select(_db.importiVoce)
+              ..where(
+                (i) => i.voceId.equals(voceId) & i.eliminato.equals(false),
+              )
+              ..orderBy([
+                (i) => OrderingTerm(expression: i.validoDal),
+                (i) => OrderingTerm(expression: i.aggiornatoIl),
+              ]))
+            .get();
+    return _importoAl(storia, data);
+  }
 
   // -------------------------------------------------------------- voci
 
@@ -111,13 +202,30 @@ class CostoVita {
     String id, {
     required String nome,
     String? categoriaId,
-  }) => (_db.update(_db.vociCosto)..where((v) => v.id.equals(id))).write(
-    VociCostoCompanion(
-      aggiornatoIl: Value(_orologio.adesso()),
-      nome: Value(nome.trim()),
-      categoriaId: Value(categoriaId),
-    ),
-  );
+    String? tipo,
+  }) async {
+    await (_db.update(_db.vociCosto)..where((v) => v.id.equals(id))).write(
+      VociCostoCompanion(
+        aggiornatoIl: Value(_orologio.adesso()),
+        nome: Value(nome.trim()),
+        categoriaId: Value(categoriaId),
+        tipo: tipo == null ? const Value.absent() : Value(tipo),
+      ),
+    );
+    // Nome e categoria anche sui movimenti che verranno registrati da qui in poi.
+    await (_db.update(_db.pianificazioni)..where(
+          (p) =>
+              p.origine.equals(OriginePianificazione.costoVita) &
+              p.origineId.equals(id),
+        ))
+        .write(
+          PianificazioniCompanion(
+            aggiornatoIl: Value(_orologio.adesso()),
+            descrizione: Value(nome.trim()),
+            categoriaId: Value(categoriaId),
+          ),
+        );
+  }
 
   /// Nuovo importo predefinito, da domani o dal 1° del mese prossimo.
   /// I mesi già passati non cambiano.
@@ -181,13 +289,26 @@ class CostoVita {
             ),
           );
 
-  Future<void> archiviaVoce(String id, {bool archiviata = true}) =>
-      (_db.update(_db.vociCosto)..where((v) => v.id.equals(id))).write(
-        VociCostoCompanion(
-          aggiornatoIl: Value(_orologio.adesso()),
-          archiviata: Value(archiviata),
-        ),
-      );
+  /// Archivia la voce e sospende i suoi addebiti automatici (reversibile).
+  Future<void> archiviaVoce(String id, {bool archiviata = true}) async {
+    await (_db.update(_db.vociCosto)..where((v) => v.id.equals(id))).write(
+      VociCostoCompanion(
+        aggiornatoIl: Value(_orologio.adesso()),
+        archiviata: Value(archiviata),
+      ),
+    );
+    await (_db.update(_db.pianificazioni)..where(
+          (p) =>
+              p.origine.equals(OriginePianificazione.costoVita) &
+              p.origineId.equals(id),
+        ))
+        .write(
+          PianificazioniCompanion(
+            aggiornatoIl: Value(_orologio.adesso()),
+            attiva: Value(!archiviata),
+          ),
+        );
+  }
 
   // ---------------------------------------------------------- riepiloghi
 
@@ -224,6 +345,16 @@ class CostoVita {
       _db.variazioniMese,
     )..where((v) => v.eliminato.equals(false))).get();
     final albero = AlberoCategorie(await _db.select(_db.categorie).get());
+    final addebiti = {
+      for (final p
+          in await (_db.select(_db.pianificazioni)..where(
+                (p) =>
+                    p.origine.equals(OriginePianificazione.costoVita) &
+                    p.eliminato.equals(false),
+              ))
+              .get())
+        p.origineId: p,
+    };
 
     final perVoce = <String, List<ImportoVoce>>{};
     for (final i in importi) {
@@ -258,7 +389,26 @@ class CostoVita {
                 0) {
           continue;
         }
-        final predefinito = _importoAl(storia, riferimento) ?? 0;
+        final addebito = addebiti[voce.id];
+        var dateAddebito = const <DateTime>[];
+        int predefinito;
+        if (addebito != null) {
+          final regola = Pianificatore.ricorrenzaDi(addebito);
+          // Fuori dal periodo della voce (prima dell'inizio o dopo la fine): non conta.
+          final ultima = regola.ultima;
+          if (regola.inizio.isAfter(_ultimoGiorno(mese)) ||
+              (ultima != null && ultima.isBefore(mese))) {
+            continue;
+          }
+          dateAddebito = regola.nelMese(mese);
+          predefinito = regola.frequenza == Frequenza.mensile
+              ? _importoAl(storia, riferimento) ?? 0
+              : dateAddebito
+                    .map((d) => _importoAl(storia, d) ?? 0)
+                    .fold(0, (a, b) => a + b);
+        } else {
+          predefinito = _importoAl(storia, riferimento) ?? 0;
+        }
         final variazione = variazioniPer['${voce.id}|${_chiaveMese(mese)}'];
         final futura = storia
             .where((i) => i.validoDal.compareTo(Contabilita.giorno(oggi)) > 0)
@@ -280,6 +430,9 @@ class CostoVita {
             prossimaModifica: futura == null
                 ? null
                 : (importo: futura.importoMinimo, dal: futura.validoDal),
+            addebito: addebito,
+            dateAddebito: dateAddebito,
+            importoUnitario: _importoAl(storia, riferimento) ?? 0,
           ),
         );
       }
@@ -299,6 +452,7 @@ class CostoVita {
           _db.variazioniMese,
           _db.movimenti,
           _db.categorie,
+          _db.pianificazioni,
         },
       )
       .watch();

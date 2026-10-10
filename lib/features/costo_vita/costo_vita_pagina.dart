@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/db/costo_vita.dart';
+import '../../core/db/pianificatore.dart';
 import '../../core/db/tabelle.dart';
 import '../../core/importo.dart';
 import '../../core/sessione.dart';
@@ -11,9 +12,7 @@ import 'voce_modulo.dart';
 /// Suggerimenti a un tocco: (nome, categoria proposta).
 const _fisseSuggerite = [
   ('Affitto o mutuo', 'Affitto o mutuo'),
-  ('Luce', 'Bollette'),
-  ('Gas', 'Bollette'),
-  ('Acqua', 'Bollette'),
+  ('Condominio', 'Condominio'),
   ('Telefono e internet', 'Telefono e internet'),
   ('Assicurazione auto', 'Assicurazioni'),
   ('Abbonamenti streaming', 'Streaming'),
@@ -21,6 +20,9 @@ const _fisseSuggerite = [
 ];
 
 const _variabiliSuggerite = [
+  ('Luce', 'Bollette'),
+  ('Gas', 'Bollette'),
+  ('Acqua', 'Bollette'),
   ('Spesa alimentare', 'Spesa'),
   ('Ristoranti e bar', 'Ristoranti e bar'),
   ('Carburante', 'Carburante'),
@@ -357,6 +359,9 @@ class _RigaVoce extends StatelessWidget {
         'Solo questo mese (predefinito ${Importo.formatta(voce.predefinito, 'EUR')})',
       if (voce.prossimaModifica case final p?)
         'Dal ${_data(p.dal)}: ${Importo.formatta(p.importo, 'EUR')}',
+      if (voce.addebito case final a?)
+        '${Pianificatore.ricorrenzaDi(a).descrizione()}'
+            '${a.portafoglioId == null ? ' (promemoria)' : ' (registrazione automatica)'}',
     ];
     final reale = voce.reale;
     return ListTile(

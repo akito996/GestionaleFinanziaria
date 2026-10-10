@@ -41,6 +41,7 @@ const categorieProposte = [
     VociCosto,
     ImportiVoce,
     VariazioniMese,
+    Pianificazioni,
     Impostazioni,
   ],
 )
@@ -96,7 +97,7 @@ class Archivio extends _$Archivio {
   Archivio.conEsecutore(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -115,6 +116,13 @@ class Archivio extends _$Archivio {
         if (categorieEsistenti.isEmpty) {
           await _categorieIniziali();
         }
+      }
+      // v3: pagamenti programmati e collegamento movimento ↔ scadenza.
+      if (da < 3) {
+        await m.createTable(pianificazioni);
+        await m.addColumn(movimenti, movimenti.pianificazioneId);
+        await m.addColumn(movimenti, movimenti.dataPrevista);
+        await m.createIndex(movimentiPianificatiUnici);
       }
     },
     beforeOpen: (_) async {

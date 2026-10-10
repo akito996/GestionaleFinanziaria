@@ -7,6 +7,7 @@ import '../../core/sessione.dart';
 import '../categorie/scelta_categoria.dart';
 import '../comuni/errori.dart';
 import '../comuni/navigazione.dart';
+import 'sezione_addebito.dart';
 
 /// Nuova voce del costo della vita (fissa o variabile), con nome suggerito.
 Future<void> apriNuovaVoce(
@@ -47,9 +48,11 @@ class _NuovaVoceState extends State<_NuovaVoce> {
   late final _nome = TextEditingController(text: widget.nomeSuggerito ?? '');
   final _importo = TextEditingController();
   String? _categoria;
+  late String _tipo = widget.tipo;
+  final _addebito = ImpostazioneAddebito();
   bool _salvataggio = false;
 
-  bool get _fissa => widget.tipo == TipoVoce.fissa;
+  bool get _fissa => _tipo == TipoVoce.fissa;
 
   @override
   void initState() {
@@ -70,12 +73,22 @@ class _NuovaVoceState extends State<_NuovaVoce> {
     }
     setState(() => _salvataggio = true);
     try {
-      await widget.sessione.costoVita.creaVoce(
+      final cv = widget.sessione.costoVita;
+      final id = await cv.creaVoce(
         nome: _nome.text,
-        tipo: widget.tipo,
+        tipo: _tipo,
         importo: Importo.leggi(_importo.text)!,
         categoriaId: _categoria,
       );
+      if (_addebito.attivo) {
+        await cv.impostaAddebito(
+          id,
+          ricorrenza: _addebito.ricorrenza,
+          portafoglioId: _addebito.portafoglioId,
+        );
+        // Se il primo addebito è oggi o già passato, si registra subito.
+        await widget.sessione.pianificatore.registraScadute();
+      }
       if (mounted) {
         Navigator.of(context).pop();
       }
@@ -95,58 +108,77 @@ class _NuovaVoceState extends State<_NuovaVoce> {
         width: 420,
         child: Form(
           key: _form,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                _fissa
-                    ? 'Una spesa che si ripete uguale ogni mese.'
-                    : 'Una spesa che cambia ogni mese: indica quanto prevedi di '
-                          'spendere. Con una categoria l\'app confronta la stima '
-                          'con quello che spendi davvero.',
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _nome,
-                autofocus: widget.nomeSuggerito == null,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(labelText: 'Nome'),
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Dai un nome alla voce'
-                    : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _importo,
-                autofocus: widget.nomeSuggerito != null,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SceltaTipoVoce(
+                  valore: _tipo,
+                  onChanged: (t) => setState(() => _tipo = t),
                 ),
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => _salva(),
-                decoration: InputDecoration(
-                  labelText: _fissa ? 'Importo al mese' : 'Stima al mese',
-                  hintText: '0,00',
-                  suffixText: '€',
+                const SizedBox(height: 12),
+                Text(
+                  _fissa
+                      ? 'Una spesa che si ripete uguale ogni mese.'
+                      : 'Una spesa che cambia ogni mese: indica quanto prevedi di '
+                            'spendere. Con una categoria l\'app confronta la stima '
+                            'con quello che spendi davvero.',
                 ),
-                validator: (v) {
-                  final importo = Importo.leggi(v ?? '');
-                  return importo == null || importo <= 0
-                      ? 'Scrivi un importo, per esempio 80,00'
-                      : null;
-                },
-              ),
-              const SizedBox(height: 16),
-              CampoCategoria(
-                sessione: widget.sessione,
-                valore: _categoria,
-                onChanged: (v) => setState(() => _categoria = v),
-                etichetta: _fissa
-                    ? 'Categoria (facoltativa)'
-                    : 'Categoria delle spese reali',
-              ),
-            ],
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _nome,
+                  autofocus: widget.nomeSuggerito == null,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(labelText: 'Nome'),
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Dai un nome alla voce'
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _importo,
+                  autofocus: widget.nomeSuggerito != null,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _salva(),
+                  decoration: InputDecoration(
+                    labelText:
+                        _addebito.attivo &&
+                            _addebito.frequenza.codice != 'mensile'
+                        ? (_fissa
+                              ? 'Importo per addebito'
+                              : 'Stima per addebito')
+                        : (_fissa ? 'Importo al mese' : 'Stima al mese'),
+                    hintText: '0,00',
+                    suffixText: '€',
+                  ),
+                  validator: (v) {
+                    final importo = Importo.leggi(v ?? '');
+                    return importo == null || importo <= 0
+                        ? 'Scrivi un importo, per esempio 80,00'
+                        : null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                CampoCategoria(
+                  sessione: widget.sessione,
+                  valore: _categoria,
+                  onChanged: (v) => setState(() => _categoria = v),
+                  etichetta: _fissa
+                      ? 'Categoria (facoltativa)'
+                      : 'Categoria delle spese reali',
+                ),
+                const SizedBox(height: 8),
+                SezioneAddebito(
+                  sessione: widget.sessione,
+                  valore: _addebito,
+                  onChanged: () => setState(() {}),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -197,10 +229,15 @@ class _ModificaVoce extends StatefulWidget {
 class _ModificaVoceState extends State<_ModificaVoce> {
   final _form = GlobalKey<FormState>();
   late final _nome = TextEditingController(text: widget.voce.voce.nome);
+  late final int _importoMostrato = widget.voce.variato
+      ? widget.voce.previsto
+      : widget.voce.importoUnitario;
   late final _importo = TextEditingController(
-    text: Importo.perModifica(widget.voce.previsto),
+    text: Importo.perModifica(_importoMostrato),
   );
   late String? _categoria = widget.voce.voce.categoriaId;
+  late String _tipo = widget.voce.voce.tipo;
+  late final _addebito = ImpostazioneAddebito.da(widget.voce.addebito);
   _Ambito _ambito = _Ambito.soloMese;
   bool _salvataggio = false;
 
@@ -235,14 +272,21 @@ class _ModificaVoceState extends State<_ModificaVoce> {
     final importo = Importo.leggi(_importo.text)!;
     await _esegui(() async {
       if (_nome.text.trim() != v.voce.nome ||
-          _categoria != v.voce.categoriaId) {
+          _categoria != v.voce.categoriaId ||
+          _tipo != v.voce.tipo) {
         await cv.modificaVoce(
           v.voce.id,
           nome: _nome.text,
           categoriaId: _categoria,
+          tipo: _tipo,
         );
       }
-      if (importo != v.previsto) {
+      await cv.impostaAddebito(
+        v.voce.id,
+        ricorrenza: _addebito.ricorrenza,
+        portafoglioId: _addebito.portafoglioId,
+      );
+      if (importo != _importoMostrato) {
         switch (_ambito) {
           case _Ambito.soloMese:
             await cv.variaMese(v.voce.id, widget.mese, importo);
@@ -260,6 +304,7 @@ class _ModificaVoceState extends State<_ModificaVoce> {
             );
         }
       }
+      await widget.sessione.pianificatore.registraScadute();
     });
   }
 
@@ -297,8 +342,15 @@ class _ModificaVoceState extends State<_ModificaVoce> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                SceltaTipoVoce(
+                  valore: _tipo,
+                  onChanged: (t) => setState(() => _tipo = t),
+                ),
+                const SizedBox(height: 12),
                 Text(
-                  'Importo predefinito: ${Importo.formatta(v.predefinito, 'EUR')} al mese',
+                  'Importo predefinito: '
+                  '${Importo.formatta(v.importoUnitario, 'EUR')} '
+                  '${_addebito.attivo && _addebito.frequenza.codice != 'mensile' ? 'per addebito' : 'al mese'}',
                   style: TextStyle(color: schema.onSurfaceVariant),
                 ),
                 if (v.variato)
@@ -382,6 +434,12 @@ class _ModificaVoceState extends State<_ModificaVoce> {
                   sessione: widget.sessione,
                   valore: _categoria,
                   onChanged: (c) => setState(() => _categoria = c),
+                ),
+                const SizedBox(height: 8),
+                SezioneAddebito(
+                  sessione: widget.sessione,
+                  valore: _addebito,
+                  onChanged: () => setState(() {}),
                 ),
               ],
             ),

@@ -2,12 +2,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gestionale_finanziaria/core/db/archivio.dart';
 import 'package:gestionale_finanziaria/core/db/contabilita.dart';
 import 'package:gestionale_finanziaria/core/db/costo_vita.dart';
+import 'package:gestionale_finanziaria/core/db/pianificatore.dart';
 import 'package:gestionale_finanziaria/core/db/tabelle.dart';
+import 'package:gestionale_finanziaria/core/ricorrenza.dart';
 
 void main() {
   late Archivio db;
   late Contabilita c;
   late CostoVita cv;
+  late Pianificatore pian;
   late DateTime adesso;
 
   final ottobre = DateTime(2026, 10);
@@ -18,7 +21,8 @@ void main() {
     db = Archivio.inMemoria();
     c = await Contabilita.apri(db);
     adesso = DateTime(2026, 10, 10, 15);
-    cv = CostoVita(db, c.orologio, adesso: () => adesso);
+    pian = Pianificatore(db, c.orologio, adesso: () => adesso);
+    cv = CostoVita(db, c.orologio, pian, adesso: () => adesso);
   });
 
   tearDown(() => db.close());
@@ -191,5 +195,145 @@ void main() {
     await sub.cancel();
     expect(valori.first, 0);
     expect(valori.last, 80000);
+  });
+
+  group('data di addebito', () {
+    Future<String> contoCorrente() async {
+      final tipo = (await c.tipi(AmbitoTipo.portafoglio))
+          .firstWhere((t) => t.nome == 'Conto corrente');
+      return c.creaPortafoglio(nome: 'Conto', tipoId: tipo.id, valuta: 'EUR');
+    }
+
+    test('bolletta bimestrale: conta solo nei mesi con addebito', () async {
+      final luce = await cv.creaVoce(
+        nome: 'Luce',
+        tipo: TipoVoce.variabile,
+        importo: 12000,
+      );
+      await cv.impostaAddebito(
+        luce,
+        ricorrenza: Ricorrenza(
+          inizio: DateTime(2026, 10, 20),
+          frequenza: Frequenza.bimestrale,
+        ),
+      );
+      expect((await voce('Luce', ottobre))!.previsto, 12000);
+      expect((await voce('Luce', ottobre))!.dateAddebito, [
+        DateTime(2026, 10, 20),
+      ]);
+      expect((await voce('Luce', novembre))!.previsto, 0);
+      expect((await voce('Luce', DateTime(2026, 12)))!.previsto, 12000);
+    });
+
+    test('fine dopo N addebiti: i mesi successivi non contano', () async {
+      final rata = await cv.creaVoce(
+        nome: 'Corso',
+        tipo: TipoVoce.fissa,
+        importo: 5000,
+      );
+      await cv.impostaAddebito(
+        rata,
+        ricorrenza: Ricorrenza(inizio: DateTime(2026, 10, 1), occorrenze: 2),
+      );
+      expect((await voce('Corso', ottobre))!.previsto, 5000);
+      expect((await voce('Corso', novembre))!.previsto, 5000);
+      expect(await voce('Corso', DateTime(2026, 12)), isNull);
+    });
+
+    test(
+      'registrazione automatica: una volta sola, anche aprendo dopo',
+      () async {
+        final conto = await contoCorrente();
+        final affitto = await cv.creaVoce(
+          nome: 'Affitto',
+          tipo: TipoVoce.fissa,
+          importo: 80000,
+          categoriaId: await categoria('Affitto o mutuo'),
+        );
+        await cv.impostaAddebito(
+          affitto,
+          ricorrenza: Ricorrenza(inizio: DateTime(2026, 10, 5)),
+          portafoglioId: conto,
+        );
+
+        expect(await pian.registraScadute(), 1); // 5 ottobre
+        expect(await pian.registraScadute(), 0); // già fatto
+
+        final ottobreMov = (await c.osservaMovimenti().first).single;
+        expect(ottobreMov.movimento.data, '2026-10-05');
+        expect(ottobreMov.movimento.importoMinimo, 80000);
+        expect(ottobreMov.movimento.descrizione, 'Affitto');
+        expect(ottobreMov.categoria?.nome, 'Affitto o mutuo');
+
+        // Dicembre: importo cambiato solo per dicembre; l'app riaperta il 6/12
+        // recupera novembre e dicembre.
+        await cv.variaMese(affitto, DateTime(2026, 12), 85000);
+        adesso = DateTime(2026, 12, 6);
+        expect(await pian.registraScadute(), 2);
+        final importi = {
+          for (final m in await c.osservaMovimenti().first)
+            m.movimento.data: m.movimento.importoMinimo,
+        };
+        expect(importi, {
+          '2026-10-05': 80000,
+          '2026-11-05': 80000,
+          '2026-12-05': 85000,
+        });
+
+        // Un movimento automatico cancellato dall'utente non torna.
+        final novembreId = (await c.osservaMovimenti().first)
+            .firstWhere((m) => m.movimento.data == '2026-11-05')
+            .movimento
+            .id;
+        await c.eliminaMovimento(novembreId);
+        expect(await pian.registraScadute(), 0);
+      },
+    );
+
+    test('avviso 3 giorni prima e voce archiviata sospesa', () async {
+      final conto = await contoCorrente();
+      final gas = await cv.creaVoce(
+        nome: 'Gas',
+        tipo: TipoVoce.variabile,
+        importo: 6000,
+      );
+      await cv.impostaAddebito(
+        gas,
+        ricorrenza: Ricorrenza(inizio: DateTime(2026, 10, 13)),
+        portafoglioId: conto,
+      );
+
+      final arrivo = await pian.inArrivo(giorni: 10);
+      expect(arrivo.single.data, DateTime(2026, 10, 13));
+      expect(arrivo.single.importo, 6000);
+      expect(arrivo.single.giorniMancanti, 3);
+      expect(arrivo.single.daAvvisare, isTrue);
+      expect(
+        (await pian.inArrivo(giorni: 10, portafoglioId: conto)),
+        hasLength(1),
+      );
+
+      await cv.archiviaVoce(gas);
+      expect(await pian.inArrivo(giorni: 10), isEmpty);
+      adesso = DateTime(2026, 10, 14);
+      expect(await pian.registraScadute(), 0);
+
+      await cv.archiviaVoce(gas, archiviata: false);
+      expect(await pian.registraScadute(), 1);
+    });
+
+    test('senza portafoglio è solo un promemoria', () async {
+      final voceId = await cv.creaVoce(
+        nome: 'Acqua',
+        tipo: TipoVoce.variabile,
+        importo: 3000,
+      );
+      await cv.impostaAddebito(
+        voceId,
+        ricorrenza: Ricorrenza(inizio: DateTime(2026, 10, 1)),
+      );
+      expect(await pian.registraScadute(), 0);
+      expect(await pian.inArrivo(), isNotEmpty);
+    });
   });
 }

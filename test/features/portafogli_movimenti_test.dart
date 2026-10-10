@@ -31,7 +31,13 @@ void main() {
   });
 
   tearDown(() async {
-    await cartella.delete(recursive: true);
+    // L'archivio può essere ancora in chiusura dopo il blocco: la cartella
+    // temporanea, se occupata, la ripulisce il sistema.
+    try {
+      await cartella.delete(recursive: true);
+    } on FileSystemException {
+      // ignorato
+    }
   });
 
   Future<void> attendi(WidgetTester tester, Finder cosa) async {

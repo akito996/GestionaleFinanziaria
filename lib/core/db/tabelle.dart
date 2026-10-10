@@ -63,6 +63,11 @@ class Categorie extends Table with ColonneSincronizzate {
 }
 
 @DataClassName('Movimento')
+@TableIndex(
+  name: 'movimenti_pianificati_unici',
+  columns: {#pianificazioneId, #dataPrevista},
+  unique: true,
+)
 class Movimenti extends Table with ColonneSincronizzate {
   TextColumn get tipoId => text().references(DefinizioniTipo, #id)();
   @ReferenceName('movimentiInUscita')
@@ -82,6 +87,13 @@ class Movimenti extends Table with ColonneSincronizzate {
   TextColumn get data => text().withLength(min: 10, max: 10)();
   TextColumn get descrizione => text().withDefault(const Constant(''))();
   TextColumn get campi => text().withDefault(const Constant('{}'))();
+
+  /// Movimento creato da un pagamento programmato (bolletta, rata, carta):
+  /// la coppia (pianificazione, data prevista) è unica, così non si registra due volte.
+  @ReferenceName('movimentiGenerati')
+  TextColumn get pianificazioneId =>
+      text().nullable().references(Pianificazioni, #id)();
+  TextColumn get dataPrevista => text().nullable()();
 }
 
 /// Tag multilivello (anche loro ad albero).
@@ -134,6 +146,51 @@ class VariazioniMese extends Table with ColonneSincronizzate {
   /// AAAA-MM.
   TextColumn get mese => text().withLength(min: 7, max: 7)();
   IntColumn get importoMinimo => integer()();
+}
+
+/// Pagamento programmato: si ripete secondo una regola (data, frequenza, fine)
+/// e nel giorno previsto diventa un movimento. Lo usano costo della vita,
+/// prestiti e carte di credito ([origine] + [origineId]).
+@DataClassName('Pianificazione')
+class Pianificazioni extends Table with ColonneSincronizzate {
+  /// Vedi [OriginePianificazione].
+  TextColumn get origine => text()();
+  TextColumn get origineId => text().nullable()();
+
+  /// Da dove escono i soldi. Senza portafoglio è solo un promemoria.
+  @ReferenceName('pianificazioniInUscita')
+  TextColumn get portafoglioId =>
+      text().nullable().references(Portafogli, #id)();
+
+  /// Per i trasferimenti (es. addebito della carta sul conto).
+  @ReferenceName('pianificazioniInEntrata')
+  TextColumn get destinazioneId =>
+      text().nullable().references(Portafogli, #id)();
+  TextColumn get tipoId => text().nullable().references(DefinizioniTipo, #id)();
+  TextColumn get categoriaId => text().nullable().references(Categorie, #id)();
+  TextColumn get descrizione => text().withDefault(const Constant(''))();
+
+  /// Importo fisso; `null` = lo calcola l'origine (es. importo del mese della voce).
+  IntColumn get importoMinimo => integer().nullable()();
+  TextColumn get valuta =>
+      text().withLength(min: 3, max: 10).withDefault(const Constant('EUR'))();
+
+  /// Regola: primo giorno (AAAA-MM-GG), frequenza, fine per data o numero di volte.
+  TextColumn get inizio => text().withLength(min: 10, max: 10)();
+  TextColumn get frequenza => text().withDefault(const Constant('mensile'))();
+  TextColumn get fine => text().nullable()();
+  IntColumn get occorrenze => integer().nullable()();
+
+  /// Quanti giorni prima avvisare.
+  IntColumn get avvisoGiorni => integer().withDefault(const Constant(3))();
+  BoolColumn get attiva => boolean().withDefault(const Constant(true))();
+}
+
+/// Valori ammessi per [Pianificazioni.origine].
+abstract final class OriginePianificazione {
+  static const costoVita = 'costo_vita';
+  static const prestito = 'prestito';
+  static const carta = 'carta';
 }
 
 /// Impostazioni locali del dispositivo (non sincronizzate): id dispositivo, contatori, ...

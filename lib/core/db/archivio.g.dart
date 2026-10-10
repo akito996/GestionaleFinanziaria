@@ -1870,6 +1870,1063 @@ class CategorieCompanion extends UpdateCompanion<Categoria> {
   }
 }
 
+class $PianificazioniTable extends Pianificazioni
+    with TableInfo<$PianificazioniTable, Pianificazione> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PianificazioniTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _aggiornatoIlMeta = const VerificationMeta(
+    'aggiornatoIl',
+  );
+  @override
+  late final GeneratedColumn<String> aggiornatoIl = GeneratedColumn<String>(
+    'aggiornato_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eliminatoMeta = const VerificationMeta(
+    'eliminato',
+  );
+  @override
+  late final GeneratedColumn<bool> eliminato = GeneratedColumn<bool>(
+    'eliminato',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("eliminato" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _origineMeta = const VerificationMeta(
+    'origine',
+  );
+  @override
+  late final GeneratedColumn<String> origine = GeneratedColumn<String>(
+    'origine',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _origineIdMeta = const VerificationMeta(
+    'origineId',
+  );
+  @override
+  late final GeneratedColumn<String> origineId = GeneratedColumn<String>(
+    'origine_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _portafoglioIdMeta = const VerificationMeta(
+    'portafoglioId',
+  );
+  @override
+  late final GeneratedColumn<String> portafoglioId = GeneratedColumn<String>(
+    'portafoglio_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES portafogli (id)',
+    ),
+  );
+  static const VerificationMeta _destinazioneIdMeta = const VerificationMeta(
+    'destinazioneId',
+  );
+  @override
+  late final GeneratedColumn<String> destinazioneId = GeneratedColumn<String>(
+    'destinazione_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES portafogli (id)',
+    ),
+  );
+  static const VerificationMeta _tipoIdMeta = const VerificationMeta('tipoId');
+  @override
+  late final GeneratedColumn<String> tipoId = GeneratedColumn<String>(
+    'tipo_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES definizioni_tipo (id)',
+    ),
+  );
+  static const VerificationMeta _categoriaIdMeta = const VerificationMeta(
+    'categoriaId',
+  );
+  @override
+  late final GeneratedColumn<String> categoriaId = GeneratedColumn<String>(
+    'categoria_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES categorie (id)',
+    ),
+  );
+  static const VerificationMeta _descrizioneMeta = const VerificationMeta(
+    'descrizione',
+  );
+  @override
+  late final GeneratedColumn<String> descrizione = GeneratedColumn<String>(
+    'descrizione',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _importoMinimoMeta = const VerificationMeta(
+    'importoMinimo',
+  );
+  @override
+  late final GeneratedColumn<int> importoMinimo = GeneratedColumn<int>(
+    'importo_minimo',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _valutaMeta = const VerificationMeta('valuta');
+  @override
+  late final GeneratedColumn<String> valuta = GeneratedColumn<String>(
+    'valuta',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 3,
+      maxTextLength: 10,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('EUR'),
+  );
+  static const VerificationMeta _inizioMeta = const VerificationMeta('inizio');
+  @override
+  late final GeneratedColumn<String> inizio = GeneratedColumn<String>(
+    'inizio',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 10,
+      maxTextLength: 10,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _frequenzaMeta = const VerificationMeta(
+    'frequenza',
+  );
+  @override
+  late final GeneratedColumn<String> frequenza = GeneratedColumn<String>(
+    'frequenza',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('mensile'),
+  );
+  static const VerificationMeta _fineMeta = const VerificationMeta('fine');
+  @override
+  late final GeneratedColumn<String> fine = GeneratedColumn<String>(
+    'fine',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _occorrenzeMeta = const VerificationMeta(
+    'occorrenze',
+  );
+  @override
+  late final GeneratedColumn<int> occorrenze = GeneratedColumn<int>(
+    'occorrenze',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _avvisoGiorniMeta = const VerificationMeta(
+    'avvisoGiorni',
+  );
+  @override
+  late final GeneratedColumn<int> avvisoGiorni = GeneratedColumn<int>(
+    'avviso_giorni',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(3),
+  );
+  static const VerificationMeta _attivaMeta = const VerificationMeta('attiva');
+  @override
+  late final GeneratedColumn<bool> attiva = GeneratedColumn<bool>(
+    'attiva',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("attiva" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    aggiornatoIl,
+    eliminato,
+    origine,
+    origineId,
+    portafoglioId,
+    destinazioneId,
+    tipoId,
+    categoriaId,
+    descrizione,
+    importoMinimo,
+    valuta,
+    inizio,
+    frequenza,
+    fine,
+    occorrenze,
+    avvisoGiorni,
+    attiva,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pianificazioni';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Pianificazione> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('aggiornato_il')) {
+      context.handle(
+        _aggiornatoIlMeta,
+        aggiornatoIl.isAcceptableOrUnknown(
+          data['aggiornato_il']!,
+          _aggiornatoIlMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_aggiornatoIlMeta);
+    }
+    if (data.containsKey('eliminato')) {
+      context.handle(
+        _eliminatoMeta,
+        eliminato.isAcceptableOrUnknown(data['eliminato']!, _eliminatoMeta),
+      );
+    }
+    if (data.containsKey('origine')) {
+      context.handle(
+        _origineMeta,
+        origine.isAcceptableOrUnknown(data['origine']!, _origineMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_origineMeta);
+    }
+    if (data.containsKey('origine_id')) {
+      context.handle(
+        _origineIdMeta,
+        origineId.isAcceptableOrUnknown(data['origine_id']!, _origineIdMeta),
+      );
+    }
+    if (data.containsKey('portafoglio_id')) {
+      context.handle(
+        _portafoglioIdMeta,
+        portafoglioId.isAcceptableOrUnknown(
+          data['portafoglio_id']!,
+          _portafoglioIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('destinazione_id')) {
+      context.handle(
+        _destinazioneIdMeta,
+        destinazioneId.isAcceptableOrUnknown(
+          data['destinazione_id']!,
+          _destinazioneIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tipo_id')) {
+      context.handle(
+        _tipoIdMeta,
+        tipoId.isAcceptableOrUnknown(data['tipo_id']!, _tipoIdMeta),
+      );
+    }
+    if (data.containsKey('categoria_id')) {
+      context.handle(
+        _categoriaIdMeta,
+        categoriaId.isAcceptableOrUnknown(
+          data['categoria_id']!,
+          _categoriaIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('descrizione')) {
+      context.handle(
+        _descrizioneMeta,
+        descrizione.isAcceptableOrUnknown(
+          data['descrizione']!,
+          _descrizioneMeta,
+        ),
+      );
+    }
+    if (data.containsKey('importo_minimo')) {
+      context.handle(
+        _importoMinimoMeta,
+        importoMinimo.isAcceptableOrUnknown(
+          data['importo_minimo']!,
+          _importoMinimoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('valuta')) {
+      context.handle(
+        _valutaMeta,
+        valuta.isAcceptableOrUnknown(data['valuta']!, _valutaMeta),
+      );
+    }
+    if (data.containsKey('inizio')) {
+      context.handle(
+        _inizioMeta,
+        inizio.isAcceptableOrUnknown(data['inizio']!, _inizioMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_inizioMeta);
+    }
+    if (data.containsKey('frequenza')) {
+      context.handle(
+        _frequenzaMeta,
+        frequenza.isAcceptableOrUnknown(data['frequenza']!, _frequenzaMeta),
+      );
+    }
+    if (data.containsKey('fine')) {
+      context.handle(
+        _fineMeta,
+        fine.isAcceptableOrUnknown(data['fine']!, _fineMeta),
+      );
+    }
+    if (data.containsKey('occorrenze')) {
+      context.handle(
+        _occorrenzeMeta,
+        occorrenze.isAcceptableOrUnknown(data['occorrenze']!, _occorrenzeMeta),
+      );
+    }
+    if (data.containsKey('avviso_giorni')) {
+      context.handle(
+        _avvisoGiorniMeta,
+        avvisoGiorni.isAcceptableOrUnknown(
+          data['avviso_giorni']!,
+          _avvisoGiorniMeta,
+        ),
+      );
+    }
+    if (data.containsKey('attiva')) {
+      context.handle(
+        _attivaMeta,
+        attiva.isAcceptableOrUnknown(data['attiva']!, _attivaMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Pianificazione map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Pianificazione(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      aggiornatoIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}aggiornato_il'],
+      )!,
+      eliminato: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}eliminato'],
+      )!,
+      origine: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origine'],
+      )!,
+      origineId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origine_id'],
+      ),
+      portafoglioId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}portafoglio_id'],
+      ),
+      destinazioneId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}destinazione_id'],
+      ),
+      tipoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tipo_id'],
+      ),
+      categoriaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}categoria_id'],
+      ),
+      descrizione: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}descrizione'],
+      )!,
+      importoMinimo: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}importo_minimo'],
+      ),
+      valuta: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}valuta'],
+      )!,
+      inizio: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}inizio'],
+      )!,
+      frequenza: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}frequenza'],
+      )!,
+      fine: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fine'],
+      ),
+      occorrenze: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}occorrenze'],
+      ),
+      avvisoGiorni: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}avviso_giorni'],
+      )!,
+      attiva: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}attiva'],
+      )!,
+    );
+  }
+
+  @override
+  $PianificazioniTable createAlias(String alias) {
+    return $PianificazioniTable(attachedDatabase, alias);
+  }
+}
+
+class Pianificazione extends DataClass implements Insertable<Pianificazione> {
+  final String id;
+  final String aggiornatoIl;
+  final bool eliminato;
+
+  /// Vedi [OriginePianificazione].
+  final String origine;
+  final String? origineId;
+
+  /// Da dove escono i soldi. Senza portafoglio è solo un promemoria.
+  final String? portafoglioId;
+
+  /// Per i trasferimenti (es. addebito della carta sul conto).
+  final String? destinazioneId;
+  final String? tipoId;
+  final String? categoriaId;
+  final String descrizione;
+
+  /// Importo fisso; `null` = lo calcola l'origine (es. importo del mese della voce).
+  final int? importoMinimo;
+  final String valuta;
+
+  /// Regola: primo giorno (AAAA-MM-GG), frequenza, fine per data o numero di volte.
+  final String inizio;
+  final String frequenza;
+  final String? fine;
+  final int? occorrenze;
+
+  /// Quanti giorni prima avvisare.
+  final int avvisoGiorni;
+  final bool attiva;
+  const Pianificazione({
+    required this.id,
+    required this.aggiornatoIl,
+    required this.eliminato,
+    required this.origine,
+    this.origineId,
+    this.portafoglioId,
+    this.destinazioneId,
+    this.tipoId,
+    this.categoriaId,
+    required this.descrizione,
+    this.importoMinimo,
+    required this.valuta,
+    required this.inizio,
+    required this.frequenza,
+    this.fine,
+    this.occorrenze,
+    required this.avvisoGiorni,
+    required this.attiva,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['aggiornato_il'] = Variable<String>(aggiornatoIl);
+    map['eliminato'] = Variable<bool>(eliminato);
+    map['origine'] = Variable<String>(origine);
+    if (!nullToAbsent || origineId != null) {
+      map['origine_id'] = Variable<String>(origineId);
+    }
+    if (!nullToAbsent || portafoglioId != null) {
+      map['portafoglio_id'] = Variable<String>(portafoglioId);
+    }
+    if (!nullToAbsent || destinazioneId != null) {
+      map['destinazione_id'] = Variable<String>(destinazioneId);
+    }
+    if (!nullToAbsent || tipoId != null) {
+      map['tipo_id'] = Variable<String>(tipoId);
+    }
+    if (!nullToAbsent || categoriaId != null) {
+      map['categoria_id'] = Variable<String>(categoriaId);
+    }
+    map['descrizione'] = Variable<String>(descrizione);
+    if (!nullToAbsent || importoMinimo != null) {
+      map['importo_minimo'] = Variable<int>(importoMinimo);
+    }
+    map['valuta'] = Variable<String>(valuta);
+    map['inizio'] = Variable<String>(inizio);
+    map['frequenza'] = Variable<String>(frequenza);
+    if (!nullToAbsent || fine != null) {
+      map['fine'] = Variable<String>(fine);
+    }
+    if (!nullToAbsent || occorrenze != null) {
+      map['occorrenze'] = Variable<int>(occorrenze);
+    }
+    map['avviso_giorni'] = Variable<int>(avvisoGiorni);
+    map['attiva'] = Variable<bool>(attiva);
+    return map;
+  }
+
+  PianificazioniCompanion toCompanion(bool nullToAbsent) {
+    return PianificazioniCompanion(
+      id: Value(id),
+      aggiornatoIl: Value(aggiornatoIl),
+      eliminato: Value(eliminato),
+      origine: Value(origine),
+      origineId: origineId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origineId),
+      portafoglioId: portafoglioId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(portafoglioId),
+      destinazioneId: destinazioneId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(destinazioneId),
+      tipoId: tipoId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tipoId),
+      categoriaId: categoriaId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(categoriaId),
+      descrizione: Value(descrizione),
+      importoMinimo: importoMinimo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(importoMinimo),
+      valuta: Value(valuta),
+      inizio: Value(inizio),
+      frequenza: Value(frequenza),
+      fine: fine == null && nullToAbsent ? const Value.absent() : Value(fine),
+      occorrenze: occorrenze == null && nullToAbsent
+          ? const Value.absent()
+          : Value(occorrenze),
+      avvisoGiorni: Value(avvisoGiorni),
+      attiva: Value(attiva),
+    );
+  }
+
+  factory Pianificazione.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Pianificazione(
+      id: serializer.fromJson<String>(json['id']),
+      aggiornatoIl: serializer.fromJson<String>(json['aggiornatoIl']),
+      eliminato: serializer.fromJson<bool>(json['eliminato']),
+      origine: serializer.fromJson<String>(json['origine']),
+      origineId: serializer.fromJson<String?>(json['origineId']),
+      portafoglioId: serializer.fromJson<String?>(json['portafoglioId']),
+      destinazioneId: serializer.fromJson<String?>(json['destinazioneId']),
+      tipoId: serializer.fromJson<String?>(json['tipoId']),
+      categoriaId: serializer.fromJson<String?>(json['categoriaId']),
+      descrizione: serializer.fromJson<String>(json['descrizione']),
+      importoMinimo: serializer.fromJson<int?>(json['importoMinimo']),
+      valuta: serializer.fromJson<String>(json['valuta']),
+      inizio: serializer.fromJson<String>(json['inizio']),
+      frequenza: serializer.fromJson<String>(json['frequenza']),
+      fine: serializer.fromJson<String?>(json['fine']),
+      occorrenze: serializer.fromJson<int?>(json['occorrenze']),
+      avvisoGiorni: serializer.fromJson<int>(json['avvisoGiorni']),
+      attiva: serializer.fromJson<bool>(json['attiva']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'aggiornatoIl': serializer.toJson<String>(aggiornatoIl),
+      'eliminato': serializer.toJson<bool>(eliminato),
+      'origine': serializer.toJson<String>(origine),
+      'origineId': serializer.toJson<String?>(origineId),
+      'portafoglioId': serializer.toJson<String?>(portafoglioId),
+      'destinazioneId': serializer.toJson<String?>(destinazioneId),
+      'tipoId': serializer.toJson<String?>(tipoId),
+      'categoriaId': serializer.toJson<String?>(categoriaId),
+      'descrizione': serializer.toJson<String>(descrizione),
+      'importoMinimo': serializer.toJson<int?>(importoMinimo),
+      'valuta': serializer.toJson<String>(valuta),
+      'inizio': serializer.toJson<String>(inizio),
+      'frequenza': serializer.toJson<String>(frequenza),
+      'fine': serializer.toJson<String?>(fine),
+      'occorrenze': serializer.toJson<int?>(occorrenze),
+      'avvisoGiorni': serializer.toJson<int>(avvisoGiorni),
+      'attiva': serializer.toJson<bool>(attiva),
+    };
+  }
+
+  Pianificazione copyWith({
+    String? id,
+    String? aggiornatoIl,
+    bool? eliminato,
+    String? origine,
+    Value<String?> origineId = const Value.absent(),
+    Value<String?> portafoglioId = const Value.absent(),
+    Value<String?> destinazioneId = const Value.absent(),
+    Value<String?> tipoId = const Value.absent(),
+    Value<String?> categoriaId = const Value.absent(),
+    String? descrizione,
+    Value<int?> importoMinimo = const Value.absent(),
+    String? valuta,
+    String? inizio,
+    String? frequenza,
+    Value<String?> fine = const Value.absent(),
+    Value<int?> occorrenze = const Value.absent(),
+    int? avvisoGiorni,
+    bool? attiva,
+  }) => Pianificazione(
+    id: id ?? this.id,
+    aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+    eliminato: eliminato ?? this.eliminato,
+    origine: origine ?? this.origine,
+    origineId: origineId.present ? origineId.value : this.origineId,
+    portafoglioId: portafoglioId.present
+        ? portafoglioId.value
+        : this.portafoglioId,
+    destinazioneId: destinazioneId.present
+        ? destinazioneId.value
+        : this.destinazioneId,
+    tipoId: tipoId.present ? tipoId.value : this.tipoId,
+    categoriaId: categoriaId.present ? categoriaId.value : this.categoriaId,
+    descrizione: descrizione ?? this.descrizione,
+    importoMinimo: importoMinimo.present
+        ? importoMinimo.value
+        : this.importoMinimo,
+    valuta: valuta ?? this.valuta,
+    inizio: inizio ?? this.inizio,
+    frequenza: frequenza ?? this.frequenza,
+    fine: fine.present ? fine.value : this.fine,
+    occorrenze: occorrenze.present ? occorrenze.value : this.occorrenze,
+    avvisoGiorni: avvisoGiorni ?? this.avvisoGiorni,
+    attiva: attiva ?? this.attiva,
+  );
+  Pianificazione copyWithCompanion(PianificazioniCompanion data) {
+    return Pianificazione(
+      id: data.id.present ? data.id.value : this.id,
+      aggiornatoIl: data.aggiornatoIl.present
+          ? data.aggiornatoIl.value
+          : this.aggiornatoIl,
+      eliminato: data.eliminato.present ? data.eliminato.value : this.eliminato,
+      origine: data.origine.present ? data.origine.value : this.origine,
+      origineId: data.origineId.present ? data.origineId.value : this.origineId,
+      portafoglioId: data.portafoglioId.present
+          ? data.portafoglioId.value
+          : this.portafoglioId,
+      destinazioneId: data.destinazioneId.present
+          ? data.destinazioneId.value
+          : this.destinazioneId,
+      tipoId: data.tipoId.present ? data.tipoId.value : this.tipoId,
+      categoriaId: data.categoriaId.present
+          ? data.categoriaId.value
+          : this.categoriaId,
+      descrizione: data.descrizione.present
+          ? data.descrizione.value
+          : this.descrizione,
+      importoMinimo: data.importoMinimo.present
+          ? data.importoMinimo.value
+          : this.importoMinimo,
+      valuta: data.valuta.present ? data.valuta.value : this.valuta,
+      inizio: data.inizio.present ? data.inizio.value : this.inizio,
+      frequenza: data.frequenza.present ? data.frequenza.value : this.frequenza,
+      fine: data.fine.present ? data.fine.value : this.fine,
+      occorrenze: data.occorrenze.present
+          ? data.occorrenze.value
+          : this.occorrenze,
+      avvisoGiorni: data.avvisoGiorni.present
+          ? data.avvisoGiorni.value
+          : this.avvisoGiorni,
+      attiva: data.attiva.present ? data.attiva.value : this.attiva,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Pianificazione(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('origine: $origine, ')
+          ..write('origineId: $origineId, ')
+          ..write('portafoglioId: $portafoglioId, ')
+          ..write('destinazioneId: $destinazioneId, ')
+          ..write('tipoId: $tipoId, ')
+          ..write('categoriaId: $categoriaId, ')
+          ..write('descrizione: $descrizione, ')
+          ..write('importoMinimo: $importoMinimo, ')
+          ..write('valuta: $valuta, ')
+          ..write('inizio: $inizio, ')
+          ..write('frequenza: $frequenza, ')
+          ..write('fine: $fine, ')
+          ..write('occorrenze: $occorrenze, ')
+          ..write('avvisoGiorni: $avvisoGiorni, ')
+          ..write('attiva: $attiva')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    aggiornatoIl,
+    eliminato,
+    origine,
+    origineId,
+    portafoglioId,
+    destinazioneId,
+    tipoId,
+    categoriaId,
+    descrizione,
+    importoMinimo,
+    valuta,
+    inizio,
+    frequenza,
+    fine,
+    occorrenze,
+    avvisoGiorni,
+    attiva,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Pianificazione &&
+          other.id == this.id &&
+          other.aggiornatoIl == this.aggiornatoIl &&
+          other.eliminato == this.eliminato &&
+          other.origine == this.origine &&
+          other.origineId == this.origineId &&
+          other.portafoglioId == this.portafoglioId &&
+          other.destinazioneId == this.destinazioneId &&
+          other.tipoId == this.tipoId &&
+          other.categoriaId == this.categoriaId &&
+          other.descrizione == this.descrizione &&
+          other.importoMinimo == this.importoMinimo &&
+          other.valuta == this.valuta &&
+          other.inizio == this.inizio &&
+          other.frequenza == this.frequenza &&
+          other.fine == this.fine &&
+          other.occorrenze == this.occorrenze &&
+          other.avvisoGiorni == this.avvisoGiorni &&
+          other.attiva == this.attiva);
+}
+
+class PianificazioniCompanion extends UpdateCompanion<Pianificazione> {
+  final Value<String> id;
+  final Value<String> aggiornatoIl;
+  final Value<bool> eliminato;
+  final Value<String> origine;
+  final Value<String?> origineId;
+  final Value<String?> portafoglioId;
+  final Value<String?> destinazioneId;
+  final Value<String?> tipoId;
+  final Value<String?> categoriaId;
+  final Value<String> descrizione;
+  final Value<int?> importoMinimo;
+  final Value<String> valuta;
+  final Value<String> inizio;
+  final Value<String> frequenza;
+  final Value<String?> fine;
+  final Value<int?> occorrenze;
+  final Value<int> avvisoGiorni;
+  final Value<bool> attiva;
+  final Value<int> rowid;
+  const PianificazioniCompanion({
+    this.id = const Value.absent(),
+    this.aggiornatoIl = const Value.absent(),
+    this.eliminato = const Value.absent(),
+    this.origine = const Value.absent(),
+    this.origineId = const Value.absent(),
+    this.portafoglioId = const Value.absent(),
+    this.destinazioneId = const Value.absent(),
+    this.tipoId = const Value.absent(),
+    this.categoriaId = const Value.absent(),
+    this.descrizione = const Value.absent(),
+    this.importoMinimo = const Value.absent(),
+    this.valuta = const Value.absent(),
+    this.inizio = const Value.absent(),
+    this.frequenza = const Value.absent(),
+    this.fine = const Value.absent(),
+    this.occorrenze = const Value.absent(),
+    this.avvisoGiorni = const Value.absent(),
+    this.attiva = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PianificazioniCompanion.insert({
+    required String id,
+    required String aggiornatoIl,
+    this.eliminato = const Value.absent(),
+    required String origine,
+    this.origineId = const Value.absent(),
+    this.portafoglioId = const Value.absent(),
+    this.destinazioneId = const Value.absent(),
+    this.tipoId = const Value.absent(),
+    this.categoriaId = const Value.absent(),
+    this.descrizione = const Value.absent(),
+    this.importoMinimo = const Value.absent(),
+    this.valuta = const Value.absent(),
+    required String inizio,
+    this.frequenza = const Value.absent(),
+    this.fine = const Value.absent(),
+    this.occorrenze = const Value.absent(),
+    this.avvisoGiorni = const Value.absent(),
+    this.attiva = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       aggiornatoIl = Value(aggiornatoIl),
+       origine = Value(origine),
+       inizio = Value(inizio);
+  static Insertable<Pianificazione> custom({
+    Expression<String>? id,
+    Expression<String>? aggiornatoIl,
+    Expression<bool>? eliminato,
+    Expression<String>? origine,
+    Expression<String>? origineId,
+    Expression<String>? portafoglioId,
+    Expression<String>? destinazioneId,
+    Expression<String>? tipoId,
+    Expression<String>? categoriaId,
+    Expression<String>? descrizione,
+    Expression<int>? importoMinimo,
+    Expression<String>? valuta,
+    Expression<String>? inizio,
+    Expression<String>? frequenza,
+    Expression<String>? fine,
+    Expression<int>? occorrenze,
+    Expression<int>? avvisoGiorni,
+    Expression<bool>? attiva,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (aggiornatoIl != null) 'aggiornato_il': aggiornatoIl,
+      if (eliminato != null) 'eliminato': eliminato,
+      if (origine != null) 'origine': origine,
+      if (origineId != null) 'origine_id': origineId,
+      if (portafoglioId != null) 'portafoglio_id': portafoglioId,
+      if (destinazioneId != null) 'destinazione_id': destinazioneId,
+      if (tipoId != null) 'tipo_id': tipoId,
+      if (categoriaId != null) 'categoria_id': categoriaId,
+      if (descrizione != null) 'descrizione': descrizione,
+      if (importoMinimo != null) 'importo_minimo': importoMinimo,
+      if (valuta != null) 'valuta': valuta,
+      if (inizio != null) 'inizio': inizio,
+      if (frequenza != null) 'frequenza': frequenza,
+      if (fine != null) 'fine': fine,
+      if (occorrenze != null) 'occorrenze': occorrenze,
+      if (avvisoGiorni != null) 'avviso_giorni': avvisoGiorni,
+      if (attiva != null) 'attiva': attiva,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PianificazioniCompanion copyWith({
+    Value<String>? id,
+    Value<String>? aggiornatoIl,
+    Value<bool>? eliminato,
+    Value<String>? origine,
+    Value<String?>? origineId,
+    Value<String?>? portafoglioId,
+    Value<String?>? destinazioneId,
+    Value<String?>? tipoId,
+    Value<String?>? categoriaId,
+    Value<String>? descrizione,
+    Value<int?>? importoMinimo,
+    Value<String>? valuta,
+    Value<String>? inizio,
+    Value<String>? frequenza,
+    Value<String?>? fine,
+    Value<int?>? occorrenze,
+    Value<int>? avvisoGiorni,
+    Value<bool>? attiva,
+    Value<int>? rowid,
+  }) {
+    return PianificazioniCompanion(
+      id: id ?? this.id,
+      aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+      eliminato: eliminato ?? this.eliminato,
+      origine: origine ?? this.origine,
+      origineId: origineId ?? this.origineId,
+      portafoglioId: portafoglioId ?? this.portafoglioId,
+      destinazioneId: destinazioneId ?? this.destinazioneId,
+      tipoId: tipoId ?? this.tipoId,
+      categoriaId: categoriaId ?? this.categoriaId,
+      descrizione: descrizione ?? this.descrizione,
+      importoMinimo: importoMinimo ?? this.importoMinimo,
+      valuta: valuta ?? this.valuta,
+      inizio: inizio ?? this.inizio,
+      frequenza: frequenza ?? this.frequenza,
+      fine: fine ?? this.fine,
+      occorrenze: occorrenze ?? this.occorrenze,
+      avvisoGiorni: avvisoGiorni ?? this.avvisoGiorni,
+      attiva: attiva ?? this.attiva,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (aggiornatoIl.present) {
+      map['aggiornato_il'] = Variable<String>(aggiornatoIl.value);
+    }
+    if (eliminato.present) {
+      map['eliminato'] = Variable<bool>(eliminato.value);
+    }
+    if (origine.present) {
+      map['origine'] = Variable<String>(origine.value);
+    }
+    if (origineId.present) {
+      map['origine_id'] = Variable<String>(origineId.value);
+    }
+    if (portafoglioId.present) {
+      map['portafoglio_id'] = Variable<String>(portafoglioId.value);
+    }
+    if (destinazioneId.present) {
+      map['destinazione_id'] = Variable<String>(destinazioneId.value);
+    }
+    if (tipoId.present) {
+      map['tipo_id'] = Variable<String>(tipoId.value);
+    }
+    if (categoriaId.present) {
+      map['categoria_id'] = Variable<String>(categoriaId.value);
+    }
+    if (descrizione.present) {
+      map['descrizione'] = Variable<String>(descrizione.value);
+    }
+    if (importoMinimo.present) {
+      map['importo_minimo'] = Variable<int>(importoMinimo.value);
+    }
+    if (valuta.present) {
+      map['valuta'] = Variable<String>(valuta.value);
+    }
+    if (inizio.present) {
+      map['inizio'] = Variable<String>(inizio.value);
+    }
+    if (frequenza.present) {
+      map['frequenza'] = Variable<String>(frequenza.value);
+    }
+    if (fine.present) {
+      map['fine'] = Variable<String>(fine.value);
+    }
+    if (occorrenze.present) {
+      map['occorrenze'] = Variable<int>(occorrenze.value);
+    }
+    if (avvisoGiorni.present) {
+      map['avviso_giorni'] = Variable<int>(avvisoGiorni.value);
+    }
+    if (attiva.present) {
+      map['attiva'] = Variable<bool>(attiva.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PianificazioniCompanion(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('origine: $origine, ')
+          ..write('origineId: $origineId, ')
+          ..write('portafoglioId: $portafoglioId, ')
+          ..write('destinazioneId: $destinazioneId, ')
+          ..write('tipoId: $tipoId, ')
+          ..write('categoriaId: $categoriaId, ')
+          ..write('descrizione: $descrizione, ')
+          ..write('importoMinimo: $importoMinimo, ')
+          ..write('valuta: $valuta, ')
+          ..write('inizio: $inizio, ')
+          ..write('frequenza: $frequenza, ')
+          ..write('fine: $fine, ')
+          ..write('occorrenze: $occorrenze, ')
+          ..write('avvisoGiorni: $avvisoGiorni, ')
+          ..write('attiva: $attiva, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $MovimentiTable extends Movimenti
     with TableInfo<$MovimentiTable, Movimento> {
   @override
@@ -2024,6 +3081,31 @@ class $MovimentiTable extends Movimenti
     requiredDuringInsert: false,
     defaultValue: const Constant('{}'),
   );
+  static const VerificationMeta _pianificazioneIdMeta = const VerificationMeta(
+    'pianificazioneId',
+  );
+  @override
+  late final GeneratedColumn<String> pianificazioneId = GeneratedColumn<String>(
+    'pianificazione_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES pianificazioni (id)',
+    ),
+  );
+  static const VerificationMeta _dataPrevistaMeta = const VerificationMeta(
+    'dataPrevista',
+  );
+  @override
+  late final GeneratedColumn<String> dataPrevista = GeneratedColumn<String>(
+    'data_prevista',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2038,6 +3120,8 @@ class $MovimentiTable extends Movimenti
     data,
     descrizione,
     campi,
+    pianificazioneId,
+    dataPrevista,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2152,6 +3236,24 @@ class $MovimentiTable extends Movimenti
         campi.isAcceptableOrUnknown(data['campi']!, _campiMeta),
       );
     }
+    if (data.containsKey('pianificazione_id')) {
+      context.handle(
+        _pianificazioneIdMeta,
+        pianificazioneId.isAcceptableOrUnknown(
+          data['pianificazione_id']!,
+          _pianificazioneIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('data_prevista')) {
+      context.handle(
+        _dataPrevistaMeta,
+        dataPrevista.isAcceptableOrUnknown(
+          data['data_prevista']!,
+          _dataPrevistaMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2209,6 +3311,14 @@ class $MovimentiTable extends Movimenti
         DriftSqlType.string,
         data['${effectivePrefix}campi'],
       )!,
+      pianificazioneId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pianificazione_id'],
+      ),
+      dataPrevista: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}data_prevista'],
+      ),
     );
   }
 
@@ -2237,6 +3347,11 @@ class Movimento extends DataClass implements Insertable<Movimento> {
   final String data;
   final String descrizione;
   final String campi;
+
+  /// Movimento creato da un pagamento programmato (bolletta, rata, carta):
+  /// la coppia (pianificazione, data prevista) è unica, così non si registra due volte.
+  final String? pianificazioneId;
+  final String? dataPrevista;
   const Movimento({
     required this.id,
     required this.aggiornatoIl,
@@ -2250,6 +3365,8 @@ class Movimento extends DataClass implements Insertable<Movimento> {
     required this.data,
     required this.descrizione,
     required this.campi,
+    this.pianificazioneId,
+    this.dataPrevista,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2272,6 +3389,12 @@ class Movimento extends DataClass implements Insertable<Movimento> {
     map['data'] = Variable<String>(data);
     map['descrizione'] = Variable<String>(descrizione);
     map['campi'] = Variable<String>(campi);
+    if (!nullToAbsent || pianificazioneId != null) {
+      map['pianificazione_id'] = Variable<String>(pianificazioneId);
+    }
+    if (!nullToAbsent || dataPrevista != null) {
+      map['data_prevista'] = Variable<String>(dataPrevista);
+    }
     return map;
   }
 
@@ -2294,6 +3417,12 @@ class Movimento extends DataClass implements Insertable<Movimento> {
       data: Value(data),
       descrizione: Value(descrizione),
       campi: Value(campi),
+      pianificazioneId: pianificazioneId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pianificazioneId),
+      dataPrevista: dataPrevista == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dataPrevista),
     );
   }
 
@@ -2317,6 +3446,8 @@ class Movimento extends DataClass implements Insertable<Movimento> {
       data: serializer.fromJson<String>(json['data']),
       descrizione: serializer.fromJson<String>(json['descrizione']),
       campi: serializer.fromJson<String>(json['campi']),
+      pianificazioneId: serializer.fromJson<String?>(json['pianificazioneId']),
+      dataPrevista: serializer.fromJson<String?>(json['dataPrevista']),
     );
   }
   @override
@@ -2337,6 +3468,8 @@ class Movimento extends DataClass implements Insertable<Movimento> {
       'data': serializer.toJson<String>(data),
       'descrizione': serializer.toJson<String>(descrizione),
       'campi': serializer.toJson<String>(campi),
+      'pianificazioneId': serializer.toJson<String?>(pianificazioneId),
+      'dataPrevista': serializer.toJson<String?>(dataPrevista),
     };
   }
 
@@ -2353,6 +3486,8 @@ class Movimento extends DataClass implements Insertable<Movimento> {
     String? data,
     String? descrizione,
     String? campi,
+    Value<String?> pianificazioneId = const Value.absent(),
+    Value<String?> dataPrevista = const Value.absent(),
   }) => Movimento(
     id: id ?? this.id,
     aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
@@ -2368,6 +3503,10 @@ class Movimento extends DataClass implements Insertable<Movimento> {
     data: data ?? this.data,
     descrizione: descrizione ?? this.descrizione,
     campi: campi ?? this.campi,
+    pianificazioneId: pianificazioneId.present
+        ? pianificazioneId.value
+        : this.pianificazioneId,
+    dataPrevista: dataPrevista.present ? dataPrevista.value : this.dataPrevista,
   );
   Movimento copyWithCompanion(MovimentiCompanion data) {
     return Movimento(
@@ -2395,6 +3534,12 @@ class Movimento extends DataClass implements Insertable<Movimento> {
           ? data.descrizione.value
           : this.descrizione,
       campi: data.campi.present ? data.campi.value : this.campi,
+      pianificazioneId: data.pianificazioneId.present
+          ? data.pianificazioneId.value
+          : this.pianificazioneId,
+      dataPrevista: data.dataPrevista.present
+          ? data.dataPrevista.value
+          : this.dataPrevista,
     );
   }
 
@@ -2412,7 +3557,9 @@ class Movimento extends DataClass implements Insertable<Movimento> {
           ..write('valuta: $valuta, ')
           ..write('data: $data, ')
           ..write('descrizione: $descrizione, ')
-          ..write('campi: $campi')
+          ..write('campi: $campi, ')
+          ..write('pianificazioneId: $pianificazioneId, ')
+          ..write('dataPrevista: $dataPrevista')
           ..write(')'))
         .toString();
   }
@@ -2431,6 +3578,8 @@ class Movimento extends DataClass implements Insertable<Movimento> {
     data,
     descrizione,
     campi,
+    pianificazioneId,
+    dataPrevista,
   );
   @override
   bool operator ==(Object other) =>
@@ -2447,7 +3596,9 @@ class Movimento extends DataClass implements Insertable<Movimento> {
           other.valuta == this.valuta &&
           other.data == this.data &&
           other.descrizione == this.descrizione &&
-          other.campi == this.campi);
+          other.campi == this.campi &&
+          other.pianificazioneId == this.pianificazioneId &&
+          other.dataPrevista == this.dataPrevista);
 }
 
 class MovimentiCompanion extends UpdateCompanion<Movimento> {
@@ -2463,6 +3614,8 @@ class MovimentiCompanion extends UpdateCompanion<Movimento> {
   final Value<String> data;
   final Value<String> descrizione;
   final Value<String> campi;
+  final Value<String?> pianificazioneId;
+  final Value<String?> dataPrevista;
   final Value<int> rowid;
   const MovimentiCompanion({
     this.id = const Value.absent(),
@@ -2477,6 +3630,8 @@ class MovimentiCompanion extends UpdateCompanion<Movimento> {
     this.data = const Value.absent(),
     this.descrizione = const Value.absent(),
     this.campi = const Value.absent(),
+    this.pianificazioneId = const Value.absent(),
+    this.dataPrevista = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   MovimentiCompanion.insert({
@@ -2492,6 +3647,8 @@ class MovimentiCompanion extends UpdateCompanion<Movimento> {
     required String data,
     this.descrizione = const Value.absent(),
     this.campi = const Value.absent(),
+    this.pianificazioneId = const Value.absent(),
+    this.dataPrevista = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        aggiornatoIl = Value(aggiornatoIl),
@@ -2513,6 +3670,8 @@ class MovimentiCompanion extends UpdateCompanion<Movimento> {
     Expression<String>? data,
     Expression<String>? descrizione,
     Expression<String>? campi,
+    Expression<String>? pianificazioneId,
+    Expression<String>? dataPrevista,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2529,6 +3688,8 @@ class MovimentiCompanion extends UpdateCompanion<Movimento> {
       if (data != null) 'data': data,
       if (descrizione != null) 'descrizione': descrizione,
       if (campi != null) 'campi': campi,
+      if (pianificazioneId != null) 'pianificazione_id': pianificazioneId,
+      if (dataPrevista != null) 'data_prevista': dataPrevista,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2546,6 +3707,8 @@ class MovimentiCompanion extends UpdateCompanion<Movimento> {
     Value<String>? data,
     Value<String>? descrizione,
     Value<String>? campi,
+    Value<String?>? pianificazioneId,
+    Value<String?>? dataPrevista,
     Value<int>? rowid,
   }) {
     return MovimentiCompanion(
@@ -2562,6 +3725,8 @@ class MovimentiCompanion extends UpdateCompanion<Movimento> {
       data: data ?? this.data,
       descrizione: descrizione ?? this.descrizione,
       campi: campi ?? this.campi,
+      pianificazioneId: pianificazioneId ?? this.pianificazioneId,
+      dataPrevista: dataPrevista ?? this.dataPrevista,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2607,6 +3772,12 @@ class MovimentiCompanion extends UpdateCompanion<Movimento> {
     if (campi.present) {
       map['campi'] = Variable<String>(campi.value);
     }
+    if (pianificazioneId.present) {
+      map['pianificazione_id'] = Variable<String>(pianificazioneId.value);
+    }
+    if (dataPrevista.present) {
+      map['data_prevista'] = Variable<String>(dataPrevista.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2628,6 +3799,8 @@ class MovimentiCompanion extends UpdateCompanion<Movimento> {
           ..write('data: $data, ')
           ..write('descrizione: $descrizione, ')
           ..write('campi: $campi, ')
+          ..write('pianificazioneId: $pianificazioneId, ')
+          ..write('dataPrevista: $dataPrevista, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5051,6 +6224,7 @@ abstract class _$Archivio extends GeneratedDatabase {
   );
   late final $PortafogliTable portafogli = $PortafogliTable(this);
   late final $CategorieTable categorie = $CategorieTable(this);
+  late final $PianificazioniTable pianificazioni = $PianificazioniTable(this);
   late final $MovimentiTable movimenti = $MovimentiTable(this);
   late final $EtichetteTable etichette = $EtichetteTable(this);
   late final $MovimentiEtichetteTable movimentiEtichette =
@@ -5059,6 +6233,10 @@ abstract class _$Archivio extends GeneratedDatabase {
   late final $ImportiVoceTable importiVoce = $ImportiVoceTable(this);
   late final $VariazioniMeseTable variazioniMese = $VariazioniMeseTable(this);
   late final $ImpostazioniTable impostazioni = $ImpostazioniTable(this);
+  late final Index movimentiPianificatiUnici = Index(
+    'movimenti_pianificati_unici',
+    'CREATE UNIQUE INDEX movimenti_pianificati_unici ON movimenti (pianificazione_id, data_prevista)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5067,6 +6245,7 @@ abstract class _$Archivio extends GeneratedDatabase {
     definizioniTipo,
     portafogli,
     categorie,
+    pianificazioni,
     movimenti,
     etichette,
     movimentiEtichette,
@@ -5074,6 +6253,7 @@ abstract class _$Archivio extends GeneratedDatabase {
     importiVoce,
     variazioniMese,
     impostazioni,
+    movimentiPianificatiUnici,
   ];
 }
 
@@ -5129,6 +6309,24 @@ final class $$DefinizioniTipoTableReferences
     ).filter((f) => f.tipoId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_portafogliRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$PianificazioniTable, List<Pianificazione>>
+  _pianificazioniRefsTable(_$Archivio db) => MultiTypedResultKey.fromTable(
+    db.pianificazioni,
+    aliasName: 'definizioni_tipo__id__pianificazioni__tipo_id',
+  );
+
+  $$PianificazioniTableProcessedTableManager get pianificazioniRefs {
+    final manager = $$PianificazioniTableTableManager(
+      $_db,
+      $_db.pianificazioni,
+    ).filter((f) => f.tipoId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_pianificazioniRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -5233,6 +6431,31 @@ class $$DefinizioniTipoTableFilterComposer
           }) => $$PortafogliTableFilterComposer(
             $db: $db,
             $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> pianificazioniRefs(
+    Expression<bool> Function($$PianificazioniTableFilterComposer f) f,
+  ) {
+    final $$PianificazioniTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.pianificazioni,
+      getReferencedColumn: (t) => t.tipoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PianificazioniTableFilterComposer(
+            $db: $db,
+            $table: $db.pianificazioni,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -5408,6 +6631,31 @@ class $$DefinizioniTipoTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> pianificazioniRefs<T extends Object>(
+    Expression<T> Function($$PianificazioniTableAnnotationComposer a) f,
+  ) {
+    final $$PianificazioniTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.pianificazioni,
+      getReferencedColumn: (t) => t.tipoId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PianificazioniTableAnnotationComposer(
+            $db: $db,
+            $table: $db.pianificazioni,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> movimentiRefs<T extends Object>(
     Expression<T> Function($$MovimentiTableAnnotationComposer a) f,
   ) {
@@ -5447,7 +6695,11 @@ class $$DefinizioniTipoTableTableManager
           $$DefinizioniTipoTableUpdateCompanionBuilder,
           (DefinizioneTipo, $$DefinizioniTipoTableReferences),
           DefinizioneTipo,
-          PrefetchHooks Function({bool portafogliRefs, bool movimentiRefs})
+          PrefetchHooks Function({
+            bool portafogliRefs,
+            bool pianificazioniRefs,
+            bool movimentiRefs,
+          })
         > {
   $$DefinizioniTipoTableTableManager(_$Archivio db, $DefinizioniTipoTable table)
     : super(
@@ -5525,11 +6777,16 @@ class $$DefinizioniTipoTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({portafogliRefs = false, movimentiRefs = false}) {
+              ({
+                portafogliRefs = false,
+                pianificazioniRefs = false,
+                movimentiRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (portafogliRefs) db.portafogli,
+                    if (pianificazioniRefs) db.pianificazioni,
                     if (movimentiRefs) db.movimenti,
                   ],
                   addJoins: null,
@@ -5550,6 +6807,27 @@ class $$DefinizioniTipoTableTableManager
                                 table,
                                 p0,
                               ).portafogliRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.tipoId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (pianificazioniRefs)
+                        await $_getPrefetchedData<
+                          DefinizioneTipo,
+                          $DefinizioniTipoTable,
+                          Pianificazione
+                        >(
+                          currentTable: table,
+                          referencedTable: $$DefinizioniTipoTableReferences
+                              ._pianificazioniRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$DefinizioniTipoTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).pianificazioniRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.tipoId == item.id,
@@ -5597,7 +6875,11 @@ typedef $$DefinizioniTipoTableProcessedTableManager =
       $$DefinizioniTipoTableUpdateCompanionBuilder,
       (DefinizioneTipo, $$DefinizioniTipoTableReferences),
       DefinizioneTipo,
-      PrefetchHooks Function({bool portafogliRefs, bool movimentiRefs})
+      PrefetchHooks Function({
+        bool portafogliRefs,
+        bool pianificazioniRefs,
+        bool movimentiRefs,
+      })
     >;
 typedef $$PortafogliTableCreateCompanionBuilder = PortafogliCompanion Function({
   required String id,
@@ -5644,6 +6926,46 @@ final class $$PortafogliTableReferences
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$PianificazioniTable, List<Pianificazione>>
+  _pianificazioniInUscitaTable(_$Archivio db) => MultiTypedResultKey.fromTable(
+    db.pianificazioni,
+    aliasName: 'portafogli__id__pianificazioni__portafoglio_id',
+  );
+
+  $$PianificazioniTableProcessedTableManager get pianificazioniInUscita {
+    final manager = $$PianificazioniTableTableManager(
+      $_db,
+      $_db.pianificazioni,
+    ).filter((f) => f.portafoglioId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _pianificazioniInUscitaTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$PianificazioniTable, List<Pianificazione>>
+  _pianificazioniInEntrataTable(_$Archivio db) => MultiTypedResultKey.fromTable(
+    db.pianificazioni,
+    aliasName: 'portafogli__id__pianificazioni__destinazione_id',
+  );
+
+  $$PianificazioniTableProcessedTableManager get pianificazioniInEntrata {
+    final manager = $$PianificazioniTableTableManager(
+      $_db,
+      $_db.pianificazioni,
+    ).filter((f) => f.destinazioneId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _pianificazioniInEntrataTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
     );
   }
 
@@ -5759,6 +7081,56 @@ class $$PortafogliTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> pianificazioniInUscita(
+    Expression<bool> Function($$PianificazioniTableFilterComposer f) f,
+  ) {
+    final $$PianificazioniTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.pianificazioni,
+      getReferencedColumn: (t) => t.portafoglioId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PianificazioniTableFilterComposer(
+            $db: $db,
+            $table: $db.pianificazioni,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> pianificazioniInEntrata(
+    Expression<bool> Function($$PianificazioniTableFilterComposer f) f,
+  ) {
+    final $$PianificazioniTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.pianificazioni,
+      getReferencedColumn: (t) => t.destinazioneId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PianificazioniTableFilterComposer(
+            $db: $db,
+            $table: $db.pianificazioni,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 
   Expression<bool> movimentiInUscita(
@@ -5955,6 +7327,56 @@ class $$PortafogliTableAnnotationComposer
     return composer;
   }
 
+  Expression<T> pianificazioniInUscita<T extends Object>(
+    Expression<T> Function($$PianificazioniTableAnnotationComposer a) f,
+  ) {
+    final $$PianificazioniTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.pianificazioni,
+      getReferencedColumn: (t) => t.portafoglioId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PianificazioniTableAnnotationComposer(
+            $db: $db,
+            $table: $db.pianificazioni,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> pianificazioniInEntrata<T extends Object>(
+    Expression<T> Function($$PianificazioniTableAnnotationComposer a) f,
+  ) {
+    final $$PianificazioniTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.pianificazioni,
+      getReferencedColumn: (t) => t.destinazioneId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PianificazioniTableAnnotationComposer(
+            $db: $db,
+            $table: $db.pianificazioni,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> movimentiInUscita<T extends Object>(
     Expression<T> Function($$MovimentiTableAnnotationComposer a) f,
   ) {
@@ -6021,6 +7443,8 @@ class $$PortafogliTableTableManager
           Portafoglio,
           PrefetchHooks Function({
             bool tipoId,
+            bool pianificazioniInUscita,
+            bool pianificazioniInEntrata,
             bool movimentiInUscita,
             bool movimentiInEntrata,
           })
@@ -6099,12 +7523,16 @@ class $$PortafogliTableTableManager
           prefetchHooksCallback:
               ({
                 tipoId = false,
+                pianificazioniInUscita = false,
+                pianificazioniInEntrata = false,
                 movimentiInUscita = false,
                 movimentiInEntrata = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
+                    if (pianificazioniInUscita) db.pianificazioni,
+                    if (pianificazioniInEntrata) db.pianificazioni,
                     if (movimentiInUscita) db.movimenti,
                     if (movimentiInEntrata) db.movimenti,
                   ],
@@ -6140,6 +7568,48 @@ class $$PortafogliTableTableManager
                       },
                   getPrefetchedDataCallback: (items) async {
                     return [
+                      if (pianificazioniInUscita)
+                        await $_getPrefetchedData<
+                          Portafoglio,
+                          $PortafogliTable,
+                          Pianificazione
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PortafogliTableReferences
+                              ._pianificazioniInUscitaTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PortafogliTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).pianificazioniInUscita,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.portafoglioId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (pianificazioniInEntrata)
+                        await $_getPrefetchedData<
+                          Portafoglio,
+                          $PortafogliTable,
+                          Pianificazione
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PortafogliTableReferences
+                              ._pianificazioniInEntrataTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PortafogliTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).pianificazioniInEntrata,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.destinazioneId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (movimentiInUscita)
                         await $_getPrefetchedData<
                           Portafoglio,
@@ -6204,6 +7674,8 @@ typedef $$PortafogliTableProcessedTableManager =
       Portafoglio,
       PrefetchHooks Function({
         bool tipoId,
+        bool pianificazioniInUscita,
+        bool pianificazioniInEntrata,
         bool movimentiInUscita,
         bool movimentiInEntrata,
       })
@@ -6251,6 +7723,24 @@ final class $$CategorieTableReferences
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$PianificazioniTable, List<Pianificazione>>
+  _pianificazioniRefsTable(_$Archivio db) => MultiTypedResultKey.fromTable(
+    db.pianificazioni,
+    aliasName: 'categorie__id__pianificazioni__categoria_id',
+  );
+
+  $$PianificazioniTableProcessedTableManager get pianificazioniRefs {
+    final manager = $$PianificazioniTableTableManager(
+      $_db,
+      $_db.pianificazioni,
+    ).filter((f) => f.categoriaId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_pianificazioniRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
     );
   }
 
@@ -6361,6 +7851,31 @@ class $$CategorieTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> pianificazioniRefs(
+    Expression<bool> Function($$PianificazioniTableFilterComposer f) f,
+  ) {
+    final $$PianificazioniTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.pianificazioni,
+      getReferencedColumn: (t) => t.categoriaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PianificazioniTableFilterComposer(
+            $db: $db,
+            $table: $db.pianificazioni,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 
   Expression<bool> movimentiRefs(
@@ -6547,6 +8062,31 @@ class $$CategorieTableAnnotationComposer
     return composer;
   }
 
+  Expression<T> pianificazioniRefs<T extends Object>(
+    Expression<T> Function($$PianificazioniTableAnnotationComposer a) f,
+  ) {
+    final $$PianificazioniTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.pianificazioni,
+      getReferencedColumn: (t) => t.categoriaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PianificazioniTableAnnotationComposer(
+            $db: $db,
+            $table: $db.pianificazioni,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> movimentiRefs<T extends Object>(
     Expression<T> Function($$MovimentiTableAnnotationComposer a) f,
   ) {
@@ -6613,6 +8153,7 @@ class $$CategorieTableTableManager
           Categoria,
           PrefetchHooks Function({
             bool padreId,
+            bool pianificazioniRefs,
             bool movimentiRefs,
             bool vociCostoRefs,
           })
@@ -6687,12 +8228,14 @@ class $$CategorieTableTableManager
           prefetchHooksCallback:
               ({
                 padreId = false,
+                pianificazioniRefs = false,
                 movimentiRefs = false,
                 vociCostoRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
+                    if (pianificazioniRefs) db.pianificazioni,
                     if (movimentiRefs) db.movimenti,
                     if (vociCostoRefs) db.vociCosto,
                   ],
@@ -6728,6 +8271,27 @@ class $$CategorieTableTableManager
                       },
                   getPrefetchedDataCallback: (items) async {
                     return [
+                      if (pianificazioniRefs)
+                        await $_getPrefetchedData<
+                          Categoria,
+                          $CategorieTable,
+                          Pianificazione
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CategorieTableReferences
+                              ._pianificazioniRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CategorieTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).pianificazioniRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.categoriaId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (movimentiRefs)
                         await $_getPrefetchedData<
                           Categoria,
@@ -6792,8 +8356,947 @@ typedef $$CategorieTableProcessedTableManager =
       Categoria,
       PrefetchHooks Function({
         bool padreId,
+        bool pianificazioniRefs,
         bool movimentiRefs,
         bool vociCostoRefs,
+      })
+    >;
+typedef $$PianificazioniTableCreateCompanionBuilder =
+    PianificazioniCompanion Function({
+      required String id,
+      required String aggiornatoIl,
+      Value<bool> eliminato,
+      required String origine,
+      Value<String?> origineId,
+      Value<String?> portafoglioId,
+      Value<String?> destinazioneId,
+      Value<String?> tipoId,
+      Value<String?> categoriaId,
+      Value<String> descrizione,
+      Value<int?> importoMinimo,
+      Value<String> valuta,
+      required String inizio,
+      Value<String> frequenza,
+      Value<String?> fine,
+      Value<int?> occorrenze,
+      Value<int> avvisoGiorni,
+      Value<bool> attiva,
+      Value<int> rowid,
+    });
+typedef $$PianificazioniTableUpdateCompanionBuilder =
+    PianificazioniCompanion Function({
+      Value<String> id,
+      Value<String> aggiornatoIl,
+      Value<bool> eliminato,
+      Value<String> origine,
+      Value<String?> origineId,
+      Value<String?> portafoglioId,
+      Value<String?> destinazioneId,
+      Value<String?> tipoId,
+      Value<String?> categoriaId,
+      Value<String> descrizione,
+      Value<int?> importoMinimo,
+      Value<String> valuta,
+      Value<String> inizio,
+      Value<String> frequenza,
+      Value<String?> fine,
+      Value<int?> occorrenze,
+      Value<int> avvisoGiorni,
+      Value<bool> attiva,
+      Value<int> rowid,
+    });
+
+final class $$PianificazioniTableReferences
+    extends BaseReferences<_$Archivio, $PianificazioniTable, Pianificazione> {
+  $$PianificazioniTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $PortafogliTable _portafoglioIdTable(_$Archivio db) => db.portafogli
+      .createAlias('pianificazioni__portafoglio_id__portafogli__id');
+
+  $$PortafogliTableProcessedTableManager? get portafoglioId {
+    final $_column = $_itemColumn<String>('portafoglio_id');
+    if ($_column == null) return null;
+    final manager = $$PortafogliTableTableManager(
+      $_db,
+      $_db.portafogli,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_portafoglioIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $PortafogliTable _destinazioneIdTable(_$Archivio db) => db.portafogli
+      .createAlias('pianificazioni__destinazione_id__portafogli__id');
+
+  $$PortafogliTableProcessedTableManager? get destinazioneId {
+    final $_column = $_itemColumn<String>('destinazione_id');
+    if ($_column == null) return null;
+    final manager = $$PortafogliTableTableManager(
+      $_db,
+      $_db.portafogli,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_destinazioneIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $DefinizioniTipoTable _tipoIdTable(_$Archivio db) => db.definizioniTipo
+      .createAlias('pianificazioni__tipo_id__definizioni_tipo__id');
+
+  $$DefinizioniTipoTableProcessedTableManager? get tipoId {
+    final $_column = $_itemColumn<String>('tipo_id');
+    if ($_column == null) return null;
+    final manager = $$DefinizioniTipoTableTableManager(
+      $_db,
+      $_db.definizioniTipo,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_tipoIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $CategorieTable _categoriaIdTable(_$Archivio db) =>
+      db.categorie.createAlias('pianificazioni__categoria_id__categorie__id');
+
+  $$CategorieTableProcessedTableManager? get categoriaId {
+    final $_column = $_itemColumn<String>('categoria_id');
+    if ($_column == null) return null;
+    final manager = $$CategorieTableTableManager(
+      $_db,
+      $_db.categorie,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_categoriaIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$MovimentiTable, List<Movimento>>
+  _movimentiGeneratiTable(_$Archivio db) => MultiTypedResultKey.fromTable(
+    db.movimenti,
+    aliasName: 'pianificazioni__id__movimenti__pianificazione_id',
+  );
+
+  $$MovimentiTableProcessedTableManager get movimentiGenerati {
+    final manager = $$MovimentiTableTableManager($_db, $_db.movimenti).filter(
+      (f) => f.pianificazioneId.id.sqlEquals($_itemColumn<String>('id')!),
+    );
+
+    final cache = $_typedResult.readTableOrNull(_movimentiGeneratiTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$PianificazioniTableFilterComposer
+    extends Composer<_$Archivio, $PianificazioniTable> {
+  $$PianificazioniTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origine => $composableBuilder(
+    column: $table.origine,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origineId => $composableBuilder(
+    column: $table.origineId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get descrizione => $composableBuilder(
+    column: $table.descrizione,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get importoMinimo => $composableBuilder(
+    column: $table.importoMinimo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get valuta => $composableBuilder(
+    column: $table.valuta,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get inizio => $composableBuilder(
+    column: $table.inizio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get frequenza => $composableBuilder(
+    column: $table.frequenza,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fine => $composableBuilder(
+    column: $table.fine,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get occorrenze => $composableBuilder(
+    column: $table.occorrenze,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get avvisoGiorni => $composableBuilder(
+    column: $table.avvisoGiorni,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get attiva => $composableBuilder(
+    column: $table.attiva,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PortafogliTableFilterComposer get portafoglioId {
+    final $$PortafogliTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portafoglioId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableFilterComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PortafogliTableFilterComposer get destinazioneId {
+    final $$PortafogliTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.destinazioneId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableFilterComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$DefinizioniTipoTableFilterComposer get tipoId {
+    final $$DefinizioniTipoTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tipoId,
+      referencedTable: $db.definizioniTipo,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DefinizioniTipoTableFilterComposer(
+            $db: $db,
+            $table: $db.definizioniTipo,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CategorieTableFilterComposer get categoriaId {
+    final $$CategorieTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoriaId,
+      referencedTable: $db.categorie,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategorieTableFilterComposer(
+            $db: $db,
+            $table: $db.categorie,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> movimentiGenerati(
+    Expression<bool> Function($$MovimentiTableFilterComposer f) f,
+  ) {
+    final $$MovimentiTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.movimenti,
+      getReferencedColumn: (t) => t.pianificazioneId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MovimentiTableFilterComposer(
+            $db: $db,
+            $table: $db.movimenti,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PianificazioniTableOrderingComposer
+    extends Composer<_$Archivio, $PianificazioniTable> {
+  $$PianificazioniTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get origine => $composableBuilder(
+    column: $table.origine,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get origineId => $composableBuilder(
+    column: $table.origineId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get descrizione => $composableBuilder(
+    column: $table.descrizione,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get importoMinimo => $composableBuilder(
+    column: $table.importoMinimo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get valuta => $composableBuilder(
+    column: $table.valuta,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get inizio => $composableBuilder(
+    column: $table.inizio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get frequenza => $composableBuilder(
+    column: $table.frequenza,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fine => $composableBuilder(
+    column: $table.fine,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get occorrenze => $composableBuilder(
+    column: $table.occorrenze,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get avvisoGiorni => $composableBuilder(
+    column: $table.avvisoGiorni,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get attiva => $composableBuilder(
+    column: $table.attiva,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PortafogliTableOrderingComposer get portafoglioId {
+    final $$PortafogliTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portafoglioId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableOrderingComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PortafogliTableOrderingComposer get destinazioneId {
+    final $$PortafogliTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.destinazioneId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableOrderingComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$DefinizioniTipoTableOrderingComposer get tipoId {
+    final $$DefinizioniTipoTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tipoId,
+      referencedTable: $db.definizioniTipo,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DefinizioniTipoTableOrderingComposer(
+            $db: $db,
+            $table: $db.definizioniTipo,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CategorieTableOrderingComposer get categoriaId {
+    final $$CategorieTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoriaId,
+      referencedTable: $db.categorie,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategorieTableOrderingComposer(
+            $db: $db,
+            $table: $db.categorie,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PianificazioniTableAnnotationComposer
+    extends Composer<_$Archivio, $PianificazioniTable> {
+  $$PianificazioniTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get eliminato =>
+      $composableBuilder(column: $table.eliminato, builder: (column) => column);
+
+  GeneratedColumn<String> get origine =>
+      $composableBuilder(column: $table.origine, builder: (column) => column);
+
+  GeneratedColumn<String> get origineId =>
+      $composableBuilder(column: $table.origineId, builder: (column) => column);
+
+  GeneratedColumn<String> get descrizione => $composableBuilder(
+    column: $table.descrizione,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get importoMinimo => $composableBuilder(
+    column: $table.importoMinimo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get valuta =>
+      $composableBuilder(column: $table.valuta, builder: (column) => column);
+
+  GeneratedColumn<String> get inizio =>
+      $composableBuilder(column: $table.inizio, builder: (column) => column);
+
+  GeneratedColumn<String> get frequenza =>
+      $composableBuilder(column: $table.frequenza, builder: (column) => column);
+
+  GeneratedColumn<String> get fine =>
+      $composableBuilder(column: $table.fine, builder: (column) => column);
+
+  GeneratedColumn<int> get occorrenze => $composableBuilder(
+    column: $table.occorrenze,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get avvisoGiorni => $composableBuilder(
+    column: $table.avvisoGiorni,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get attiva =>
+      $composableBuilder(column: $table.attiva, builder: (column) => column);
+
+  $$PortafogliTableAnnotationComposer get portafoglioId {
+    final $$PortafogliTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portafoglioId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableAnnotationComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PortafogliTableAnnotationComposer get destinazioneId {
+    final $$PortafogliTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.destinazioneId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableAnnotationComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$DefinizioniTipoTableAnnotationComposer get tipoId {
+    final $$DefinizioniTipoTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tipoId,
+      referencedTable: $db.definizioniTipo,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DefinizioniTipoTableAnnotationComposer(
+            $db: $db,
+            $table: $db.definizioniTipo,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CategorieTableAnnotationComposer get categoriaId {
+    final $$CategorieTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoriaId,
+      referencedTable: $db.categorie,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategorieTableAnnotationComposer(
+            $db: $db,
+            $table: $db.categorie,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> movimentiGenerati<T extends Object>(
+    Expression<T> Function($$MovimentiTableAnnotationComposer a) f,
+  ) {
+    final $$MovimentiTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.movimenti,
+      getReferencedColumn: (t) => t.pianificazioneId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MovimentiTableAnnotationComposer(
+            $db: $db,
+            $table: $db.movimenti,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PianificazioniTableTableManager
+    extends
+        RootTableManager<
+          _$Archivio,
+          $PianificazioniTable,
+          Pianificazione,
+          $$PianificazioniTableFilterComposer,
+          $$PianificazioniTableOrderingComposer,
+          $$PianificazioniTableAnnotationComposer,
+          $$PianificazioniTableCreateCompanionBuilder,
+          $$PianificazioniTableUpdateCompanionBuilder,
+          (Pianificazione, $$PianificazioniTableReferences),
+          Pianificazione,
+          PrefetchHooks Function({
+            bool portafoglioId,
+            bool destinazioneId,
+            bool tipoId,
+            bool categoriaId,
+            bool movimentiGenerati,
+          })
+        > {
+  $$PianificazioniTableTableManager(_$Archivio db, $PianificazioniTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PianificazioniTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PianificazioniTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PianificazioniTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> aggiornatoIl = const Value.absent(),
+                Value<bool> eliminato = const Value.absent(),
+                Value<String> origine = const Value.absent(),
+                Value<String?> origineId = const Value.absent(),
+                Value<String?> portafoglioId = const Value.absent(),
+                Value<String?> destinazioneId = const Value.absent(),
+                Value<String?> tipoId = const Value.absent(),
+                Value<String?> categoriaId = const Value.absent(),
+                Value<String> descrizione = const Value.absent(),
+                Value<int?> importoMinimo = const Value.absent(),
+                Value<String> valuta = const Value.absent(),
+                Value<String> inizio = const Value.absent(),
+                Value<String> frequenza = const Value.absent(),
+                Value<String?> fine = const Value.absent(),
+                Value<int?> occorrenze = const Value.absent(),
+                Value<int> avvisoGiorni = const Value.absent(),
+                Value<bool> attiva = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PianificazioniCompanion(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                origine: origine,
+                origineId: origineId,
+                portafoglioId: portafoglioId,
+                destinazioneId: destinazioneId,
+                tipoId: tipoId,
+                categoriaId: categoriaId,
+                descrizione: descrizione,
+                importoMinimo: importoMinimo,
+                valuta: valuta,
+                inizio: inizio,
+                frequenza: frequenza,
+                fine: fine,
+                occorrenze: occorrenze,
+                avvisoGiorni: avvisoGiorni,
+                attiva: attiva,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String aggiornatoIl,
+                Value<bool> eliminato = const Value.absent(),
+                required String origine,
+                Value<String?> origineId = const Value.absent(),
+                Value<String?> portafoglioId = const Value.absent(),
+                Value<String?> destinazioneId = const Value.absent(),
+                Value<String?> tipoId = const Value.absent(),
+                Value<String?> categoriaId = const Value.absent(),
+                Value<String> descrizione = const Value.absent(),
+                Value<int?> importoMinimo = const Value.absent(),
+                Value<String> valuta = const Value.absent(),
+                required String inizio,
+                Value<String> frequenza = const Value.absent(),
+                Value<String?> fine = const Value.absent(),
+                Value<int?> occorrenze = const Value.absent(),
+                Value<int> avvisoGiorni = const Value.absent(),
+                Value<bool> attiva = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PianificazioniCompanion.insert(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                origine: origine,
+                origineId: origineId,
+                portafoglioId: portafoglioId,
+                destinazioneId: destinazioneId,
+                tipoId: tipoId,
+                categoriaId: categoriaId,
+                descrizione: descrizione,
+                importoMinimo: importoMinimo,
+                valuta: valuta,
+                inizio: inizio,
+                frequenza: frequenza,
+                fine: fine,
+                occorrenze: occorrenze,
+                avvisoGiorni: avvisoGiorni,
+                attiva: attiva,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$PianificazioniTable, Pianificazione>(table),
+                  $$PianificazioniTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                portafoglioId = false,
+                destinazioneId = false,
+                tipoId = false,
+                categoriaId = false,
+                movimentiGenerati = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (movimentiGenerati) db.movimenti,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (portafoglioId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.portafoglioId,
+                            referencedTable: $$PianificazioniTableReferences
+                                ._portafoglioIdTable(db),
+                            referencedColumn: $$PianificazioniTableReferences
+                                ._portafoglioIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (destinazioneId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.destinazioneId,
+                            referencedTable: $$PianificazioniTableReferences
+                                ._destinazioneIdTable(db),
+                            referencedColumn: $$PianificazioniTableReferences
+                                ._destinazioneIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (tipoId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.tipoId,
+                            referencedTable: $$PianificazioniTableReferences
+                                ._tipoIdTable(db),
+                            referencedColumn: $$PianificazioniTableReferences
+                                ._tipoIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (categoriaId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.categoriaId,
+                            referencedTable: $$PianificazioniTableReferences
+                                ._categoriaIdTable(db),
+                            referencedColumn: $$PianificazioniTableReferences
+                                ._categoriaIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (movimentiGenerati)
+                        await $_getPrefetchedData<
+                          Pianificazione,
+                          $PianificazioniTable,
+                          Movimento
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PianificazioniTableReferences
+                              ._movimentiGeneratiTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PianificazioniTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).movimentiGenerati,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.pianificazioneId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$PianificazioniTableProcessedTableManager =
+    ProcessedTableManager<
+      _$Archivio,
+      $PianificazioniTable,
+      Pianificazione,
+      $$PianificazioniTableFilterComposer,
+      $$PianificazioniTableOrderingComposer,
+      $$PianificazioniTableAnnotationComposer,
+      $$PianificazioniTableCreateCompanionBuilder,
+      $$PianificazioniTableUpdateCompanionBuilder,
+      (Pianificazione, $$PianificazioniTableReferences),
+      Pianificazione,
+      PrefetchHooks Function({
+        bool portafoglioId,
+        bool destinazioneId,
+        bool tipoId,
+        bool categoriaId,
+        bool movimentiGenerati,
       })
     >;
 typedef $$MovimentiTableCreateCompanionBuilder = MovimentiCompanion Function({
@@ -6809,6 +9312,8 @@ typedef $$MovimentiTableCreateCompanionBuilder = MovimentiCompanion Function({
   required String data,
   Value<String> descrizione,
   Value<String> campi,
+  Value<String?> pianificazioneId,
+  Value<String?> dataPrevista,
   Value<int> rowid,
 });
 typedef $$MovimentiTableUpdateCompanionBuilder = MovimentiCompanion Function({
@@ -6824,6 +9329,8 @@ typedef $$MovimentiTableUpdateCompanionBuilder = MovimentiCompanion Function({
   Value<String> data,
   Value<String> descrizione,
   Value<String> campi,
+  Value<String?> pianificazioneId,
+  Value<String?> dataPrevista,
   Value<int> rowid,
 });
 
@@ -6902,6 +9409,24 @@ final class $$MovimentiTableReferences
     );
   }
 
+  static $PianificazioniTable _pianificazioneIdTable(_$Archivio db) => db
+      .pianificazioni
+      .createAlias('movimenti__pianificazione_id__pianificazioni__id');
+
+  $$PianificazioniTableProcessedTableManager? get pianificazioneId {
+    final $_column = $_itemColumn<String>('pianificazione_id');
+    if ($_column == null) return null;
+    final manager = $$PianificazioniTableTableManager(
+      $_db,
+      $_db.pianificazioni,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_pianificazioneIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
   static MultiTypedResultKey<$MovimentiEtichetteTable, List<MovimentoEtichetta>>
   _movimentiEtichetteRefsTable(_$Archivio db) => MultiTypedResultKey.fromTable(
     db.movimentiEtichette,
@@ -6969,6 +9494,11 @@ class $$MovimentiTableFilterComposer
 
   ColumnFilters<String> get campi => $composableBuilder(
     column: $table.campi,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dataPrevista => $composableBuilder(
+    column: $table.dataPrevista,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7064,6 +9594,29 @@ class $$MovimentiTableFilterComposer
     return composer;
   }
 
+  $$PianificazioniTableFilterComposer get pianificazioneId {
+    final $$PianificazioniTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.pianificazioneId,
+      referencedTable: $db.pianificazioni,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PianificazioniTableFilterComposer(
+            $db: $db,
+            $table: $db.pianificazioni,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
   Expression<bool> movimentiEtichetteRefs(
     Expression<bool> Function($$MovimentiEtichetteTableFilterComposer f) f,
   ) {
@@ -7136,6 +9689,11 @@ class $$MovimentiTableOrderingComposer
 
   ColumnOrderings<String> get campi => $composableBuilder(
     column: $table.campi,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dataPrevista => $composableBuilder(
+    column: $table.dataPrevista,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -7230,6 +9788,29 @@ class $$MovimentiTableOrderingComposer
     );
     return composer;
   }
+
+  $$PianificazioniTableOrderingComposer get pianificazioneId {
+    final $$PianificazioniTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.pianificazioneId,
+      referencedTable: $db.pianificazioni,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PianificazioniTableOrderingComposer(
+            $db: $db,
+            $table: $db.pianificazioni,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$MovimentiTableAnnotationComposer
@@ -7270,6 +9851,11 @@ class $$MovimentiTableAnnotationComposer
 
   GeneratedColumn<String> get campi =>
       $composableBuilder(column: $table.campi, builder: (column) => column);
+
+  GeneratedColumn<String> get dataPrevista => $composableBuilder(
+    column: $table.dataPrevista,
+    builder: (column) => column,
+  );
 
   $$DefinizioniTipoTableAnnotationComposer get tipoId {
     final $$DefinizioniTipoTableAnnotationComposer composer = $composerBuilder(
@@ -7363,6 +9949,29 @@ class $$MovimentiTableAnnotationComposer
     return composer;
   }
 
+  $$PianificazioniTableAnnotationComposer get pianificazioneId {
+    final $$PianificazioniTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.pianificazioneId,
+      referencedTable: $db.pianificazioni,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PianificazioniTableAnnotationComposer(
+            $db: $db,
+            $table: $db.pianificazioni,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
   Expression<T> movimentiEtichetteRefs<T extends Object>(
     Expression<T> Function($$MovimentiEtichetteTableAnnotationComposer a) f,
   ) {
@@ -7408,6 +10017,7 @@ class $$MovimentiTableTableManager
             bool portafoglioId,
             bool portafoglioDestinazioneId,
             bool categoriaId,
+            bool pianificazioneId,
             bool movimentiEtichetteRefs,
           })
         > {
@@ -7436,6 +10046,8 @@ class $$MovimentiTableTableManager
                 Value<String> data = const Value.absent(),
                 Value<String> descrizione = const Value.absent(),
                 Value<String> campi = const Value.absent(),
+                Value<String?> pianificazioneId = const Value.absent(),
+                Value<String?> dataPrevista = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MovimentiCompanion(
                 id: id,
@@ -7450,6 +10062,8 @@ class $$MovimentiTableTableManager
                 data: data,
                 descrizione: descrizione,
                 campi: campi,
+                pianificazioneId: pianificazioneId,
+                dataPrevista: dataPrevista,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -7466,6 +10080,8 @@ class $$MovimentiTableTableManager
                 required String data,
                 Value<String> descrizione = const Value.absent(),
                 Value<String> campi = const Value.absent(),
+                Value<String?> pianificazioneId = const Value.absent(),
+                Value<String?> dataPrevista = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MovimentiCompanion.insert(
                 id: id,
@@ -7480,6 +10096,8 @@ class $$MovimentiTableTableManager
                 data: data,
                 descrizione: descrizione,
                 campi: campi,
+                pianificazioneId: pianificazioneId,
+                dataPrevista: dataPrevista,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -7496,6 +10114,7 @@ class $$MovimentiTableTableManager
                 portafoglioId = false,
                 portafoglioDestinazioneId = false,
                 categoriaId = false,
+                pianificazioneId = false,
                 movimentiEtichetteRefs = false,
               }) {
                 return PrefetchHooks(
@@ -7563,6 +10182,17 @@ class $$MovimentiTableTableManager
                                 .id,
                           ) as T;
                         }
+                        if (pianificazioneId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.pianificazioneId,
+                            referencedTable: $$MovimentiTableReferences
+                                ._pianificazioneIdTable(db),
+                            referencedColumn: $$MovimentiTableReferences
+                                ._pianificazioneIdTable(db)
+                                .id,
+                          ) as T;
+                        }
 
                         return state;
                       },
@@ -7614,6 +10244,7 @@ typedef $$MovimentiTableProcessedTableManager =
         bool portafoglioId,
         bool portafoglioDestinazioneId,
         bool categoriaId,
+        bool pianificazioneId,
         bool movimentiEtichetteRefs,
       })
     >;
@@ -9875,6 +12506,8 @@ class $ArchivioManager {
       $$PortafogliTableTableManager(_db, _db.portafogli);
   $$CategorieTableTableManager get categorie =>
       $$CategorieTableTableManager(_db, _db.categorie);
+  $$PianificazioniTableTableManager get pianificazioni =>
+      $$PianificazioniTableTableManager(_db, _db.pianificazioni);
   $$MovimentiTableTableManager get movimenti =>
       $$MovimentiTableTableManager(_db, _db.movimenti);
   $$EtichetteTableTableManager get etichette =>

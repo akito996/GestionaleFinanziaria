@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/db/contabilita.dart';
 import '../../core/importo.dart';
 import '../../core/sessione.dart';
+import '../comuni/in_arrivo.dart';
 import '../movimenti/movimento_modulo.dart';
 import '../movimenti/riga_movimento.dart';
 import 'portafoglio_modulo.dart';
@@ -137,6 +138,15 @@ class PortafoglioPagina extends StatelessWidget {
                               ),
                         ),
                       ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: SchedaInArrivo(
+                      sessione: sessione,
+                      portafoglioId: portafoglioId,
+                      giorni: 30,
+                      titolo: 'Addebiti in arrivo su questo portafoglio',
                     ),
                   ),
                   const Divider(height: 1),

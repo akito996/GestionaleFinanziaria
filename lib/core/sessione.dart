@@ -8,6 +8,7 @@ import 'db/archivio.dart';
 import 'db/contabilita.dart';
 import 'db/costo_vita.dart';
 import 'db/deposito_locale.dart';
+import 'db/pianificatore.dart';
 
 enum FaseSessione { caricamento, primoAvvio, bloccata, sbloccata }
 
@@ -43,6 +44,11 @@ class Sessione extends ChangeNotifier {
 
   /// Costo della vita: disponibile solo nella fase [FaseSessione.sbloccata].
   CostoVita get costoVita => _costoVita!;
+
+  Pianificatore? _pianificatore;
+
+  /// Pagamenti programmati: disponibile solo nella fase [FaseSessione.sbloccata].
+  Pianificatore get pianificatore => _pianificatore!;
 
   SecureKey? _dek;
 
@@ -146,15 +152,20 @@ class Sessione extends ChangeNotifier {
   }
 
   Future<void> blocca() async {
-    _contabilita = null;
-    _costoVita = null;
-    await _archivio?.close();
-    _archivio = null;
-    _dek?.dispose();
-    _dek = null;
+    final archivio = _archivio;
+    final dek = _dek;
+    // Prima si tolgono le schermate dell'archivio, poi si chiude tutto:
+    // nessuna schermata può leggere un archivio già chiuso.
     _idArchivio = null;
     avviso = null;
     _cambia(FaseSessione.bloccata);
+    _contabilita = null;
+    _costoVita = null;
+    _pianificatore = null;
+    _archivio = null;
+    _dek = null;
+    await archivio?.close();
+    dek?.dispose();
   }
 
   @override
@@ -175,13 +186,20 @@ class Sessione extends ChangeNotifier {
     }
     try {
       _contabilita = await Contabilita.apri(archivio);
-      _costoVita = CostoVita(archivio, _contabilita!.orologio);
+      _pianificatore = Pianificatore(archivio, _contabilita!.orologio);
+      _costoVita = CostoVita(archivio, _contabilita!.orologio, _pianificatore!);
     } catch (_) {
       await archivio.close();
       dek.dispose();
       rethrow;
     }
     _archivio = archivio;
+    // Scadenze arrivate mentre l'app era chiusa: si registrano subito.
+    final registrati = await _pianificatore!.registraScadute();
+    if (registrati > 0) {
+      messaggio =
+          '$messaggio · registrat${registrati == 1 ? 'o 1 pagamento programmato' : 'i $registrati pagamenti programmati'}';
+    }
     _dek = dek;
     _idArchivio = idArchivio;
     avviso = messaggio;

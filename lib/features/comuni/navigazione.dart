@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../core/sessione.dart';
@@ -38,6 +40,41 @@ class Guscio extends StatefulWidget {
 
 class _GuscioState extends State<Guscio> {
   int _sezione = 0;
+  Timer? _controllo;
+
+  @override
+  void initState() {
+    super.initState();
+    // Se l'app resta aperta, le scadenze del giorno si registrano comunque.
+    _controllo = Timer.periodic(
+      const Duration(minutes: 15),
+      (_) => _registra(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controllo?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _registra() async {
+    if (widget.sessione.fase != FaseSessione.sbloccata) {
+      return;
+    }
+    final n = await widget.sessione.pianificatore.registraScadute();
+    if (n > 0 && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            n == 1
+                ? 'Registrato 1 pagamento programmato'
+                : 'Registrati $n pagamenti programmati',
+          ),
+        ),
+      );
+    }
+  }
 
   static const _voci = [
     (Icons.dashboard_outlined, Icons.dashboard, 'Panoramica'),
