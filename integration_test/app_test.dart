@@ -26,6 +26,7 @@ void main() {
   }
 
   Future<void> tocca(WidgetTester tester, Finder cosa) async {
+    await tester.pump(const Duration(milliseconds: 400));
     await tester.ensureVisible(cosa);
     await tester.pump();
     await tester.tap(cosa);
@@ -64,9 +65,26 @@ void main() {
     await tocca(tester, find.text('Incolla'));
     await attendi(tester, find.text('Secret Key valida'));
     await tocca(tester, find.text('Crea l\'archivio'));
-    await attendi(tester, find.text('Archivio aperto'));
+    await attendi(tester, find.text('Crea il tuo primo portafoglio'));
     expect(deposito.fileKeyring.existsSync(), isTrue);
     expect(deposito.fileArchivio.existsSync(), isTrue);
+
+    // Primo portafoglio e prima spesa: il saldo si aggiorna.
+    Finder nelDialogo(Finder f) =>
+        find.descendant(of: find.byType(AlertDialog), matching: f);
+    await tocca(tester, find.text('Contanti'));
+    await attendi(tester, nelDialogo(find.text('Tipo')));
+    await tester.enterText(nelDialogo(find.byType(TextFormField)).last, '50');
+    await tocca(tester, find.text('Crea'));
+    await attendi(tester, find.text('50,00 €'));
+    await tocca(tester, find.text('Movimento'));
+    await attendi(tester, nelDialogo(find.text('Importo')));
+    await tester.enterText(
+      nelDialogo(find.byType(TextFormField)).first,
+      '12,5',
+    );
+    await tocca(tester, nelDialogo(find.text('Salva')));
+    await attendi(tester, find.text('37,50 €'));
 
     // Blocco e sblocco.
     const lucchetto = 'Archivio aperto: tocca per bloccarlo';

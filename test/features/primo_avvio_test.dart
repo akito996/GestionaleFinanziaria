@@ -7,6 +7,7 @@ import 'package:gestionale_finanziaria/app.dart';
 import 'package:gestionale_finanziaria/core/crypto/derivazione.dart';
 import 'package:gestionale_finanziaria/core/db/deposito_locale.dart';
 import 'package:gestionale_finanziaria/core/sessione.dart';
+import 'package:gestionale_finanziaria/features/comuni/icone.dart';
 import 'package:sodium/sodium_sumo.dart';
 
 void main() {
@@ -115,10 +116,10 @@ void main() {
     await tester.pump();
     expect(find.text('Secret Key valida'), findsOneWidget);
     await tocca(tester, find.text('Crea l\'archivio'));
-    await attendi(tester, find.text('Archivio aperto'));
+    await attendi(tester, find.text('Crea il tuo primo portafoglio'));
     await tester.pump();
     expect(find.text('Archivio creato'), findsOneWidget);
-    expect(find.byIcon(Icons.lock_open), findsWidgets);
+    expect(find.byType(LucchettoAperto), findsWidgets);
 
     // Blocco e sblocco con conferma visibile.
     await tocca(tester, find.byTooltip('Archivio aperto: tocca per bloccarlo'));

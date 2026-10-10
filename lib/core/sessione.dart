@@ -5,6 +5,7 @@ import 'crypto/keyring.dart';
 import 'crypto/operazioni_chiavi.dart';
 import 'crypto/secret_key.dart';
 import 'db/archivio.dart';
+import 'db/contabilita.dart';
 import 'db/deposito_locale.dart';
 
 enum FaseSessione { caricamento, primoAvvio, bloccata, sbloccata }
@@ -31,6 +32,11 @@ class Sessione extends ChangeNotifier {
 
   /// Disponibile solo nella fase [FaseSessione.sbloccata].
   Archivio get archivio => _archivio!;
+
+  Contabilita? _contabilita;
+
+  /// Portafogli e movimenti: disponibile solo nella fase [FaseSessione.sbloccata].
+  Contabilita get contabilita => _contabilita!;
 
   SecureKey? _dek;
 
@@ -97,7 +103,7 @@ class Sessione extends ChangeNotifier {
     _inPreparazione = null;
     await deposito.metteDaParteArchivioOrfano();
     await deposito.scriviKeyring(pronto.keyring);
-    _apri(pronto.dek, pronto.idArchivio, 'Archivio creato');
+    await _apri(pronto.dek, pronto.idArchivio, 'Archivio creato');
   }
 
   /// Lancia `PasswordErrataException` se la password non è giusta.
@@ -108,7 +114,11 @@ class Sessione extends ChangeNotifier {
       keyring,
       password,
     );
-    _apri(dek, Keyring.deserializza(keyring).idArchivio, 'Archivio sbloccato');
+    await _apri(
+      dek,
+      Keyring.deserializza(keyring).idArchivio,
+      'Archivio sbloccato',
+    );
   }
 
   /// Password dimenticata: Secret Key (testo o contenuto del file) + nuova password.
@@ -122,7 +132,7 @@ class Sessione extends ChangeNotifier {
       costo: costoArgon2,
     );
     await deposito.scriviKeyring(recuperato.keyring);
-    _apri(
+    await _apri(
       recuperato.dek,
       Keyring.deserializza(recuperato.keyring).idArchivio,
       'Nuova password impostata: archivio sbloccato',
@@ -130,6 +140,7 @@ class Sessione extends ChangeNotifier {
   }
 
   Future<void> blocca() async {
+    _contabilita = null;
     await _archivio?.close();
     _archivio = null;
     _dek?.dispose();
@@ -147,13 +158,22 @@ class Sessione extends ChangeNotifier {
     super.dispose();
   }
 
-  void _apri(SecureKey dek, String idArchivio, String messaggio) {
+  Future<void> _apri(SecureKey dek, String idArchivio, String messaggio) async {
+    final Archivio archivio;
     try {
-      _archivio = Archivio.apri(deposito.fileArchivio, sodium, dek);
+      archivio = Archivio.apri(deposito.fileArchivio, sodium, dek);
     } catch (_) {
       dek.dispose();
       rethrow;
     }
+    try {
+      _contabilita = await Contabilita.apri(archivio);
+    } catch (_) {
+      await archivio.close();
+      dek.dispose();
+      rethrow;
+    }
+    _archivio = archivio;
     _dek = dek;
     _idArchivio = idArchivio;
     avviso = messaggio;
