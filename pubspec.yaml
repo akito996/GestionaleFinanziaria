@@ -11,10 +11,12 @@ environment:
   flutter: 3.47.7
 
 dependencies:
+  crypto: ^3.0.7
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+  sodium: ^4.1.1+2
 
 dev_dependencies:
   flutter_test:
