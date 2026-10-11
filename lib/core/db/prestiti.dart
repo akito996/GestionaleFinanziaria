@@ -6,6 +6,7 @@ import 'archivio.dart';
 import 'contabilita.dart';
 import 'id.dart';
 import 'orologio.dart';
+import 'osservazione.dart';
 import 'pianificatore.dart';
 import 'tabelle.dart';
 
@@ -22,6 +23,7 @@ class DatiPrestito {
     this.finanziatore = '',
     this.tanPuntiBase,
     this.taegPuntiBase,
+    this.maxiRata,
     this.portafoglioId,
     this.categoriaId,
     this.note = '',
@@ -37,6 +39,9 @@ class DatiPrestito {
   final String finanziatore;
   final int? tanPuntiBase;
   final int? taegPuntiBase;
+
+  /// Maxi rata finale: l'ultima delle [numeroRate] rate vale questa cifra.
+  final int? maxiRata;
   final String? portafoglioId;
   final String? categoriaId;
   final String note;
@@ -90,12 +95,44 @@ class PrestitiServizio {
     this._orologio,
     this._pianificatore, {
     DateTime Function()? adesso,
-  }) : _adesso = adesso ?? DateTime.now;
+  }) : _adesso = adesso ?? DateTime.now {
+    _pianificatore.registraCalcolo(OriginePianificazione.prestito, (
+      pianificazione,
+      data,
+    ) async {
+      final id = pianificazione.origineId;
+      final p = id == null
+          ? null
+          : await (_db.select(
+              _db.prestiti,
+            )..where((x) => x.id.equals(id))).getSingleOrNull();
+      return p == null ? null : importoRataAl(p, data);
+    });
+  }
 
   final Archivio _db;
   final OrologioLogico _orologio;
   final Pianificatore _pianificatore;
   final DateTime Function() _adesso;
+
+  /// Importo della rata che scade il giorno [data]: la maxi rata se è l'ultima.
+  static int importoRataAl(Prestito p, DateTime data) {
+    final maxi = p.maxiRataMinimo;
+    if (maxi == null) {
+      return p.importoRataMinimo;
+    }
+    final date = _ricorrenza(p).tra(Contabilita.daGiorno(p.primaRata), data);
+    final ultima =
+        date.length == p.numeroRate &&
+        Contabilita.giorno(date.last) == Contabilita.giorno(data);
+    return ultima ? maxi : p.importoRataMinimo;
+  }
+
+  static Ricorrenza _ricorrenza(Prestito p) => Ricorrenza(
+    inizio: Contabilita.daGiorno(p.primaRata),
+    frequenza: Frequenza.daCodice(p.frequenza),
+    occorrenze: p.numeroRate,
+  );
 
   Future<String> crea(DatiPrestito d) async {
     final id = nuovoId();
@@ -113,6 +150,7 @@ class PrestitiServizio {
             importoRataMinimo: d.importoRata,
             tanPuntiBase: Value(d.tanPuntiBase),
             taegPuntiBase: Value(d.taegPuntiBase),
+            maxiRataMinimo: Value(d.maxiRata),
             primaRata: Contabilita.giorno(d.primaRata),
             frequenza: Value(d.frequenza.codice),
             portafoglioId: Value(d.portafoglioId),
@@ -138,6 +176,7 @@ class PrestitiServizio {
         importoRataMinimo: Value(d.importoRata),
         tanPuntiBase: Value(d.tanPuntiBase),
         taegPuntiBase: Value(d.taegPuntiBase),
+        maxiRataMinimo: Value(d.maxiRata),
         primaRata: Value(Contabilita.giorno(d.primaRata)),
         frequenza: Value(d.frequenza.codice),
         portafoglioId: Value(d.portafoglioId),
@@ -175,7 +214,7 @@ class PrestitiServizio {
         readsFrom: {_db.prestiti, _db.movimenti, _db.pianificazioni},
       )
       .watch()
-      .asyncMap((_) => stati());
+      .ricalcola((_) => stati());
 
   Future<List<PrestitoConStato>> stati() async {
     final prestiti =
@@ -204,16 +243,15 @@ class PrestitiServizio {
             numeroRate: p.numeroRate,
             rata: p.importoRataMinimo,
             rateAllAnno: _rateAllAnno(frequenza),
+            rataFinale: p.maxiRataMinimo,
           ) ??
           0,
       rataFissa: p.importoRataMinimo,
       rateAllAnno: _rateAllAnno(frequenza),
+      rataFinale: p.maxiRataMinimo,
     );
-    final date = Ricorrenza(
-      inizio: Contabilita.daGiorno(p.primaRata),
-      frequenza: frequenza,
-      occorrenze: p.numeroRate,
-    ).tra(Contabilita.daGiorno(p.primaRata), DateTime(9999));
+    final date = _ricorrenza(p)
+        .tra(Contabilita.daGiorno(p.primaRata), DateTime(9999));
     final pagate = await _dateRegistrate(p.id);
     final oggi = _oggi();
     final rate = <RataDatata>[];
@@ -296,15 +334,12 @@ class PrestitiServizio {
       DatiPianificazione(
         origine: OriginePianificazione.prestito,
         origineId: id,
-        ricorrenza: Ricorrenza(
-          inizio: Contabilita.daGiorno(p.primaRata),
-          frequenza: Frequenza.daCodice(p.frequenza),
-          occorrenze: p.numeroRate,
-        ),
+        ricorrenza: _ricorrenza(p),
         portafoglioId: p.portafoglioId,
         categoriaId: p.categoriaId,
         descrizione: 'Rata ${p.nome}',
-        importo: p.importoRataMinimo,
+        // Con la maxi rata l'importo cambia all'ultima: lo calcola [importoRataAl].
+        importo: p.maxiRataMinimo == null ? p.importoRataMinimo : null,
         valuta: p.valuta,
       ),
     );

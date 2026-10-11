@@ -7,6 +7,7 @@ import '../../core/db/tabelle.dart';
 import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import '../categorie/scelta_categoria.dart';
+import '../comuni/campi.dart';
 import '../comuni/errori.dart';
 import 'riga_movimento.dart';
 
@@ -164,19 +165,6 @@ class _MovimentoModuloState extends State<_MovimentoModulo> {
     }
   }
 
-  Future<void> _scegliData() async {
-    final scelta = await showDatePicker(
-      context: context,
-      initialDate: _data,
-      firstDate: DateTime(1970),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
-      helpText: 'Data del movimento',
-    );
-    if (scelta != null) {
-      setState(() => _data = scelta);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final modifica = widget.esistente != null;
@@ -221,30 +209,11 @@ class _MovimentoModuloState extends State<_MovimentoModulo> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        TextFormField(
+                        CampoImporto(
                           controller: _importo,
                           autofocus: true,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          textInputAction: TextInputAction.next,
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(color: colore),
-                          decoration: InputDecoration(
-                            labelText: 'Importo',
-                            hintText: '0,00',
-                            suffixText: Importo.simbolo(valuta),
-                          ),
-                          validator: (v) {
-                            final importo = Importo.leggi(v ?? '');
-                            if (importo == null) {
-                              return 'Scrivi un importo, per esempio 12,50';
-                            }
-                            if (importo <= 0) {
-                              return 'L\'importo deve essere maggiore di zero';
-                            }
-                            return null;
-                          },
+                          valuta: valuta,
+                          colore: colore,
                         ),
                         const SizedBox(height: 16),
                         _sceltaPortafoglio(
@@ -282,14 +251,15 @@ class _MovimentoModuloState extends State<_MovimentoModulo> {
                             hintText: 'Es. Pizzeria, Stipendio, Bolletta luce',
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton.icon(
-                            onPressed: _scegliData,
-                            icon: const Icon(Icons.event),
-                            label: Text(dataLeggibile(context, _data)),
+                        const SizedBox(height: 16),
+                        CampoData(
+                          etichetta: 'Data del movimento',
+                          valore: _data,
+                          primo: DateTime(1970),
+                          ultimo: DateTime.now().add(
+                            const Duration(days: 365 * 5),
                           ),
+                          onChanged: (d) => setState(() => _data = d),
                         ),
                       ],
                     ),

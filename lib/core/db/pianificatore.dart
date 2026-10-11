@@ -5,6 +5,7 @@ import 'archivio.dart';
 import 'contabilita.dart';
 import 'id.dart';
 import 'orologio.dart';
+import 'osservazione.dart';
 import 'tabelle.dart';
 
 /// Calcola l'importo di una scadenza quando non è fisso (es. il costo della vita
@@ -227,7 +228,7 @@ class Pianificatore {
         },
       )
       .watch()
-      .asyncMap((_) => inArrivo(giorni: giorni, portafoglioId: portafoglioId));
+      .ricalcola((_) => inArrivo(giorni: giorni, portafoglioId: portafoglioId));
 
   // ------------------------------------------------------------- interni
 

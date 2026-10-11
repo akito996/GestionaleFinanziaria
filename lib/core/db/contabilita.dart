@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import 'archivio.dart';
 import 'id.dart';
 import 'orologio.dart';
+import 'osservazione.dart';
 import 'tabelle.dart';
 
 /// Portafoglio con il saldo calcolato (saldo iniziale + movimenti).
@@ -102,7 +103,7 @@ class Contabilita {
           readsFrom: {_db.portafogli, _db.movimenti, _db.definizioniTipo},
         )
         .watch();
-    return saldi.asyncMap((righe) async {
+    return saldi.ricalcola((righe) async {
       final perId = {
         for (final r in righe) r.read<String>('id'): r.read<int>('saldo'),
       };
@@ -184,6 +185,21 @@ class Contabilita {
           preferito: Value(preferito),
         ),
       );
+
+  /// Mette i portafogli [ids] nel gruppo [gruppo] (`null` = fuori dai gruppi).
+  Future<void> impostaGruppo(Iterable<String> ids, String? gruppo) =>
+      _db.transaction(() async {
+        for (final id in ids) {
+          await (_db.update(
+            _db.portafogli,
+          )..where((p) => p.id.equals(id))).write(
+            PortafogliCompanion(
+              aggiornatoIl: Value(_orologio.adesso()),
+              gruppo: Value(_gruppo(gruppo)),
+            ),
+          );
+        }
+      });
 
   /// Nomi dei gruppi già usati (per suggerirli nel modulo).
   Future<List<String>> gruppiPortafogli() async {

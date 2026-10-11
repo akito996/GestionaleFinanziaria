@@ -47,6 +47,65 @@ void main() {
     data: data,
   );
 
+  test('entrate e uscite per mese e per anno, senza trasferimenti', () async {
+    final conto = await c.creaPortafoglio(
+      nome: 'Conto',
+      tipoId: tipo['Conto corrente']!,
+      valuta: 'EUR',
+    );
+    final risparmi = await c.creaPortafoglio(
+      nome: 'Risparmi',
+      tipoId: tipo['Risparmi']!,
+      valuta: 'EUR',
+    );
+    await mov('Entrata', conto, 200000, DateTime(2025, 10, 1));
+    await mov('Spesa', conto, 50000, DateTime(2025, 10, 8));
+    await mov('Entrata', conto, 210000, DateTime(2026, 9, 1));
+    await mov('Spesa', conto, 90000, DateTime(2026, 9, 9));
+    await mov('Spesa', conto, 30000, DateTime(2026, 9, 25));
+    await mov('Entrata', conto, 210000, DateTime(2026, 10, 1));
+    await mov('Spesa', conto, 60000, DateTime(2026, 10, 5));
+    // Un trasferimento non è né entrata né uscita.
+    await mov(
+      'Trasferimento',
+      conto,
+      100000,
+      DateTime(2026, 10, 6),
+      destinazione: risparmi,
+    );
+
+    final mesi = await st.entrateUscitePerMese(
+      finoA: DateTime(2026, 10, 11),
+      mesi: 13,
+    );
+    expect(mesi, hasLength(13));
+    expect(mesi.first.periodo, DateTime(2025, 10));
+    expect(mesi.first.entrate, 200000);
+    expect(mesi.last.periodo, DateTime(2026, 10));
+    expect(mesi.last.entrate, 210000);
+    expect(mesi.last.uscite, 60000);
+    expect(mesi.last.differenza, 150000);
+    expect(mesi[1].entrate, 0); // novembre 2025: niente
+
+    final anni = await st.entrateUscitePerAnno(finoA: DateTime(2026, 10, 11));
+    expect(anni.map((a) => a.periodo.year), [2025, 2026]);
+    expect(anni.last.entrate, 420000);
+    expect(anni.last.uscite, 180000);
+    expect(anni.first.risparmio, closeTo(0.75, 0.001));
+
+    // 1-11 ottobre contro 1-11 settembre: la spesa del 25/9 non conta.
+    final mese = await st.confronto(DateTime(2026, 10, 11));
+    expect(mese.attuale.uscite, 60000);
+    expect(mese.precedente.uscite, 90000);
+    expect(
+      ConfrontoPeriodo.variazione(mese.attuale.uscite, mese.precedente.uscite),
+      closeTo(-1 / 3, 0.001),
+    );
+    final anno = await st.confronto(DateTime(2026, 10, 11), anno: true);
+    expect(anno.precedente.entrate, 200000); // fino all'11/10/2025
+    expect(anno.attuale.entrate, 420000);
+  });
+
   test('cascata del mese: inizio + entrate − spese = fine', () async {
     final conto = await c.creaPortafoglio(
       nome: 'Conto',

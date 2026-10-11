@@ -288,6 +288,8 @@ class PrestitoPagina extends StatelessWidget {
                     children: [
                       _Dato('Importo finanziato', euro(p.capitaleMinimo)),
                       _Dato('Rata', euro(p.importoRataMinimo)),
+                      if (p.maxiRataMinimo != null)
+                        _Dato('Maxi rata finale', euro(p.maxiRataMinimo!)),
                       _Dato('Rate', '${s.ratePagate} / ${p.numeroRate}'),
                       _Dato('Debito residuo', euro(s.debitoResiduo)),
                       _Dato('Ancora da pagare', euro(s.daPagare)),

@@ -8,6 +8,7 @@ class ProposteContratto {
     this.capitale,
     this.numeroRate,
     this.importoRata,
+    this.maxiRata,
     this.tanPuntiBase,
     this.taegPuntiBase,
     this.totaleDovuto,
@@ -20,6 +21,9 @@ class ProposteContratto {
   final int? capitale;
   final int? numeroRate;
   final int? importoRata;
+
+  /// Maxi rata finale (finanziamenti auto, "valore futuro garantito").
+  final int? maxiRata;
   final int? tanPuntiBase;
   final int? taegPuntiBase;
   final int? totaleDovuto;
@@ -35,6 +39,7 @@ class ProposteContratto {
     capitale,
     numeroRate,
     importoRata,
+    maxiRata,
     tanPuntiBase,
     taegPuntiBase,
     primaRata,
@@ -45,6 +50,11 @@ class ProposteContratto {
 /// di base sul credito ai consumatori", prestiti e rate) e **PIES/ESIS**
 /// (mutui). Tutto sul dispositivo: il contratto non viene inviato a nessuno.
 abstract final class LettoreContratto {
+  static final _altraVoce = RegExp(
+    r'\b(?:importo\s*totale|credito|prezzo|TAN|TAEG|anticipo|durata)\b',
+    caseSensitive: false,
+  );
+
   static ProposteContratto leggi(String testo) {
     // Testo su una riga sola, spazi normalizzati: i PDF spezzano le frasi.
     final t = testo.replaceAll(RegExp(r'[ \s]+'), ' ');
@@ -63,6 +73,25 @@ abstract final class LettoreContratto {
       r'(\d{1,3})\s*mesi',
     ]);
     final durataAnni = _intero(t, [r'durata[^\d]{0,60}?(\d{1,2})\s*anni']);
+    final maxiRata = _importo(t, [
+      r'maxi\s*-?\s*rata(?:\s*finale)?',
+      r'rata\s*finale',
+      r'valore\s*futuro\s*garantito',
+      r'valore\s*garantito\s*futuro',
+      r'\bVFG\b',
+      r'rata\s*residua',
+    ], escludi: _altraVoce);
+    // "35 rate mensili + maxi rata finale": la maxi rata è la 36ª.
+    var rate = numeroRate;
+    if (maxiRata != null && rate != null) {
+      final piuMaxi = RegExp(
+        r'(\d{1,3})\s*rate[^.;]{0,60}?(?:\+|più(?=\s)|\be\b|oltre\s*(?:a\s*)?(?:la\s*)?)\s*(?:una\s*|1\s*)?(?:maxi\s*-?\s*rata|rata\s*finale)',
+        caseSensitive: false,
+      ).firstMatch(t);
+      if (piuMaxi != null && int.tryParse(piuMaxi.group(1)!) == rate) {
+        rate++;
+      }
+    }
 
     return ProposteContratto(
       finanziatore: _finanziatore(t),
@@ -73,14 +102,13 @@ abstract final class LettoreContratto {
         r'capitale\s*(?:finanziato|erogato)',
       ]),
       numeroRate:
-          numeroRate ??
-          durataMesi ??
-          (durataAnni == null ? null : durataAnni * 12),
+          rate ?? durataMesi ?? (durataAnni == null ? null : durataAnni * 12),
       importoRata: _importo(t, [
         r'importo\s*(?:di\s*ciascuna|della|delle)\s*rat[ae]',
-        r'rat[ae]\s*(?:mensil[ei]\s*)?(?:costant[ei]\s*)?(?:di|da|pari\s*a)',
+        r'(?<!maxi[\s-]{0,2})\brat[ae]\s*(?:mensil[ei]\s*)?(?:costant[ei]\s*)?(?:di|da|pari\s*a)',
         r'rate\s*mensili\s*di',
       ]),
+      maxiRata: maxiRata,
       tanPuntiBase: _percentuale(t, [
         r'tasso\s*(?:annuo\s*)?(?:di\s*interesse\s*)?nominale(?:\s*annuo)?(?:\s*\(?TAN\)?)?',
         r'\bTAN\b',
@@ -102,16 +130,25 @@ abstract final class LettoreContratto {
   }
 
   /// Importo (€) che segue la prima etichetta trovata, entro pochi caratteri.
-  static int? _importo(String t, List<String> etichette) {
+  /// Con [escludi]: scarta i numeri preceduti da un'altra voce (es. "maxi
+  /// rata finale Importo totale del credito € 20.000" non è la maxi rata).
+  static int? _importo(String t, List<String> etichette, {RegExp? escludi}) {
     for (final e in etichette) {
-      final m = RegExp(
-        '$e[^\\d€]{0,80}?(?:€|EUR|euro)?\\s*([\\d.]{1,12}(?:,\\d{1,2})?)\\s*(?:€|EUR|euro)?',
+      // (?![\d/]): non una data (es. "rata finale: 05/12/2030").
+      final modello = RegExp(
+        '$e([^\\d€]{0,80}?)(?:€|EUR|euro)?\\s*([\\d.]{1,12}(?:,\\d{1,2})?)(?![\\d/])\\s*(?:€|EUR|euro)?',
         caseSensitive: false,
-      ).firstMatch(t);
-      if (m != null) {
-        final valore = Importo.leggi(m.group(1)!);
+      );
+      for (final m in modello.allMatches(t)) {
+        if (escludi != null && escludi.hasMatch(m.group(1)!)) {
+          continue;
+        }
+        final valore = Importo.leggi(m.group(2)!);
         if (valore != null && valore > 0) {
           return valore;
+        }
+        if (escludi == null) {
+          break; // come prima: solo la prima occorrenza dell'etichetta
         }
       }
     }

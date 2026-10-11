@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../core/db/archivio.dart';
 import '../../core/db/carte_credito.dart';
 import '../../core/db/contabilita.dart';
 import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import '../movimenti/riga_movimento.dart';
 import 'portafoglio_pagina.dart';
+import 'raggruppa_portafogli.dart';
 
 /// Portafogli della Panoramica:
 /// - i preferiti ⭐ in cima, sempre visibili (mai dentro un gruppo chiuso);
@@ -61,13 +61,7 @@ class _ElencoPortafogliState extends State<ElencoPortafogli> {
       builder: (context, snapshot) {
         final carte = snapshot.data ?? const <CartaConStato>[];
         final idCarte = {for (final c in carte) c.portafoglio.id};
-        final visibili = widget.portafogli
-            .where(
-              (p) =>
-                  !idCarte.contains(p.portafoglio.id) &&
-                  p.tipo.nome != tipoCartaDiCredito,
-            )
-            .toList();
+        final visibili = raggruppabili(widget.portafogli, idCarte);
         final preferiti = visibili
             .where((p) => p.portafoglio.preferito)
             .toList();
@@ -107,6 +101,22 @@ class _ElencoPortafogliState extends State<ElencoPortafogli> {
                 aperto: _aperti[g] ?? false,
                 onAlterna: () => _alterna(g),
                 riga: riga,
+                onModifica: () => apriRaggruppa(
+                  context,
+                  widget.sessione,
+                  visibili,
+                  gruppo: g,
+                ),
+                onSciogli: () => sciogliGruppo(
+                  context,
+                  widget.sessione,
+                  g,
+                  // Anche i preferiti del gruppo (mostrati in cima) ne escono.
+                  [
+                    for (final p in visibili)
+                      if (p.portafoglio.gruppo == g) p,
+                  ],
+                ),
               ),
           ],
         );
@@ -122,6 +132,8 @@ class _Gruppo extends StatelessWidget {
     required this.aperto,
     required this.onAlterna,
     required this.riga,
+    required this.onModifica,
+    required this.onSciogli,
   });
 
   final String nome;
@@ -129,6 +141,8 @@ class _Gruppo extends StatelessWidget {
   final bool aperto;
   final VoidCallback onAlterna;
   final Widget Function(PortafoglioConSaldo) riga;
+  final VoidCallback onModifica;
+  final VoidCallback onSciogli;
 
   @override
   Widget build(BuildContext context) {
@@ -161,6 +175,27 @@ class _Gruppo extends StatelessWidget {
                   ),
                 ),
                 Icon(aperto ? Icons.expand_less : Icons.expand_more),
+                PopupMenuButton<String>(
+                  tooltip: 'Modifica o sciogli il gruppo',
+                  onSelected: (scelta) =>
+                      scelta == 'sciogli' ? onSciogli() : onModifica(),
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      value: 'modifica',
+                      child: ListTile(
+                        leading: Icon(Icons.edit_outlined),
+                        title: Text('Modifica gruppo'),
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'sciogli',
+                      child: ListTile(
+                        leading: Icon(Icons.folder_off_outlined),
+                        title: Text('Sciogli gruppo'),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
             onTap: onAlterna,

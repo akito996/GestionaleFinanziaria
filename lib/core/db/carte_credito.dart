@@ -5,6 +5,7 @@ import 'archivio.dart';
 import 'contabilita.dart';
 import 'id.dart';
 import 'orologio.dart';
+import 'osservazione.dart';
 import 'pianificatore.dart';
 import 'tabelle.dart';
 
@@ -206,7 +207,7 @@ class CarteCreditoServizio {
         readsFrom: {_db.carteCredito, _db.portafogli, _db.movimenti},
       )
       .watch()
-      .asyncMap((_) => stati());
+      .ricalcola((_) => stati());
 
   Future<List<CartaConStato>> stati() async {
     final carte =

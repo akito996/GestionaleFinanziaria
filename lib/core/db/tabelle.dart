@@ -131,6 +131,11 @@ class VociCosto extends Table with ColonneSincronizzate {
       text().withLength(min: 3, max: 10).withDefault(const Constant('EUR'))();
   BoolColumn get archiviata => boolean().withDefault(const Constant(false))();
   IntColumn get ordine => integer().withDefault(const Constant(0))();
+
+  /// Solo per gli addebiti non mensili (es. una volta l'anno): `true` = la
+  /// spesa si suddivide nei mesi (1.200 €/anno → 100 € al mese), `false` = pesa
+  /// solo nel mese del pagamento.
+  BoolColumn get ripartita => boolean().withDefault(const Constant(false))();
 }
 
 /// Importo predefinito mensile di una voce, con la data da cui vale.
@@ -229,6 +234,10 @@ class Prestiti extends Table with ColonneSincronizzate {
   IntColumn get capitaleMinimo => integer()();
   IntColumn get numeroRate => integer()();
   IntColumn get importoRataMinimo => integer()();
+
+  /// Maxi rata finale (es. finanziamenti auto): l'ultima delle [numeroRate]
+  /// rate vale questa cifra invece di [importoRataMinimo]. `null` = nessuna.
+  IntColumn get maxiRataMinimo => integer().nullable()();
 
   /// Tassi in punti base (1% = 100), facoltativi.
   IntColumn get tanPuntiBase => integer().nullable()();

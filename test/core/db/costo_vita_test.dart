@@ -335,5 +335,91 @@ void main() {
       expect(await pian.registraScadute(), 0);
       expect(await pian.inArrivo(), isNotEmpty);
     });
+
+    test('spesa annuale suddivisa nei mesi: 1.200 € → 100 € al mese', () async {
+      final bollo = await cv.creaVoce(
+        nome: 'Assicurazione',
+        tipo: TipoVoce.fissa,
+        importo: 120000,
+        ripartita: true,
+      );
+      await cv.impostaAddebito(
+        bollo,
+        ricorrenza: Ricorrenza(
+          inizio: DateTime(2027, 3, 15),
+          frequenza: Frequenza.annuale,
+        ),
+      );
+      // Anche prima del primo pagamento: è la quota da mettere da parte.
+      for (final mese in [ottobre, novembre, DateTime(2027, 3)]) {
+        final v = (await voce('Assicurazione', mese))!;
+        expect(v.previsto, 10000);
+        expect(v.ripartita, isTrue);
+        expect(v.importoUnitario, 120000);
+      }
+      expect((await voce('Assicurazione', DateTime(2027, 3)))!.dateAddebito, [
+        DateTime(2027, 3, 15),
+      ]);
+
+      // Senza suddivisione: tutto nel mese del pagamento.
+      await cv.modificaVoce(bollo, nome: 'Assicurazione', ripartita: false);
+      expect(await voce('Assicurazione', ottobre), isNull);
+      expect(
+        (await voce('Assicurazione', DateTime(2027, 3)))!.previsto,
+        120000,
+      );
+      expect(
+        CostoVita.quotaMensile(1200, Frequenza.settimanale),
+        5200,
+        reason: '12 € a settimana = 52 € al mese',
+      );
+    });
+
+    test("suddivisa e finita: dopo l'ultimo addebito non conta più", () async {
+      final corso = await cv.creaVoce(
+        nome: 'Corso',
+        tipo: TipoVoce.fissa,
+        importo: 60000,
+        ripartita: true,
+      );
+      await cv.impostaAddebito(
+        corso,
+        ricorrenza: Ricorrenza(
+          inizio: DateTime(2026, 10, 1),
+          frequenza: Frequenza.semestrale,
+          occorrenze: 1,
+        ),
+      );
+      expect((await voce('Corso', ottobre))!.previsto, 10000);
+      expect(await voce('Corso', novembre), isNull);
+    });
+
+    test(
+      'voce eliminata: sparisce e si ferma; "Annulla" la ripristina',
+      () async {
+        final conto = await contoCorrente();
+        final palestra = await cv.creaVoce(
+          nome: 'Palestra',
+          tipo: TipoVoce.fissa,
+          importo: 4000,
+        );
+        await cv.impostaAddebito(
+          palestra,
+          ricorrenza: Ricorrenza(inizio: DateTime(2026, 10, 20)),
+          portafoglioId: conto,
+        );
+        expect(await pian.inArrivo(), hasLength(1));
+
+        await cv.eliminaVoce(palestra);
+        expect(await voce('Palestra', ottobre), isNull);
+        expect(await pian.inArrivo(), isEmpty);
+        adesso = DateTime(2026, 10, 25);
+        expect(await pian.registraScadute(), 0);
+
+        await cv.ripristinaVoce(palestra);
+        expect((await voce('Palestra', ottobre))!.previsto, 4000);
+        expect(await pian.registraScadute(), 1);
+      },
+    );
   });
 }

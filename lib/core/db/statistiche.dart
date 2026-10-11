@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import 'archivio.dart';
 import 'carte_credito.dart';
 import 'contabilita.dart';
+import 'osservazione.dart';
 import 'prestiti.dart';
 
 /// Spesa di una categoria principale in un periodo.
@@ -73,6 +74,36 @@ class CandelaSaldo {
   bool get crescita => chiusura >= apertura;
 }
 
+/// Entrate e uscite di un periodo (mese o anno). I trasferimenti tra i propri
+/// portafogli non contano: non sono né guadagni né spese.
+class EntrateUscite {
+  const EntrateUscite(this.periodo, this.entrate, this.uscite);
+
+  /// Primo giorno del mese (o dell'anno).
+  final DateTime periodo;
+  final int entrate;
+  final int uscite;
+
+  /// Quanto resta (positivo) o quanto manca (negativo).
+  int get differenza => entrate - uscite;
+
+  /// Parte delle entrate messa da parte (0,25 = 25%); `null` senza entrate.
+  double? get risparmio => entrate == 0 ? null : differenza / entrate;
+}
+
+/// Periodo in corso confrontato con lo stesso tratto del periodo prima
+/// (es. 1-11 ottobre contro 1-11 settembre): confronto alla pari.
+class ConfrontoPeriodo {
+  const ConfrontoPeriodo(this.attuale, this.precedente);
+
+  final EntrateUscite attuale;
+  final EntrateUscite precedente;
+
+  /// Variazione percentuale (0,12 = +12%); `null` se prima era zero.
+  static double? variazione(int adesso, int prima) =>
+      prima == 0 ? null : (adesso - prima) / prima;
+}
+
 /// Dati aggregati per grafici ed export, e preferenze locali dei grafici.
 class StatisticheServizio {
   StatisticheServizio(this._db);
@@ -132,7 +163,7 @@ class StatisticheServizio {
         readsFrom: {_db.movimenti, _db.categorie},
       )
       .watch()
-      .asyncMap((_) => spesePerCategoria(da, a));
+      .ricalcola((_) => spesePerCategoria(da, a));
 
   /// Saldo di fine mese degli ultimi [mesi] mesi fino a [finoA] (incluso).
   Future<List<SaldoMese>> saldoMensile(
@@ -184,7 +215,180 @@ class StatisticheServizio {
         readsFrom: {_db.movimenti, _db.portafogli},
       )
       .watch()
-      .asyncMap((_) => saldoMensile(portafoglioId, finoA: finoA, mesi: mesi));
+      .ricalcola((_) => saldoMensile(portafoglioId, finoA: finoA, mesi: mesi));
+
+  // ------------------------------------------------- entrate e uscite
+
+  /// Entrate e uscite tra [da] e [a] (inclusi).
+  Future<EntrateUscite> entrateUsciteTra(DateTime da, DateTime a) async {
+    final riga = await _db
+        .customSelect(
+          '''
+          SELECT
+            COALESCE(SUM(CASE WHEN t.effetto = 'entrata' THEN m.importo_minimo END), 0) AS entrate,
+            COALESCE(SUM(CASE WHEN t.effetto = 'uscita' THEN m.importo_minimo END), 0) AS uscite
+          FROM movimenti m JOIN definizioni_tipo t ON t.id = m.tipo_id
+          WHERE m.eliminato = 0 AND m.data BETWEEN ? AND ?
+          ''',
+          variables: [
+            Variable.withString(Contabilita.giorno(da)),
+            Variable.withString(Contabilita.giorno(a)),
+          ],
+        )
+        .getSingle();
+    return EntrateUscite(
+      DateTime(da.year, da.month),
+      riga.read<int>('entrate'),
+      riga.read<int>('uscite'),
+    );
+  }
+
+  /// Gli ultimi [mesi] mesi fino a [finoA] (incluso), dal più vecchio.
+  Future<List<EntrateUscite>> entrateUscitePerMese({
+    required DateTime finoA,
+    int mesi = 12,
+  }) async {
+    final primo = DateTime(finoA.year, finoA.month - mesi + 1);
+    final per = await _perPeriodo(
+      primo,
+      DateTime(finoA.year, finoA.month + 1, 0),
+      'substr(m.data, 1, 7)',
+    );
+    return [
+      for (var i = 0; i < mesi; i++)
+        _periodo(per, DateTime(primo.year, primo.month + i), 7),
+    ];
+  }
+
+  /// Gli ultimi [anni] anni fino a quello di [finoA] (incluso), dal più
+  /// vecchio, a partire dal primo anno con movimenti.
+  Future<List<EntrateUscite>> entrateUscitePerAnno({
+    required DateTime finoA,
+    int anni = 5,
+  }) async {
+    final primoMovimento = await _db
+        .customSelect(
+          'SELECT MIN(data) AS primo FROM movimenti WHERE eliminato = 0',
+        )
+        .getSingle();
+    final primoAnno =
+        int.tryParse(
+          (primoMovimento.readNullable<String>('primo') ?? '').split('-').first,
+        ) ??
+        finoA.year;
+    final da = primoAnno > finoA.year - anni + 1
+        ? primoAnno
+        : finoA.year - anni + 1;
+    final per = await _perPeriodo(
+      DateTime(da),
+      DateTime(finoA.year, 12, 31),
+      'substr(m.data, 1, 4)',
+    );
+    return [
+      for (var anno = da; anno <= finoA.year; anno++)
+        _periodo(per, DateTime(anno), 4),
+    ];
+  }
+
+  /// Dall'inizio del mese (o dell'anno, con [anno]) fino a [oggi], contro lo
+  /// stesso tratto del mese (o dell'anno) prima.
+  Future<ConfrontoPeriodo> confronto(DateTime oggi, {bool anno = false}) async {
+    final giorno = DateTime(oggi.year, oggi.month, oggi.day);
+    if (anno) {
+      final prima = DateTime(giorno.year - 1, giorno.month, 1);
+      return ConfrontoPeriodo(
+        await entrateUsciteTra(DateTime(giorno.year), giorno),
+        await entrateUsciteTra(
+          DateTime(giorno.year - 1),
+          DateTime(
+            prima.year,
+            prima.month,
+            _giornoValido(prima.year, prima.month, giorno.day),
+          ),
+        ),
+      );
+    }
+    final mesePrima = DateTime(giorno.year, giorno.month - 1);
+    return ConfrontoPeriodo(
+      await entrateUsciteTra(DateTime(giorno.year, giorno.month), giorno),
+      await entrateUsciteTra(
+        mesePrima,
+        DateTime(
+          mesePrima.year,
+          mesePrima.month,
+          _giornoValido(mesePrima.year, mesePrima.month, giorno.day),
+        ),
+      ),
+    );
+  }
+
+  /// Mesi e anni insieme, con i confronti: un solo stream per la scheda.
+  Stream<
+    ({
+      List<EntrateUscite> mesi,
+      List<EntrateUscite> anni,
+      ConfrontoPeriodo confrontoMese,
+      ConfrontoPeriodo confrontoAnno,
+    })
+  >
+  osservaEntrateUscite(DateTime oggi) => _db
+      .customSelect(
+        'SELECT 1 AS osserva_entrate_uscite',
+        readsFrom: {_db.movimenti, _db.definizioniTipo},
+      )
+      .watch()
+      .ricalcola(
+        (_) async => (
+          mesi: await entrateUscitePerMese(finoA: oggi),
+          anni: await entrateUscitePerAnno(finoA: oggi),
+          confrontoMese: await confronto(oggi),
+          confrontoAnno: await confronto(oggi, anno: true),
+        ),
+      );
+
+  Future<Map<String, ({int entrate, int uscite})>> _perPeriodo(
+    DateTime da,
+    DateTime a,
+    String chiave,
+  ) async {
+    final righe = await _db
+        .customSelect(
+          '''
+          SELECT $chiave AS periodo,
+            COALESCE(SUM(CASE WHEN t.effetto = 'entrata' THEN m.importo_minimo END), 0) AS entrate,
+            COALESCE(SUM(CASE WHEN t.effetto = 'uscita' THEN m.importo_minimo END), 0) AS uscite
+          FROM movimenti m JOIN definizioni_tipo t ON t.id = m.tipo_id
+          WHERE m.eliminato = 0 AND m.data BETWEEN ? AND ?
+          GROUP BY periodo
+          ''',
+          variables: [
+            Variable.withString(Contabilita.giorno(da)),
+            Variable.withString(Contabilita.giorno(a)),
+          ],
+        )
+        .get();
+    return {
+      for (final r in righe)
+        r.read<String>('periodo'): (
+          entrate: r.read<int>('entrate'),
+          uscite: r.read<int>('uscite'),
+        ),
+    };
+  }
+
+  static EntrateUscite _periodo(
+    Map<String, ({int entrate, int uscite})> per,
+    DateTime inizio,
+    int lunghezza,
+  ) {
+    final v = per[Contabilita.giorno(inizio).substring(0, lunghezza)];
+    return EntrateUscite(inizio, v?.entrate ?? 0, v?.uscite ?? 0);
+  }
+
+  static int _giornoValido(int anno, int mese, int giorno) {
+    final ultimo = DateTime(anno, mese + 1, 0).day;
+    return giorno > ultimo ? ultimo : giorno;
+  }
 
   // ------------------------------------------- patrimonio, cascata, candele
 
@@ -290,7 +494,7 @@ class StatisticheServizio {
         },
       )
       .watch()
-      .asyncMap((_) => patrimonio(carte, prestiti));
+      .ricalcola((_) => patrimonio(carte, prestiti));
 
   /// Cascata di un mese: saldo totale a inizio mese → entrate → spese per
   /// categoria principale (le 5 maggiori + "Altre") → saldo a fine mese.
@@ -348,7 +552,7 @@ class StatisticheServizio {
         readsFrom: {_db.movimenti, _db.portafogli, _db.categorie},
       )
       .watch()
-      .asyncMap((_) => cascataMese(mese));
+      .ricalcola((_) => cascataMese(mese));
 
   /// Candele mensili del saldo di un portafoglio (giorno per giorno).
   Future<List<CandelaSaldo>> candeleSaldo(
@@ -415,7 +619,7 @@ class StatisticheServizio {
         readsFrom: {_db.movimenti, _db.portafogli},
       )
       .watch()
-      .asyncMap((_) => candeleSaldo(portafoglioId, finoA: finoA, mesi: mesi));
+      .ricalcola((_) => candeleSaldo(portafoglioId, finoA: finoA, mesi: mesi));
 
   // ------------------------------------------------- preferenze dei grafici
 

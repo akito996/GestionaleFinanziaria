@@ -7,6 +7,7 @@ import '../../core/db/obiettivi.dart';
 import '../../core/db/tabelle.dart';
 import '../../core/importo.dart';
 import '../../core/sessione.dart';
+import '../comuni/campi.dart';
 import '../comuni/errori.dart';
 import '../comuni/navigazione.dart';
 import '../movimenti/riga_movimento.dart';
@@ -561,21 +562,12 @@ class _VersamentoState extends State<_Versamento> {
                 ),
                 const SizedBox(height: 12),
               ],
-              TextFormField(
+              CampoImporto(
                 controller: _importo,
                 autofocus: true,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: InputDecoration(
-                  labelText: 'Importo',
-                  suffixText: Importo.simbolo(s.obiettivo.valuta),
-                ),
-                validator: (v) {
-                  final x = Importo.leggi(v ?? '');
-                  return x == null || x <= 0 ? 'Scrivi un importo' : null;
-                },
-                onFieldSubmitted: (_) => _salva(),
+                valuta: s.obiettivo.valuta,
+                textInputAction: TextInputAction.done,
+                onInvio: _salva,
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String?>(
@@ -774,55 +766,20 @@ class _ModuloObiettivoState extends State<_ModuloObiettivo> {
                       (v == null || v.trim().isEmpty) ? 'Dai un nome' : null,
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
+                CampoImporto(
                   controller: _importo,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: InputDecoration(
-                    labelText: colletta
-                        ? 'Totale da raccogliere'
-                        : 'Quanto vuoi mettere da parte',
-                    suffixText: '€',
-                  ),
-                  validator: (v) {
-                    final x = Importo.leggi(v ?? '');
-                    return x == null || x <= 0 ? 'Scrivi un importo' : null;
-                  },
+                  etichetta: colletta
+                      ? 'Totale da raccogliere'
+                      : 'Quanto vuoi mettere da parte',
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.event),
-                        label: Text(
-                          _scadenza == null
-                              ? 'Entro quando (facoltativo)'
-                              : 'Entro il ${dataLeggibile(context, _scadenza!)}',
-                        ),
-                        onPressed: () async {
-                          final d = await showDatePicker(
-                            context: context,
-                            initialDate:
-                                _scadenza ??
-                                DateTime.now().add(const Duration(days: 180)),
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime(2100),
-                          );
-                          if (d != null) {
-                            setState(() => _scadenza = d);
-                          }
-                        },
-                      ),
-                    ),
-                    if (_scadenza != null)
-                      IconButton(
-                        tooltip: 'Togli la data',
-                        icon: const Icon(Icons.close),
-                        onPressed: () => setState(() => _scadenza = null),
-                      ),
-                  ],
+                CampoData(
+                  etichetta: 'Entro quando (facoltativo)',
+                  valore: _scadenza,
+                  vuoto: 'Nessuna scadenza',
+                  primo: DateTime(2000),
+                  onChanged: (d) => setState(() => _scadenza = d),
+                  onTogli: () => setState(() => _scadenza = null),
                 ),
                 if (!colletta) ...[
                   const SizedBox(height: 12),

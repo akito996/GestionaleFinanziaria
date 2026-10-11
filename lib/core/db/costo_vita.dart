@@ -6,6 +6,7 @@ import 'archivio.dart';
 import 'contabilita.dart';
 import 'id.dart';
 import 'orologio.dart';
+import 'osservazione.dart';
 import 'pianificatore.dart';
 import 'tabelle.dart';
 
@@ -54,6 +55,12 @@ class VoceDelMese {
   final List<DateTime> dateAddebito;
 
   bool get fissa => voce.tipo == TipoVoce.fissa;
+
+  /// Spesa non mensile suddivisa nei mesi (es. 1.200 €/anno → 100 € al mese).
+  bool get ripartita =>
+      voce.ripartita &&
+      addebito != null &&
+      Frequenza.daCodice(addebito!.frequenza) != Frequenza.mensile;
 }
 
 class RiepilogoMese {
@@ -104,6 +111,14 @@ class CostoVita {
   final OrologioLogico _orologio;
   final Pianificatore _pianificatore;
   final DateTime Function() _adesso;
+
+  /// Quota mensile di una spesa pagata [importo] alla volta con frequenza [f]
+  /// (es. 1.200 € ogni anno → 100 € al mese; ogni settimana × 52 / 12).
+  static int quotaMensile(int importo, Frequenza f) => switch (f) {
+    Frequenza.settimanale => (importo * 52 / 12).round(),
+    Frequenza.mensile => importo,
+    _ => (importo / f.mesi).round(),
+  };
 
   // ------------------------------------------------------------ addebito
 
@@ -175,6 +190,7 @@ class CostoVita {
     required int importo,
     String? categoriaId,
     String valuta = 'EUR',
+    bool ripartita = false,
   }) async {
     final id = nuovoId();
     final oggi = _adesso();
@@ -189,6 +205,7 @@ class CostoVita {
               tipo: tipo,
               categoriaId: Value(categoriaId),
               valuta: Value(valuta),
+              ripartita: Value(ripartita),
               ordine: Value(await _prossimoOrdine()),
             ),
           );
@@ -203,6 +220,7 @@ class CostoVita {
     required String nome,
     String? categoriaId,
     String? tipo,
+    bool? ripartita,
   }) async {
     await (_db.update(_db.vociCosto)..where((v) => v.id.equals(id))).write(
       VociCostoCompanion(
@@ -210,6 +228,7 @@ class CostoVita {
         nome: Value(nome.trim()),
         categoriaId: Value(categoriaId),
         tipo: tipo == null ? const Value.absent() : Value(tipo),
+        ripartita: ripartita == null ? const Value.absent() : Value(ripartita),
       ),
     );
     // Nome e categoria anche sui movimenti che verranno registrati da qui in poi.
@@ -310,17 +329,45 @@ class CostoVita {
         );
   }
 
+  /// Elimina la voce (anche dai mesi passati) e ferma i suoi addebiti
+  /// automatici. I movimenti già registrati restano. Annullabile con
+  /// [ripristinaVoce].
+  Future<void> eliminaVoce(String id) => _impostaEliminata(id, true);
+
+  Future<void> ripristinaVoce(String id) => _impostaEliminata(id, false);
+
+  Future<void> _impostaEliminata(String id, bool eliminata) =>
+      _db.transaction(() async {
+        await (_db.update(_db.vociCosto)..where((v) => v.id.equals(id))).write(
+          VociCostoCompanion(
+            aggiornatoIl: Value(_orologio.adesso()),
+            eliminato: Value(eliminata),
+          ),
+        );
+        await (_db.update(_db.pianificazioni)..where(
+              (p) =>
+                  p.origine.equals(OriginePianificazione.costoVita) &
+                  p.origineId.equals(id),
+            ))
+            .write(
+              PianificazioniCompanion(
+                aggiornatoIl: Value(_orologio.adesso()),
+                attiva: Value(!eliminata),
+              ),
+            );
+      });
+
   // ---------------------------------------------------------- riepiloghi
 
   /// Riepilogo di un mese, aggiornato quando cambiano voci, importi o movimenti.
   Stream<RiepilogoMese> osservaMese(DateTime mese) =>
-      _osserva().asyncMap((_) async => (await riepiloghi([mese])).single);
+      _osserva().ricalcola((_) async => (await riepiloghi([mese])).single);
 
   /// Gli ultimi [quanti] mesi fino a [finoA] incluso (per il grafico).
   Stream<List<RiepilogoMese>> osservaStorico({
     required DateTime finoA,
     int quanti = 6,
-  }) => _osserva().asyncMap(
+  }) => _osserva().ricalcola(
     (_) => riepiloghi([
       for (var i = quanti - 1; i >= 0; i--)
         DateTime(finoA.year, finoA.month - i),
@@ -392,7 +439,23 @@ class CostoVita {
         final addebito = addebiti[voce.id];
         var dateAddebito = const <DateTime>[];
         int predefinito;
-        if (addebito != null) {
+        if (addebito != null &&
+            voce.ripartita &&
+            Frequenza.daCodice(addebito.frequenza) != Frequenza.mensile) {
+          // Suddivisa nei mesi: una quota ogni mese (anche prima del primo
+          // addebito, come accantonamento) fino al mese dell'ultimo addebito.
+          final regola = Pianificatore.ricorrenzaDi(addebito);
+          final ultima = regola.ultima;
+          if (ultima != null &&
+              DateTime(ultima.year, ultima.month).isBefore(mese)) {
+            continue;
+          }
+          dateAddebito = regola.nelMese(mese);
+          predefinito = quotaMensile(
+            _importoAl(storia, riferimento) ?? 0,
+            regola.frequenza,
+          );
+        } else if (addebito != null) {
           final regola = Pianificatore.ricorrenzaDi(addebito);
           // Fuori dal periodo della voce (prima dell'inizio o dopo la fine): non conta.
           final ultima = regola.ultima;

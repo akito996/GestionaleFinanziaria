@@ -211,7 +211,7 @@ class ColonneRaggruppate extends StatelessWidget {
                         BarChartRodData(
                           toY: s.valori[i] / 100,
                           width: 8,
-                          color: palette[k % palette.length],
+                          color: s.colore ?? palette[k % palette.length],
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(3),
                           ),
@@ -225,7 +225,7 @@ class ColonneRaggruppate extends StatelessWidget {
         const SizedBox(height: 8),
         _legenda(context, [
           for (final (k, s) in serie.indexed)
-            (palette[k % palette.length], s.nome),
+            (s.colore ?? palette[k % palette.length], s.nome),
         ]),
       ],
     );

@@ -17,6 +17,18 @@ L'utente vuole sapere quanto gli costa vivere ogni mese: spese **fisse** (affitt
 - Le voci tolte vengono **archiviate** (con Annulla), mai cancellate.
 - **Categorie**: albero iniziale proposto (Casa › Bollette, Alimentari › Spesa, ...), modificabile senza limiti; migrazione dello schema v1 → v2 che conserva i dati.
 
+## Aggiornamento dell'11/10/2026 – spese non mensili, modifica ed eliminazione
+- **Suddividi la spesa nei mesi** (casella nella data di addebito, solo per frequenze non mensili; colonna `voci_costo.ripartita`, schema v8):
+  - spenta (predefinito): la spesa pesa solo nel mese del pagamento;
+  - accesa: ogni mese conta una quota, cioè importo ÷ mesi della frequenza (settimanale: × 52 ÷ 12). Esempio: 1.200 € l'anno → 100 € al mese.
+  - La quota vale dal mese di creazione della voce, anche prima del primo pagamento (è ciò che conviene mettere da parte), fino al mese dell'ultimo addebito.
+  - La variazione di un solo mese ha la precedenza.
+  - Il movimento registrato nel giorno del pagamento resta dell'importo intero.
+- **Modifica ed elimina** dal menu ⋮ di ogni voce:
+  - Elimina chiede conferma e toglie la voce anche dai mesi passati (eliminazione logica, sincronizzabile);
+  - gli addebiti automatici si fermano; i movimenti già registrati restano;
+  - "Annulla" ripristina la voce e i suoi addebiti.
+
 ## Conseguenze
 - ✅ Lo storico dei mesi chiusi non cambia quando si aggiorna un importo.
 - ✅ Configurazione rapida: suggerimenti a un tocco con categoria già collegata.

@@ -151,4 +151,40 @@ void main() {
     expect(p!.importoMinimo, 15000);
     expect(p.descrizione, 'Rata Bici elettrica');
   });
+
+  test(
+    "maxi rata finale: l'ultima rata si registra con il suo importo",
+    () async {
+      await prestiti.crea(
+        DatiPrestito(
+          nome: 'Auto',
+          tipo: TipoPrestito.prestito,
+          capitale: 1200000,
+          numeroRate: 3,
+          importoRata: 300000,
+          maxiRata: 600000,
+          primaRata: DateTime(2026, 10, 15),
+          portafoglioId: conto,
+        ),
+      );
+      var s = (await prestiti.stati()).single;
+      expect(s.daPagare, 1200000);
+      expect(s.rate.last.piano.rata, 600000);
+
+      adesso = DateTime(2026, 12, 1);
+      final arrivo = await pian.inArrivo(giorni: 30);
+      expect(arrivo.single.importo, 600000);
+      expect(arrivo.single.data, DateTime(2026, 12, 15));
+
+      adesso = DateTime(2027, 1, 1);
+      expect(await pian.registraScadute(), 3);
+      final importi = [
+        for (final m in await c.osservaMovimenti().first)
+          m.movimento.importoMinimo,
+      ]..sort();
+      expect(importi, [300000, 300000, 600000]);
+      s = (await prestiti.stati()).single;
+      expect(s.debitoResiduo, 0);
+    },
+  );
 }

@@ -33,6 +33,21 @@ Tasso di interesse nominale annuo 3,20 %
 Tasso annuo effettivo globale (TAEG): 3,45%
 ''';
 
+/// Finanziamento auto con maxi rata finale (dati inventati). Nella prima riga
+/// "maxi rata finale" è seguito da un altro importo: non va confuso.
+const _secciAuto = '''
+INFORMAZIONI EUROPEE DI BASE SUL CREDITO AI CONSUMATORI
+Finanziatore: Auto Credito Esempio S.p.A.
+Tipo di contratto di credito: Finanziamento finalizzato con maxi rata finale
+Importo totale del credito € 20.000,00
+Durata del contratto di credito 36 mesi
+Rate: n. 35 rate mensili di € 336,69 più una maxi rata finale di € 11.000,00
+Scadenza della maxi rata: 05/11/2029
+Scadenza prima rata: 05/12/2026
+Tasso annuo nominale (TAN) fisso 5,95 %
+Tasso annuo effettivo globale (TAEG) 7,40 %
+''';
+
 void main() {
   group('piano di ammortamento alla francese', () {
     test('rata costante (verificata con la formula standard)', () {
@@ -69,6 +84,51 @@ void main() {
       for (final r in piano) {
         expect(r.rata, r.quotaCapitale + r.quotaInteressi);
       }
+    });
+
+    test("maxi rata finale: rate costanti più l'ultima che chiude", () {
+      final rata = Ammortamento.rata(
+        capitale: 2000000,
+        numeroRate: 36,
+        tanPuntiBase: 595,
+        rataFinale: 1100000,
+      );
+      expect(rata, inInclusiveRange(33660, 33680));
+      final piano = Ammortamento.piano(
+        capitale: 2000000,
+        numeroRate: 36,
+        tanPuntiBase: 595,
+        rataFissa: 33669,
+        rataFinale: 1100000,
+      );
+      expect(piano, hasLength(36));
+      expect(piano.first.rata, 33669);
+      expect(piano.last.rata, 1100000);
+      expect(piano.last.debitoResiduo, 0);
+      expect(
+        piano.map((r) => r.quotaCapitale).reduce((a, b) => a + b),
+        2000000,
+      );
+      // Il TAN si ricava anche con la maxi rata.
+      expect(
+        Ammortamento.tanDaRata(
+          capitale: 2000000,
+          numeroRate: 36,
+          rata: 33669,
+          rataFinale: 1100000,
+        ),
+        inInclusiveRange(590, 600),
+      );
+      // Senza interessi: (capitale − maxi rata) diviso le altre rate.
+      expect(
+        Ammortamento.rata(
+          capitale: 1200000,
+          numeroRate: 3,
+          tanPuntiBase: 0,
+          rataFinale: 600000,
+        ),
+        300000,
+      );
     });
 
     test('TAN ricavato dalla rata', () {
@@ -114,6 +174,27 @@ void main() {
       expect(p.tanPuntiBase, 320);
       expect(p.taegPuntiBase, 345);
       expect(p.durataMesi, 300);
+    });
+
+    test('finanziamento auto con maxi rata finale', () {
+      final p = LettoreContratto.leggi(_secciAuto);
+      expect(p.capitale, 2000000);
+      expect(p.maxiRata, 1100000);
+      expect(p.importoRata, 33669);
+      // 35 rate + la maxi rata = 36.
+      expect(p.numeroRate, 36);
+      expect(p.tanPuntiBase, 595);
+      expect(p.taegPuntiBase, 740);
+      expect(p.primaRata, DateTime(2026, 12, 5));
+      expect(p.campiTrovati, 8);
+    });
+
+    test('la data della rata finale non è un importo', () {
+      final p = LettoreContratto.leggi(
+        'Scadenza rata finale: 05/12/2030. Durata di 36 mesi.',
+      );
+      expect(p.maxiRata, isNull);
+      expect(p.importoRata, isNull);
     });
 
     test('testo senza dati: nessuna invenzione', () {

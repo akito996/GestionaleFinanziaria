@@ -110,7 +110,7 @@ class Archivio extends _$Archivio {
   Archivio.conEsecutore(super.e);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -158,6 +158,16 @@ class Archivio extends _$Archivio {
       if (da < 7) {
         await m.addColumn(portafogli, portafogli.gruppo);
         await m.addColumn(portafogli, portafogli.preferito);
+      }
+      // v8: spese annuali suddivise nei mesi, maxi rata finale dei prestiti.
+      // Le tabelle create sopra (da < 2, da < 5) hanno già le colonne nuove.
+      if (da < 8) {
+        if (da >= 2) {
+          await m.addColumn(vociCosto, vociCosto.ripartita);
+        }
+        if (da >= 5) {
+          await m.addColumn(prestiti, prestiti.maxiRataMinimo);
+        }
       }
     },
     beforeOpen: (_) async {

@@ -210,4 +210,83 @@ void main() {
 
     await chiudi(tester);
   });
+
+  testWidgets('raggruppa dal pulsante e scioglie il gruppo', (tester) async {
+    await apri(tester);
+    Finder nelDialogo(Finder f) =>
+        find.descendant(of: find.byType(AlertDialog), matching: f);
+
+    await tocca(tester, find.text('Raggruppa'));
+    await attendi(tester, nelDialogo(find.text('Nome del gruppo')));
+    await tester.enterText(
+      nelDialogo(find.widgetWithText(TextFormField, 'Nome del gruppo')),
+      'Banche',
+    );
+    await tocca(tester, nelDialogo(find.text('Conto principale')));
+    await tocca(tester, nelDialogo(find.text('Salva')));
+    await attendi(tester, find.text('1 portafoglio'));
+    await assestamento(tester); // chiusura animata del dialogo
+    expect(find.text('Banche'), findsOneWidget);
+    expect(find.text('Conto principale'), findsNothing); // gruppo chiuso
+
+    await tocca(
+      tester,
+      find.descendant(
+        of: find.ancestor(of: find.text('Banche'), matching: find.byType(Card)),
+        matching: find.byTooltip('Modifica o sciogli il gruppo'),
+      ),
+    );
+    await tocca(tester, find.text('Sciogli gruppo'));
+    await attendi(tester, find.text('Conto principale'));
+    expect(find.text('Banche'), findsNothing);
+
+    await chiudi(tester);
+  });
+
+  testWidgets('personalizza: nascondi una scheda; entrate e uscite', (
+    tester,
+  ) async {
+    await apri(tester);
+    await attendi(tester, find.text('Entrate e uscite'));
+    await attendi(tester, find.text('Patrimonio'));
+
+    await tocca(tester, find.byTooltip('Personalizza la Panoramica'));
+    await attendi(tester, find.text('Ripristina'));
+    final dialogo = find.byType(AlertDialog);
+    await tocca(
+      tester,
+      find.descendant(of: dialogo, matching: find.text('Patrimonio')),
+    );
+    await tocca(
+      tester,
+      find.descendant(of: dialogo, matching: find.text('Salva')),
+    );
+    await assestamento(tester);
+    expect(find.text('Patrimonio'), findsNothing);
+    // Totale e portafogli restano sempre.
+    expect(find.text('Totale'), findsOneWidget);
+    expect(find.text('Conto principale'), findsOneWidget);
+
+    await chiudi(tester);
+  });
+
+  // Regressione: dopo aver stretto e riallargato la finestra, la scheda del
+  // costo della vita restava in caricamento.
+  testWidgets('finestra stretta e poi larga: le schede si ricaricano', (
+    tester,
+  ) async {
+    await apri(tester);
+    final invito = find.textContaining('Configura le spese fisse');
+    await attendi(tester, invito);
+
+    await tester.binding.setSurfaceSize(const Size(760, 1800));
+    await assestamento(tester);
+    await attendi(tester, invito);
+    await tester.binding.setSurfaceSize(const Size(1300, 1800));
+    await assestamento(tester);
+    await attendi(tester, invito);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+
+    await chiudi(tester);
+  });
 }

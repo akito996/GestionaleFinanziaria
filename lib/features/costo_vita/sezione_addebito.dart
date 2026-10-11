@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../core/db/archivio.dart';
 import '../../core/db/contabilita.dart';
+import '../../core/db/costo_vita.dart';
 import '../../core/db/pianificatore.dart';
 import '../../core/db/tabelle.dart';
 import '../../core/importo.dart';
 import '../../core/ricorrenza.dart';
 import '../../core/sessione.dart';
-import '../movimenti/riga_movimento.dart';
+import '../comuni/campi.dart';
 
 enum TipoFine { mai, data, occorrenze }
 
@@ -21,11 +22,12 @@ class ImpostazioneAddebito {
     this.fine,
     this.occorrenze = 12,
     this.portafoglioId,
+    this.ripartita = false,
   }) : inizio = inizio ?? DateUtils.dateOnly(DateTime.now());
 
-  factory ImpostazioneAddebito.da(Pianificazione? p) {
+  factory ImpostazioneAddebito.da(Pianificazione? p, {bool ripartita = false}) {
     if (p == null) {
-      return ImpostazioneAddebito();
+      return ImpostazioneAddebito(ripartita: ripartita);
     }
     final r = Pianificatore.ricorrenzaDi(p);
     return ImpostazioneAddebito(
@@ -40,6 +42,7 @@ class ImpostazioneAddebito {
       fine: r.fine,
       occorrenze: r.occorrenze ?? 12,
       portafoglioId: p.portafoglioId,
+      ripartita: ripartita,
     );
   }
 
@@ -50,6 +53,15 @@ class ImpostazioneAddebito {
   DateTime? fine;
   int occorrenze;
   String? portafoglioId;
+
+  /// Solo per addebiti non mensili: suddividi la spesa nei mesi.
+  bool ripartita;
+
+  /// La casella "Suddividi nei mesi" ha senso solo per addebiti non mensili.
+  bool get nonMensile => attivo && frequenza != Frequenza.mensile;
+
+  /// Valore da salvare nella voce.
+  bool get ripartitaEffettiva => nonMensile && ripartita;
 
   Ricorrenza? get ricorrenza => attivo
       ? Ricorrenza(
@@ -69,11 +81,15 @@ class SezioneAddebito extends StatefulWidget {
     required this.sessione,
     required this.valore,
     required this.onChanged,
+    this.importo,
   });
 
   final Sessione sessione;
   final ImpostazioneAddebito valore;
   final VoidCallback onChanged;
+
+  /// Importo di un addebito (se già scritto), per l'esempio della suddivisione.
+  final int? importo;
 
   @override
   State<SezioneAddebito> createState() => _SezioneAddebitoState();
@@ -102,13 +118,17 @@ class _SezioneAddebitoState extends State<SezioneAddebito> {
     super.dispose();
   }
 
-  Future<DateTime?> _data(DateTime iniziale, String titolo) => showDatePicker(
-    context: context,
-    initialDate: iniziale,
-    firstDate: DateTime(2000),
-    lastDate: DateTime(2100),
-    helpText: titolo,
-  );
+  /// Esempio concreto con l'importo scritto (o 1.200 € se manca).
+  String _spiegazioneRipartizione() {
+    final importo = widget.importo ?? 120000;
+    final quota = CostoVita.quotaMensile(importo, v.frequenza);
+    final ogni = v.frequenza.etichetta.toLowerCase();
+    return v.ripartita
+        ? '${Importo.formatta(importo, 'EUR')} $ogni → '
+              '${Importo.formatta(quota, 'EUR')} al mese nel costo della vita.'
+        : 'Spenta: ${Importo.formatta(importo, 'EUR')} contano solo nel mese '
+              'del pagamento.';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,23 +145,11 @@ class _SezioneAddebitoState extends State<SezioneAddebito> {
           subtitle: const Text('Quando scalano i soldi dal conto'),
         ),
         if (v.attivo) ...[
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.event),
-                  label: Text(
-                    'Primo addebito: ${dataLeggibile(context, v.inizio)}',
-                  ),
-                  onPressed: () async {
-                    final d = await _data(v.inizio, 'Primo addebito');
-                    if (d != null) {
-                      _aggiorna(() => v.inizio = d);
-                    }
-                  },
-                ),
-              ),
-            ],
+          CampoData(
+            etichetta: 'Primo addebito',
+            valore: v.inizio,
+            primo: DateTime(2000),
+            onChanged: (d) => _aggiorna(() => v.inizio = d),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<Frequenza>(
@@ -153,6 +161,15 @@ class _SezioneAddebitoState extends State<SezioneAddebito> {
             ],
             onChanged: (f) => _aggiorna(() => v.frequenza = f ?? v.frequenza),
           ),
+          if (v.nonMensile)
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              value: v.ripartita,
+              onChanged: (r) => _aggiorna(() => v.ripartita = r ?? false),
+              title: const Text('Suddividi la spesa nei mesi'),
+              subtitle: Text(_spiegazioneRipartizione()),
+            ),
           const SizedBox(height: 12),
           Text('Fino a quando', style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 6),
@@ -181,17 +198,11 @@ class _SezioneAddebitoState extends State<SezioneAddebito> {
           if (v.tipoFine == TipoFine.data)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.event_busy),
-                label: Text(
-                  'Ultimo addebito entro: ${dataLeggibile(context, v.fine!)}',
-                ),
-                onPressed: () async {
-                  final d = await _data(v.fine!, 'Data di fine');
-                  if (d != null) {
-                    _aggiorna(() => v.fine = d);
-                  }
-                },
+              child: CampoData(
+                etichetta: 'Ultimo addebito entro',
+                valore: v.fine,
+                primo: v.inizio,
+                onChanged: (d) => _aggiorna(() => v.fine = d),
               ),
             ),
           if (v.tipoFine == TipoFine.occorrenze)

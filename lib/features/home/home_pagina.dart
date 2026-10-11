@@ -18,9 +18,13 @@ import '../movimenti/movimento_modulo.dart';
 import '../movimenti/riga_movimento.dart';
 import '../portafogli/portafoglio_modulo.dart';
 import '../portafogli/elenco_portafogli.dart';
+import '../portafogli/raggruppa_portafogli.dart';
+import 'entrate_uscite.dart';
+import 'schede_panoramica.dart';
 
-/// Panoramica: totale, portafogli con saldo, ultimi movimenti e "+ Movimento".
-/// Su Windows: Ctrl+N = nuovo movimento.
+/// Panoramica: totale e portafogli (sempre), poi le schede scelte dall'utente
+/// nell'ordine che preferisce, e "+ Movimento". Su Windows: Ctrl+N = nuovo
+/// movimento.
 class HomePagina extends StatefulWidget {
   const HomePagina({super.key, required this.sessione, this.apriCostoVita});
 
@@ -40,6 +44,8 @@ class _HomePaginaState extends State<HomePagina> {
   late final Stream<List<SpesaCategoria>> _spese;
   late final Stream<Patrimonio> _patrimonio;
   late final Stream<List<PassoCascata>> _cascata;
+  ConfigurazionePanoramica _configurazione =
+      ConfigurazionePanoramica.predefinita;
 
   Sessione get _sessione => widget.sessione;
 
@@ -63,6 +69,12 @@ class _HomePaginaState extends State<HomePagina> {
       DateTime(oggi.year, oggi.month),
       DateTime(oggi.year, oggi.month + 1, 0),
     );
+
+    _sessione.statistiche.preferenza(ConfigurazionePanoramica.chiave).then((v) {
+      if (mounted) {
+        setState(() => _configurazione = ConfigurazionePanoramica.leggi(v));
+      }
+    });
 
     // Conferma visibile dell'apertura ("Archivio sbloccato", "Archivio creato", ...).
     final avviso = _sessione.avviso;
@@ -91,6 +103,17 @@ class _HomePaginaState extends State<HomePagina> {
 
   void _nuovoMovimento() => apriModuloMovimento(context, _sessione);
 
+  Future<void> _personalizza() async {
+    final nuova = await personalizzaPanoramica(
+      context,
+      _sessione,
+      _configurazione,
+    );
+    if (nuova != null && mounted) {
+      setState(() => _configurazione = nuova);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<PortafoglioConSaldo>>(
@@ -110,6 +133,12 @@ class _HomePaginaState extends State<HomePagina> {
               appBar: AppBar(
                 title: const Text('GestionaleFinanziaria'),
                 actions: [
+                  if (portafogli != null && !vuoto)
+                    IconButton(
+                      tooltip: 'Personalizza la Panoramica',
+                      icon: const Icon(Icons.dashboard_customize_outlined),
+                      onPressed: _personalizza,
+                    ),
                   IconButton(
                     tooltip: 'Esporta (PDF o Excel)',
                     icon: const Icon(Icons.file_download_outlined),
@@ -153,8 +182,8 @@ class _HomePaginaState extends State<HomePagina> {
     }
     final testo = Theme.of(context).textTheme;
 
+    // Sempre visibili: totale e portafogli.
     final colonnaPortafogli = [
-      SchedaInArrivo(sessione: _sessione),
       Card(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -174,10 +203,25 @@ class _HomePaginaState extends State<HomePagina> {
       const SizedBox(height: 16),
       _Intestazione(
         titolo: 'Portafogli',
-        azione: TextButton.icon(
-          onPressed: () => apriModuloPortafoglio(context, _sessione),
-          icon: const Icon(Icons.add),
-          label: const Text('Nuovo'),
+        azione: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (raggruppabili(portafogli, const {}).length > 1)
+              TextButton.icon(
+                onPressed: () => apriRaggruppa(
+                  context,
+                  _sessione,
+                  raggruppabili(portafogli, const {}),
+                ),
+                icon: const Icon(Icons.create_new_folder_outlined),
+                label: const Text('Raggruppa'),
+              ),
+            TextButton.icon(
+              onPressed: () => apriModuloPortafoglio(context, _sessione),
+              icon: const Icon(Icons.add),
+              label: const Text('Nuovo'),
+            ),
+          ],
         ),
       ),
       ElencoPortafogli(sessione: _sessione, portafogli: portafogli),
@@ -189,6 +233,7 @@ class _HomePaginaState extends State<HomePagina> {
         final storico = snapshot.data;
         final mese = storico?.last;
         return Card(
+          margin: const EdgeInsets.only(bottom: 16),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: widget.apriCostoVita,
@@ -259,7 +304,7 @@ class _HomePaginaState extends State<HomePagina> {
         ];
         final totale = voci.fold<int>(0, (t, v) => t + v.valore);
         return Padding(
-          padding: const EdgeInsets.only(top: 16),
+          padding: const EdgeInsets.only(bottom: 16),
           child: SchedaGrafico(
             sessione: _sessione,
             chiave: 'panoramica.spese_categoria',
@@ -309,7 +354,7 @@ class _HomePaginaState extends State<HomePagina> {
             VoceValore('${v.nome} (debito)', v.importo),
         ];
         return Padding(
-          padding: const EdgeInsets.only(top: 16),
+          padding: const EdgeInsets.only(bottom: 16),
           child: SchedaGrafico(
             sessione: _sessione,
             chiave: 'panoramica.patrimonio',
@@ -348,7 +393,7 @@ class _HomePaginaState extends State<HomePagina> {
         }
         final variazioni = passi.where((p) => !p.totale).toList();
         return Padding(
-          padding: const EdgeInsets.only(top: 16),
+          padding: const EdgeInsets.only(bottom: 16),
           child: SchedaGrafico(
             sessione: _sessione,
             chiave: 'panoramica.flusso',
@@ -384,38 +429,63 @@ class _HomePaginaState extends State<HomePagina> {
       },
     );
 
-    final colonnaMovimenti = [
-      schedaCostoVita,
-      schedaSpese,
-      schedaCascata,
-      schedaPatrimonio,
-      const SizedBox(height: 16),
-      const _Intestazione(titolo: 'Ultimi movimenti'),
-      StreamBuilder<List<MovimentoDettaglio>>(
-        stream: _movimenti,
-        builder: (context, snapshot) {
-          final movimenti = snapshot.data ?? const [];
-          if (snapshot.hasData && movimenti.isEmpty) {
-            return const Card(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'Ancora nessun movimento. Premi "+ Movimento" '
-                  '(o Ctrl+N) per registrare una spesa, un\'entrata o un trasferimento.',
-                  textAlign: TextAlign.center,
+    final schedaMovimenti = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _Intestazione(titolo: 'Ultimi movimenti'),
+        StreamBuilder<List<MovimentoDettaglio>>(
+          stream: _movimenti,
+          builder: (context, snapshot) {
+            final movimenti = snapshot.data ?? const [];
+            if (snapshot.hasData && movimenti.isEmpty) {
+              return const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text(
+                    'Ancora nessun movimento. Premi "+ Movimento" '
+                    '(o Ctrl+N) per registrare una spesa, un\'entrata o un trasferimento.',
+                    textAlign: TextAlign.center,
+                  ),
                 ),
+              );
+            }
+            return Card(
+              child: Column(
+                children: [
+                  for (final m in movimenti)
+                    RigaMovimento(sessione: _sessione, dettaglio: m),
+                ],
               ),
             );
-          }
-          return Card(
-            child: Column(
-              children: [
-                for (final m in movimenti)
-                  RigaMovimento(sessione: _sessione, dettaglio: m),
-              ],
+          },
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+
+    // Le schede scelte, nell'ordine scelto (Personalizza la Panoramica).
+    final colonnaMovimenti = [
+      for (final scheda in _configurazione.visibili)
+        KeyedSubtree(
+          key: ValueKey(scheda),
+          child: switch (scheda) {
+            SchedaPanoramica.inArrivo => SchedaInArrivo(sessione: _sessione),
+            SchedaPanoramica.costoVita => schedaCostoVita,
+            SchedaPanoramica.entrateUscite => SchedaEntrateUscite(
+              sessione: _sessione,
             ),
-          );
-        },
+            SchedaPanoramica.spese => schedaSpese,
+            SchedaPanoramica.flusso => schedaCascata,
+            SchedaPanoramica.patrimonio => schedaPatrimonio,
+            SchedaPanoramica.movimenti => schedaMovimenti,
+          },
+        ),
+      Align(
+        child: TextButton.icon(
+          onPressed: _personalizza,
+          icon: const Icon(Icons.dashboard_customize_outlined),
+          label: const Text('Personalizza la Panoramica'),
+        ),
       ),
     ];
 

@@ -339,10 +339,13 @@ class Ciambella extends StatelessWidget {
 
 /// Una serie di valori nel tempo per [GraficoLinee].
 class SerieTempo {
-  const SerieTempo(this.nome, this.valori);
+  const SerieTempo(this.nome, this.valori, {this.colore});
 
   final String nome;
   final List<int> valori;
+
+  /// Colore fisso (es. entrate verde acqua, uscite arancio); senza, la palette.
+  final Color? colore;
 }
 
 /// Linee sottili con punti; una sola scala (euro). Legenda se più serie.
@@ -452,12 +455,12 @@ class GraficoLinee extends StatelessWidget {
                       for (final (x, v) in s.valori.indexed)
                         FlSpot(x.toDouble(), v / 100),
                     ],
-                    color: palette[i % palette.length],
+                    color: s.colore ?? palette[i % palette.length],
                     barWidth: 2,
                     dotData: FlDotData(
                       getDotPainter: (_, _, _, _) => FlDotCirclePainter(
                         radius: 4,
-                        color: palette[i % palette.length],
+                        color: s.colore ?? palette[i % palette.length],
                         strokeColor: tema.colorScheme.surfaceContainerLow,
                         strokeWidth: 2,
                       ),
@@ -479,7 +482,7 @@ class GraficoLinee extends StatelessWidget {
                     Container(
                       width: 16,
                       height: 2,
-                      color: palette[i % palette.length],
+                      color: s.colore ?? palette[i % palette.length],
                     ),
                     const SizedBox(width: 6),
                     Text(s.nome, style: tema.textTheme.bodySmall),

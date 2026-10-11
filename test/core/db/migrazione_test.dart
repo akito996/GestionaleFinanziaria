@@ -7,7 +7,7 @@ import 'package:sqlite3/sqlite3.dart' as sql;
 
 void main() {
   test(
-    'migrazione v1 → v7: dati conservati, nuove tabelle e categorie',
+    'migrazione v1 → v8: dati conservati, nuove tabelle e categorie',
     () async {
       // Lo schema delle tabelle già presenti in v1 non è cambiato: si crea un archivio
       // attuale e lo si riporta com'era in v1 (senza le aggiunte della v2).
@@ -78,7 +78,37 @@ void main() {
       expect(await db.select(db.obiettivi).get(), isEmpty);
       expect(portafogli.single.preferito, isFalse);
       expect(portafogli.single.gruppo, isNull);
-      expect(grezzo.userVersion, 7);
+      expect(grezzo.userVersion, 8);
     },
   );
+
+  test('migrazione v7 → v8: spese ripartite e maxi rata', () async {
+    final grezzo = sql.sqlite3.openInMemory();
+    final v8 = Archivio.conEsecutore(
+      NativeDatabase.opened(grezzo, closeUnderlyingOnClose: false),
+    );
+    await v8
+        .into(v8.vociCosto)
+        .insert(
+          VociCostoCompanion.insert(
+            id: nuovoId(),
+            aggiornatoIl: '1',
+            nome: 'Assicurazione auto',
+            tipo: 'fissa',
+          ),
+        );
+    await v8.close();
+    grezzo
+      ..execute('ALTER TABLE voci_costo DROP COLUMN ripartita')
+      ..execute('ALTER TABLE prestiti DROP COLUMN maxi_rata_minimo')
+      ..userVersion = 7;
+
+    final db = Archivio.conEsecutore(NativeDatabase.opened(grezzo));
+    addTearDown(db.close);
+    final voce = (await db.select(db.vociCosto).get()).single;
+    expect(voce.nome, 'Assicurazione auto');
+    expect(voce.ripartita, isFalse);
+    expect(await db.select(db.prestiti).get(), isEmpty);
+    expect(grezzo.userVersion, 8);
+  });
 }

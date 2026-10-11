@@ -11,9 +11,9 @@ import '../../core/prestiti/lettore_contratto.dart';
 import '../../core/ricorrenza.dart';
 import '../../core/sessione.dart';
 import '../categorie/scelta_categoria.dart';
+import '../comuni/campi.dart';
 import '../comuni/dialogo_testo.dart';
 import '../comuni/errori.dart';
-import '../movimenti/riga_movimento.dart';
 
 /// Scelta iniziale: leggere il contratto (PDF o testo) o compilare a mano.
 Future<void> apriNuovoPrestito(BuildContext context, Sessione sessione) async {
@@ -141,6 +141,8 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
   final _capitale = TextEditingController();
   final _numeroRate = TextEditingController();
   final _rata = TextEditingController();
+  final _maxi = TextEditingController();
+  bool _conMaxi = false;
   final _tan = TextEditingController();
   final _taeg = TextEditingController();
   String _tipo = TipoPrestito.prestito;
@@ -165,6 +167,10 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
       _capitale.text = Importo.perModifica(e.capitaleMinimo);
       _numeroRate.text = '${e.numeroRate}';
       _rata.text = Importo.perModifica(e.importoRataMinimo);
+      if (e.maxiRataMinimo != null) {
+        _conMaxi = true;
+        _maxi.text = Importo.perModifica(e.maxiRataMinimo!);
+      }
       _tan.text = _percentuale(e.tanPuntiBase);
       _taeg.text = _percentuale(e.taegPuntiBase);
       _tipo = e.tipo;
@@ -185,6 +191,10 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
       }
       if (p.importoRata != null) {
         _rata.text = Importo.perModifica(p.importoRata!);
+      }
+      if (p.maxiRata != null) {
+        _conMaxi = true;
+        _maxi.text = Importo.perModifica(p.maxiRata!);
       }
       _tan.text = _percentuale(p.tanPuntiBase);
       _taeg.text = _percentuale(p.taegPuntiBase);
@@ -227,6 +237,7 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
       _capitale,
       _numeroRate,
       _rata,
+      _maxi,
       _tan,
       _taeg,
     ]) {
@@ -239,7 +250,8 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
     final capitale = Importo.leggi(_capitale.text);
     final n = int.tryParse(_numeroRate.text);
     final tan = _leggiPercentuale(_tan.text) ?? 0;
-    if (capitale == null || n == null || n <= 0) {
+    final maxi = _conMaxi ? Importo.leggi(_maxi.text) : null;
+    if (capitale == null || n == null || n <= 0 || (_conMaxi && n < 2)) {
       return;
     }
     setState(
@@ -249,6 +261,7 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
           numeroRate: n,
           tanPuntiBase: tan,
           rateAllAnno: _frequenza.mesi == 0 ? 52 : 12 ~/ _frequenza.mesi,
+          rataFinale: maxi,
         ),
       ),
     );
@@ -265,6 +278,7 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
       capitale: Importo.leggi(_capitale.text)!,
       numeroRate: int.parse(_numeroRate.text.trim()),
       importoRata: Importo.leggi(_rata.text)!,
+      maxiRata: _conMaxi ? Importo.leggi(_maxi.text) : null,
       tanPuntiBase: _leggiPercentuale(_tan.text),
       taegPuntiBase: _leggiPercentuale(_taeg.text),
       primaRata: _primaRata,
@@ -398,10 +412,15 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
                         decoration: const InputDecoration(
                           labelText: 'Numero di rate',
                         ),
-                        validator: (v) =>
-                            (int.tryParse(v?.trim() ?? '') ?? 0) <= 0
-                            ? 'Quante rate?'
-                            : null,
+                        validator: (v) {
+                          final n = int.tryParse(v?.trim() ?? '') ?? 0;
+                          if (n <= 0) {
+                            return 'Quante rate?';
+                          }
+                          return _conMaxi && n < 2
+                              ? 'Con la maxi rata servono almeno 2 rate'
+                              : null;
+                        },
                       ),
                     ),
                   ],
@@ -436,6 +455,31 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 4),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: _conMaxi,
+                  onChanged: (v) => setState(() => _conMaxi = v),
+                  title: const Text("C'è una maxi rata finale"),
+                  subtitle: const Text(
+                    "L'ultima rata è più alta delle altre (tipico dei "
+                    'finanziamenti auto).',
+                  ),
+                ),
+                if (_conMaxi)
+                  TextFormField(
+                    controller: _maxi,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Maxi rata finale',
+                      suffixText: '€',
+                      helperText:
+                          "È l'ultima rata: è già compresa nel numero di rate.",
+                    ),
+                    validator: obbligatorioImporto,
+                  ),
                 const SizedBox(height: 12),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -446,8 +490,10 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
-                        decoration: const InputDecoration(
-                          labelText: 'Importo della rata',
+                        decoration: InputDecoration(
+                          labelText: _conMaxi
+                              ? "Rata (tutte tranne l'ultima)"
+                              : 'Importo della rata',
                           suffixText: '€',
                         ),
                         validator: obbligatorioImporto,
@@ -476,23 +522,10 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
                       setState(() => _frequenza = f ?? _frequenza),
                 ),
                 const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.event),
-                  label: Text(
-                    'Prima rata: ${dataLeggibile(context, _primaRata)}',
-                  ),
-                  onPressed: () async {
-                    final d = await showDatePicker(
-                      context: context,
-                      initialDate: _primaRata,
-                      firstDate: DateTime(1990),
-                      lastDate: DateTime(2100),
-                      helpText: 'Data della prima rata',
-                    );
-                    if (d != null) {
-                      setState(() => _primaRata = d);
-                    }
-                  },
+                CampoData(
+                  etichetta: 'Data della prima rata',
+                  valore: _primaRata,
+                  onChanged: (d) => setState(() => _primaRata = d),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String?>(

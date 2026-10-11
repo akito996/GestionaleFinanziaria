@@ -126,6 +126,58 @@ void main() {
     await attendi(tester, find.textContaining(': 900,00 €'));
     expect(find.text('1.200,00 €'), findsWidgets);
 
+    // Spesa annuale suddivisa nei mesi (casella nella data di addebito).
+    await tocca(tester, find.text('Affitto o mutuo'));
+    await attendi(tester, nelDialogo(find.text('Data di addebito')));
+    await tocca(tester, nelDialogo(find.text('Data di addebito')));
+    await tocca(tester, nelDialogo(find.text('Ogni mese')));
+    await tocca(tester, find.text('Ogni anno').last);
+    await attendi(tester, nelDialogo(find.text('Suddividi la spesa nei mesi')));
+    await tocca(tester, nelDialogo(find.text('Suddividi la spesa nei mesi')));
+    expect(
+      nelDialogo(find.textContaining('al mese nel costo')),
+      findsOneWidget,
+    );
+    await tocca(tester, nelDialogo(find.text('Salva')));
+    await attendi(tester, find.textContaining('suddivisi nei mesi'));
+    expect(find.text('66,67 €'), findsWidgets); // 800 € l'anno / 12
+
+    // Elimina dal menu ⋮ della riga, con conferma; "Annulla" la ripristina.
+    final menu = find.descendant(
+      of: find.ancestor(
+        of: find.text('Spesa alimentare'),
+        matching: find.byType(ListTile),
+      ),
+      matching: find.byTooltip('Modifica o elimina'),
+    );
+    await tocca(tester, menu);
+    await tocca(tester, find.text('Elimina').last);
+    await attendi(tester, find.text('Eliminare "Spesa alimentare"?'));
+    await tocca(
+      tester,
+      nelDialogo(find.widgetWithText(FilledButton, 'Elimina')),
+    );
+    await attendi(tester, find.text('"Spesa alimentare" eliminata'));
+    final riga = find.ancestor(
+      of: find.text('Spesa alimentare'),
+      matching: find.byType(ListTile),
+    );
+    for (var i = 0; i < 200 && riga.evaluate().isNotEmpty; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(riga, findsNothing);
+    await tocca(tester, find.widgetWithText(SnackBarAction, 'Annulla'));
+    await attendi(
+      tester,
+      find.ancestor(
+        of: find.text('Spesa alimentare'),
+        matching: find.byType(ListTile),
+      ),
+    );
+
     await tocca(tester, find.byTooltip('Archivio aperto: tocca per bloccarlo'));
     await attendi(tester, find.text('Archivio bloccato'));
   });

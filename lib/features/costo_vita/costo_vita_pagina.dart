@@ -4,6 +4,7 @@ import '../../core/db/costo_vita.dart';
 import '../../core/db/pianificatore.dart';
 import '../../core/db/tabelle.dart';
 import '../../core/importo.dart';
+import '../../core/ricorrenza.dart';
 import '../../core/sessione.dart';
 import '../comuni/navigazione.dart';
 import '../grafici/grafici.dart';
@@ -410,6 +411,10 @@ class _RigaVoce extends StatelessWidget {
       if (voce.addebito case final a?)
         '${Pianificatore.ricorrenzaDi(a).descrizione()}'
             '${a.portafoglioId == null ? ' (promemoria)' : ' (registrazione automatica)'}',
+      if (voce.ripartita)
+        '${Importo.formatta(voce.importoUnitario, 'EUR')} '
+            '${Frequenza.daCodice(voce.addebito!.frequenza).etichetta.toLowerCase()}, '
+            'suddivisi nei mesi',
     ];
     final reale = voce.reale;
     return ListTile(
@@ -443,6 +448,29 @@ class _RigaVoce extends StatelessWidget {
               fontWeight: FontWeight.w600,
               fontFeatures: [FontFeature.tabularFigures()],
             ),
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'Modifica o elimina',
+            onSelected: (scelta) => switch (scelta) {
+              'elimina' => eliminaVoceConConferma(context, sessione, voce.voce),
+              _ => apriModificaVoce(context, sessione, voce, mese),
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: 'modifica',
+                child: ListTile(
+                  leading: Icon(Icons.edit_outlined),
+                  title: Text('Modifica'),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'elimina',
+                child: ListTile(
+                  leading: Icon(Icons.delete_outline),
+                  title: Text('Elimina'),
+                ),
+              ),
+            ],
           ),
         ],
       ),

@@ -5,6 +5,7 @@ import 'archivio.dart';
 import 'contabilita.dart';
 import 'id.dart';
 import 'orologio.dart';
+import 'osservazione.dart';
 import 'tabelle.dart';
 
 /// Situazione di un partecipante di una colletta.
@@ -269,7 +270,7 @@ class ObiettiviServizio {
         readsFrom: {_db.obiettivi, _db.partecipanti, _db.versamenti},
       )
       .watch()
-      .asyncMap((_) => stati());
+      .ricalcola((_) => stati());
 
   Future<List<ObiettivoConStato>> stati() async {
     final obiettivi =

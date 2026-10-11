@@ -15,6 +15,15 @@ L'utente vuole inserire mutui, prestiti e acquisti a rate, anche facendo leggere
 - **Lettura del contratto, solo sul dispositivo**: testo estratto dal PDF con **PDFium** (`pdfrx_engine`, MIT, versione fissata) o incollato; un lettore a regole riconosce i moduli standard **SECCI** (credito ai consumatori) e **PIES** (mutui): capitale, numero e importo rate, TAN, TAEG, totale dovuto, prima rata, finanziatore. Il risultato è una **proposta** che l'utente controlla prima di salvare; nessun dato inventato.
 - **Sicurezza**: al blocco dell'archivio si chiudono tutte le pagine aperte (dettagli, moduli), così nessun dato resta visibile sopra la schermata di sblocco.
 
+## Aggiornamento dell'11/10/2026 – maxi rata finale
+- Colonna `prestiti.maxi_rata_minimo` (schema v8). La maxi rata è l'**ultima** delle N rate: le prime N−1 sono costanti, l'ultima chiude il debito.
+- **Ammortamento**: rata = (capitale − maxi rata attualizzata) × i ÷ (1 − (1+i)^−(N−1)). Anche il TAN si ricava con la maxi rata quando il contratto non lo riporta.
+- **Rate automatiche**: la pianificazione del prestito non ha più un importo fisso; il calcolo del prestito restituisce la maxi rata nel giorno dell'ultima scadenza.
+- **Lettura del contratto**:
+  - riconosce "maxi rata (finale)", "rata finale", "valore futuro garantito"/VFG e "rata residua";
+  - "35 rate + maxi rata" diventa 36 rate;
+  - scarta le date (es. "rata finale: 05/12/2030") e gli importi che appartengono a un'altra voce.
+
 ## Conseguenze
 - ✅ Nessun contratto lascia il dispositivo; funziona offline.
 - ⚠️ Le scansioni (PDF immagine) non hanno testo: si compila a mano (OCR on-device previsto in Fase 3).

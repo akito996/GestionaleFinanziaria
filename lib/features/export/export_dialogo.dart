@@ -7,6 +7,7 @@ import 'package:flutter/services.dart' show rootBundle;
 
 import '../../core/export/esportazione.dart';
 import '../../core/sessione.dart';
+import '../comuni/campi.dart';
 import '../comuni/errori.dart';
 import '../movimenti/riga_movimento.dart';
 
@@ -177,31 +178,55 @@ class _ExportDialogoState extends State<_ExportDialogo> {
                     ChoiceChip(
                       label: Text(etichetta),
                       selected: _periodo == p,
-                      onSelected: (_) async {
-                        if (p == _Periodo.personalizzato) {
-                          final scelto = await showDateRangePicker(
-                            context: context,
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime(2100),
-                            initialDateRange: _personalizzato,
-                          );
-                          if (scelto == null) {
-                            return;
-                          }
-                          _personalizzato = scelto;
-                        }
-                        setState(() => _periodo = p);
-                      },
+                      onSelected: (_) => setState(() => _periodo = p),
                     ),
                 ],
               ),
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(
-                  'Dal ${dataLeggibile(context, i.start)} al ${dataLeggibile(context, i.end)}',
-                  style: testo.bodySmall,
+              if (_periodo == _Periodo.personalizzato)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: CampoData(
+                          etichetta: 'Dal',
+                          valore: _personalizzato.start,
+                          primo: DateTime(2000),
+                          onChanged: (d) => setState(
+                            () => _personalizzato = DateTimeRange(
+                              start: d,
+                              end: d.isAfter(_personalizzato.end)
+                                  ? d
+                                  : _personalizzato.end,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: CampoData(
+                          etichetta: 'Al',
+                          valore: _personalizzato.end,
+                          primo: _personalizzato.start,
+                          onChanged: (d) => setState(
+                            () => _personalizzato = DateTimeRange(
+                              start: _personalizzato.start,
+                              end: d,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    'Dal ${dataLeggibile(context, i.start)} al ${dataLeggibile(context, i.end)}',
+                    style: testo.bodySmall,
+                  ),
                 ),
-              ),
               const SizedBox(height: 12),
               Text('Formato', style: testo.labelLarge),
               const SizedBox(height: 6),
