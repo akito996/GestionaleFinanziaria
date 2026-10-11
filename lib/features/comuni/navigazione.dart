@@ -30,6 +30,10 @@ class PulsanteBlocca extends StatelessWidget {
   }
 }
 
+/// Da questa larghezza la navigazione è una barra laterale; sotto, una barra
+/// in basso (telefono).
+const larghezzaBarraLaterale = 700.0;
+
 /// Sezioni dell'app: barra laterale su schermi larghi (Windows), barra in basso
 /// sul telefono.
 class Guscio extends StatefulWidget {
@@ -131,7 +135,7 @@ class _GuscioState extends State<Guscio> {
 
     return LayoutBuilder(
       builder: (context, vincoli) {
-        if (vincoli.maxWidth >= 700) {
+        if (vincoli.maxWidth >= larghezzaBarraLaterale) {
           return Scaffold(
             body: Row(
               children: [

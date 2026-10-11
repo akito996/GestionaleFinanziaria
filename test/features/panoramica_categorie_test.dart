@@ -8,6 +8,7 @@ import 'package:gestionale_finanziaria/core/crypto/derivazione.dart';
 import 'package:gestionale_finanziaria/core/db/deposito_locale.dart';
 import 'package:gestionale_finanziaria/core/db/tabelle.dart';
 import 'package:gestionale_finanziaria/core/sessione.dart';
+import 'package:gestionale_finanziaria/core/versione.dart';
 import 'package:sodium/sodium_sumo.dart';
 
 void main() {
@@ -266,6 +267,8 @@ void main() {
     // Totale e portafogli restano sempre.
     expect(find.text('Totale'), findsOneWidget);
     expect(find.text('Conto principale'), findsOneWidget);
+    // La versione, come firma, è sempre visibile.
+    expect(find.text(Versione.firma), findsOneWidget);
 
     await chiudi(tester);
   });

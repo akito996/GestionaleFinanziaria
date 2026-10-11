@@ -100,7 +100,8 @@ jobs:
           motivo="${motivo//$'\r'/}"
           echo "::error title=Test sull'app vera::${motivo}"
       - name: Build
-        run: flutter build windows --release
+        # Il commit compare nella firma della versione (in basso a sinistra).
+        run: flutter build windows --release --dart-define=GF_COMMIT=${{ github.sha }}
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: GestionaleFinanziaria-windows-${{ github.sha }}

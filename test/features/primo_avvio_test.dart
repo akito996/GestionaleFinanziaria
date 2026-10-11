@@ -7,6 +7,7 @@ import 'package:gestionale_finanziaria/app.dart';
 import 'package:gestionale_finanziaria/core/crypto/derivazione.dart';
 import 'package:gestionale_finanziaria/core/db/deposito_locale.dart';
 import 'package:gestionale_finanziaria/core/sessione.dart';
+import 'package:gestionale_finanziaria/core/versione.dart';
 import 'package:gestionale_finanziaria/features/comuni/icone.dart';
 import 'package:sodium/sodium_sumo.dart';
 
@@ -130,6 +131,7 @@ void main() {
     // Blocco e sblocco con conferma visibile.
     await tocca(tester, find.byTooltip('Archivio aperto: tocca per bloccarlo'));
     await attendi(tester, find.text('Archivio bloccato'));
+    expect(find.text(Versione.firma), findsOneWidget); // firma anche qui
     await tester.enterText(find.byType(TextField), 'Password-Lunga-1');
     await tocca(tester, find.text('Sblocca'));
     await attendi(tester, find.text('Archivio sbloccato'));
