@@ -187,4 +187,35 @@ void main() {
       expect(s.debitoResiduo, 0);
     },
   );
+
+  test('spese di incasso: il movimento è rata + spese, il piano no', () async {
+    await prestiti.crea(
+      DatiPrestito(
+        nome: 'Auto',
+        tipo: TipoPrestito.prestito,
+        capitale: 1200000,
+        numeroRate: 3,
+        importoRata: 300000,
+        maxiRata: 600000,
+        speseRata: 350,
+        primaRata: DateTime(2026, 10, 15),
+        portafoglioId: conto,
+      ),
+    );
+    var s = (await prestiti.stati()).single;
+    expect(s.rate.first.piano.rata, 300000); // il piano resta sulla rata
+    expect(s.daPagare, 1200000 + 3 * 350);
+    expect((await pian.inArrivo(giorni: 10)).single.importo, 300350);
+
+    adesso = DateTime(2027, 1, 1);
+    expect(await pian.registraScadute(), 3);
+    final importi = [
+      for (final m in await c.osservaMovimenti().first)
+        m.movimento.importoMinimo,
+    ]..sort();
+    expect(importi, [300350, 300350, 600350]);
+    s = (await prestiti.stati()).single;
+    expect(s.debitoResiduo, 0);
+    expect(s.daPagare, 0);
+  });
 }

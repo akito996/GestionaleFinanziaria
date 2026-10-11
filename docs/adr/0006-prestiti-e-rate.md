@@ -33,7 +33,10 @@ Prova con un documento reale dell'utente (documento di trasparenza di una finanz
   - "Rata Data" (intestazione di tabella) non è più "rata da";
   - un numero senza centesimi né valuta non è un importo.
 - **Finanziatore senza etichetta**: si usa una riga che contiene solo il nome della società (es. "… S.p.A.").
-- **Spese di incasso per rata** ("Spese di gestione e/o incasso"): lette e mostrate; per ora non entrano nei movimenti (decisione dell'utente in sospeso).
+- **Spese di incasso per rata** ("Spese di gestione e/o incasso", colonna `prestiti.spese_rata_minimo`, schema v9). Scelta dell'utente: opzione "Qualità/Prezzo".
+  - Il movimento registrato è rata + spese, come sull'estratto conto; il piano di ammortamento resta sulla sola rata.
+  - "Ancora da pagare" comprende le spese delle rate future.
+  - Le spese una tantum (es. imposta di bollo sulla prima rata) si correggono a mano sul singolo movimento.
 
 ## Conseguenze
 - ✅ Nessun contratto lascia il dispositivo; funziona offline.

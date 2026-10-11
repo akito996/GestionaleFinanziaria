@@ -143,6 +143,7 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
   final _rata = TextEditingController();
   final _maxi = TextEditingController();
   bool _conMaxi = false;
+  final _spese = TextEditingController();
   final _tan = TextEditingController();
   final _taeg = TextEditingController();
   String _tipo = TipoPrestito.prestito;
@@ -171,6 +172,9 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
         _conMaxi = true;
         _maxi.text = Importo.perModifica(e.maxiRataMinimo!);
       }
+      if (e.speseRataMinimo != null) {
+        _spese.text = Importo.perModifica(e.speseRataMinimo!);
+      }
       _tan.text = _percentuale(e.tanPuntiBase);
       _taeg.text = _percentuale(e.taegPuntiBase);
       _tipo = e.tipo;
@@ -195,6 +199,9 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
       if (p.maxiRata != null) {
         _conMaxi = true;
         _maxi.text = Importo.perModifica(p.maxiRata!);
+      }
+      if (p.speseRata != null) {
+        _spese.text = Importo.perModifica(p.speseRata!);
       }
       _tan.text = _percentuale(p.tanPuntiBase);
       _taeg.text = _percentuale(p.taegPuntiBase);
@@ -238,6 +245,7 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
       _numeroRate,
       _rata,
       _maxi,
+      _spese,
       _tan,
       _taeg,
     ]) {
@@ -279,6 +287,7 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
       numeroRate: int.parse(_numeroRate.text.trim()),
       importoRata: Importo.leggi(_rata.text)!,
       maxiRata: _conMaxi ? Importo.leggi(_maxi.text) : null,
+      speseRata: Importo.leggi(_spese.text),
       tanPuntiBase: _leggiPercentuale(_tan.text),
       taegPuntiBase: _leggiPercentuale(_taeg.text),
       primaRata: _primaRata,
@@ -349,9 +358,8 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
                               ? 'Controllali e completa quelli mancanti.'
                               : 'Forse è una scansione: compila i campi a mano.',
                           if (p.speseRata case final spese?)
-                            'Il contratto indica anche '
-                                '${Importo.formatta(spese, 'EUR')} di spese di '
-                                'incasso per ogni rata.',
+                            'Ho inserito anche le spese di incasso '
+                                '(${Importo.formatta(spese, 'EUR')} per rata).',
                         ].join(' '),
                       ),
                     ),
@@ -514,6 +522,29 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _spese,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Spese per ogni rata (facoltativo)',
+                    hintText: 'Es. 3,50',
+                    suffixText: '€',
+                    helperText:
+                        'Spese di incasso addebitate con la rata: il movimento '
+                        'registrato sarà rata + spese, come sull\'estratto conto.',
+                    helperMaxLines: 2,
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return null;
+                    }
+                    final x = Importo.leggi(v);
+                    return x == null || x < 0 ? 'Scrivi un importo' : null;
+                  },
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<Frequenza>(

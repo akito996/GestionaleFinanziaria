@@ -110,7 +110,7 @@ class Archivio extends _$Archivio {
   Archivio.conEsecutore(super.e);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -168,6 +168,10 @@ class Archivio extends _$Archivio {
         if (da >= 5) {
           await m.addColumn(prestiti, prestiti.maxiRataMinimo);
         }
+      }
+      // v9: spese di incasso per ogni rata dei prestiti.
+      if (da < 9 && da >= 5) {
+        await m.addColumn(prestiti, prestiti.speseRataMinimo);
       }
     },
     beforeOpen: (_) async {

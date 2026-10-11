@@ -24,6 +24,7 @@ class DatiPrestito {
     this.tanPuntiBase,
     this.taegPuntiBase,
     this.maxiRata,
+    this.speseRata,
     this.portafoglioId,
     this.categoriaId,
     this.note = '',
@@ -42,6 +43,9 @@ class DatiPrestito {
 
   /// Maxi rata finale: l'ultima delle [numeroRate] rate vale questa cifra.
   final int? maxiRata;
+
+  /// Spese di incasso per ogni rata: si aggiungono al movimento registrato.
+  final int? speseRata;
   final String? portafoglioId;
   final String? categoriaId;
   final String note;
@@ -78,10 +82,13 @@ class PrestitoConStato {
       ? prestito.capitaleMinimo
       : rate[ratePagate - 1].piano.debitoResiduo;
 
-  /// Quanto resta da pagare in rate (capitale + interessi futuri).
+  /// Spese di incasso di ogni rata (0 se non ce ne sono).
+  int get speseRata => prestito.speseRataMinimo ?? 0;
+
+  /// Quanto resta da pagare (capitale + interessi futuri + spese di incasso).
   int get daPagare => rate
       .where((r) => !r.pagata)
-      .fold(0, (totale, r) => totale + r.piano.rata);
+      .fold(0, (totale, r) => totale + r.piano.rata + speseRata);
 
   double get avanzamento =>
       prestito.numeroRate == 0 ? 0 : ratePagate / prestito.numeroRate;
@@ -115,17 +122,19 @@ class PrestitiServizio {
   final Pianificatore _pianificatore;
   final DateTime Function() _adesso;
 
-  /// Importo della rata che scade il giorno [data]: la maxi rata se è l'ultima.
+  /// Importo addebitato il giorno [data]: la rata (la maxi rata se è
+  /// l'ultima) più le spese di incasso.
   static int importoRataAl(Prestito p, DateTime data) {
+    final spese = p.speseRataMinimo ?? 0;
     final maxi = p.maxiRataMinimo;
     if (maxi == null) {
-      return p.importoRataMinimo;
+      return p.importoRataMinimo + spese;
     }
     final date = _ricorrenza(p).tra(Contabilita.daGiorno(p.primaRata), data);
     final ultima =
         date.length == p.numeroRate &&
         Contabilita.giorno(date.last) == Contabilita.giorno(data);
-    return ultima ? maxi : p.importoRataMinimo;
+    return (ultima ? maxi : p.importoRataMinimo) + spese;
   }
 
   static Ricorrenza _ricorrenza(Prestito p) => Ricorrenza(
@@ -151,6 +160,7 @@ class PrestitiServizio {
             tanPuntiBase: Value(d.tanPuntiBase),
             taegPuntiBase: Value(d.taegPuntiBase),
             maxiRataMinimo: Value(d.maxiRata),
+            speseRataMinimo: Value(_spese(d.speseRata)),
             primaRata: Contabilita.giorno(d.primaRata),
             frequenza: Value(d.frequenza.codice),
             portafoglioId: Value(d.portafoglioId),
@@ -177,6 +187,7 @@ class PrestitiServizio {
         tanPuntiBase: Value(d.tanPuntiBase),
         taegPuntiBase: Value(d.taegPuntiBase),
         maxiRataMinimo: Value(d.maxiRata),
+        speseRataMinimo: Value(_spese(d.speseRata)),
         primaRata: Value(Contabilita.giorno(d.primaRata)),
         frequenza: Value(d.frequenza.codice),
         portafoglioId: Value(d.portafoglioId),
@@ -299,6 +310,8 @@ class PrestitiServizio {
     return DateTime(a.year, a.month, a.day);
   }
 
+  static int? _spese(int? spese) => spese == null || spese <= 0 ? null : spese;
+
   static int _rateAllAnno(Frequenza f) => switch (f) {
     Frequenza.settimanale => 52,
     _ => 12 ~/ f.mesi,
@@ -339,7 +352,9 @@ class PrestitiServizio {
         categoriaId: p.categoriaId,
         descrizione: 'Rata ${p.nome}',
         // Con la maxi rata l'importo cambia all'ultima: lo calcola [importoRataAl].
-        importo: p.maxiRataMinimo == null ? p.importoRataMinimo : null,
+        importo: p.maxiRataMinimo == null
+            ? p.importoRataMinimo + (p.speseRataMinimo ?? 0)
+            : null,
         valuta: p.valuta,
       ),
     );

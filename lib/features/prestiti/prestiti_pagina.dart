@@ -167,7 +167,8 @@ class _SchedaPrestito extends StatelessWidget {
               if (prossima != null)
                 Text(
                   'Prossima rata: ${dataLeggibile(context, prossima.data)} · '
-                  '${Importo.formatta(prossima.piano.rata, p.valuta)}',
+                  '${Importo.formatta(prossima.piano.rata + s.speseRata, p.valuta)}'
+                  '${s.speseRata > 0 ? ' (con ${Importo.formatta(s.speseRata, p.valuta)} di spese)' : ''}',
                 )
               else
                 const Text('Tutte le rate sono pagate'),
@@ -290,6 +291,8 @@ class PrestitoPagina extends StatelessWidget {
                       _Dato('Rata', euro(p.importoRataMinimo)),
                       if (p.maxiRataMinimo != null)
                         _Dato('Maxi rata finale', euro(p.maxiRataMinimo!)),
+                      if (s.speseRata > 0)
+                        _Dato('Spese per rata', euro(s.speseRata)),
                       _Dato('Rate', '${s.ratePagate} / ${p.numeroRate}'),
                       _Dato('Debito residuo', euro(s.debitoResiduo)),
                       _Dato('Ancora da pagare', euro(s.daPagare)),
@@ -361,6 +364,15 @@ class PrestitoPagina extends StatelessWidget {
                   ),
                 ),
               ),
+              if (s.speseRata > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    'A ogni rata si aggiungono ${euro(s.speseRata)} di spese di '
+                    'incasso: il movimento registrato è rata + spese.',
+                    style: testo.bodySmall,
+                  ),
+                ),
               if (p.tanPuntiBase == null)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),

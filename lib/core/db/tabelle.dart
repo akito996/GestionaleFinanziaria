@@ -240,6 +240,11 @@ class Prestiti extends Table with ColonneSincronizzate {
   /// rate vale questa cifra invece di [importoRataMinimo]. `null` = nessuna.
   IntColumn get maxiRataMinimo => integer().nullable()();
 
+  /// Spese di incasso addebitate con ogni rata (es. 3,50 €). Il movimento
+  /// registrato è rata + spese, come sull'estratto conto; il piano di
+  /// ammortamento resta sulla sola rata. `null` = nessuna.
+  IntColumn get speseRataMinimo => integer().nullable()();
+
   /// Tassi in punti base (1% = 100), facoltativi.
   IntColumn get tanPuntiBase => integer().nullable()();
   IntColumn get taegPuntiBase => integer().nullable()();

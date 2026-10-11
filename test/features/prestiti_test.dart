@@ -17,6 +17,7 @@ n. 48 rate mensili di € 232,94
 Scadenza prima rata: 05/12/2026
 Tasso annuo nominale (TAN) fisso 6,50 %
 Tasso annuo effettivo globale (TAEG) 7,12 %
+Spese di incasso rata: € 1,50
 ''';
 
 void main() {
@@ -106,7 +107,8 @@ void main() {
     await tocca(tester, nelDialogo(find.text('Aggiungi')));
     await attendi(tester, find.text('0 rate pagate su 48 · restano 48'));
     expect(find.textContaining('Prossima rata:'), findsOneWidget);
-    expect(find.textContaining('5 dic · 232,94 €'), findsOneWidget);
+    // Rata + spese di incasso, come sull'estratto conto.
+    expect(find.textContaining('5 dic · 234,44 €'), findsOneWidget);
 
     // Dettaglio con il piano delle rate.
     await tocca(tester, find.text('Prestito auto'));
