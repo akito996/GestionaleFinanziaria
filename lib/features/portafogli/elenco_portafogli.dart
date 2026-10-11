@@ -1,17 +1,29 @@
 import 'package:flutter/material.dart';
 
+import '../../core/db/archivio.dart';
 import '../../core/db/carte_credito.dart';
 import '../../core/db/contabilita.dart';
 import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import '../movimenti/riga_movimento.dart';
 import 'portafoglio_pagina.dart';
-import 'raggruppa_portafogli.dart';
+
+/// Portafogli mostrati nella Panoramica: tutti tranne le carte di credito
+/// (che compaiono come avviso nel conto collegato).
+List<PortafoglioConSaldo> portafogliVisibili(
+  List<PortafoglioConSaldo> portafogli,
+  Set<String> idCarte,
+) => [
+  for (final p in portafogli)
+    if (!idCarte.contains(p.portafoglio.id) &&
+        p.tipo.nome != tipoCartaDiCredito)
+      p,
+];
 
 /// Portafogli della Panoramica:
-/// - i preferiti ⭐ in cima, sempre visibili (mai dentro un gruppo chiuso);
-/// - poi quelli senza gruppo;
-/// - poi i gruppi, richiudibili, con il totale (aperto/chiuso viene ricordato);
+/// - i preferiti ⭐ in cima, sempre visibili;
+/// - gli altri dietro "Mostra altro" / "Mostra meno" (la scelta è ricordata);
+///   senza preferiti, da chiuso se ne vedono i primi [_minimoVisibili];
 /// - le carte di credito non compaiono: il loro avviso sta nel conto collegato.
 class ElencoPortafogli extends StatefulWidget {
   const ElencoPortafogli({
@@ -28,29 +40,30 @@ class ElencoPortafogli extends StatefulWidget {
 }
 
 class _ElencoPortafogliState extends State<ElencoPortafogli> {
+  static const _preferenza = 'panoramica.portafogli.tutti';
+  static const _minimoVisibili = 3;
+
   late final Stream<List<CartaConStato>> _carte = widget.sessione.carte
       .osserva();
-  final Map<String, bool> _aperti = {};
 
-  static String _chiave(String gruppo) => 'gruppo_portafogli_aperto.$gruppo';
+  /// `false` = "mostra meno" (predefinito: schermata più pulita).
+  bool _tutti = false;
 
-  Future<void> _caricaStato(String gruppo) async {
-    if (_aperti.containsKey(gruppo)) {
-      return;
-    }
-    _aperti[gruppo] = false; // predefinito: chiuso (schermata più pulita)
-    final v = await widget.sessione.statistiche.preferenza(_chiave(gruppo));
-    if (v != null && mounted) {
-      setState(() => _aperti[gruppo] = v == '1');
-    }
+  @override
+  void initState() {
+    super.initState();
+    widget.sessione.statistiche.preferenza(_preferenza).then((v) {
+      if (mounted && v == '1') {
+        setState(() => _tutti = true);
+      }
+    });
   }
 
-  void _alterna(String gruppo) {
-    final aperto = !(_aperti[gruppo] ?? false);
-    setState(() => _aperti[gruppo] = aperto);
+  void _alterna() {
+    setState(() => _tutti = !_tutti);
     widget.sessione.statistiche.salvaPreferenza(
-      _chiave(gruppo),
-      aperto ? '1' : '0',
+      _preferenza,
+      _tutti ? '1' : '0',
     );
   }
 
@@ -61,22 +74,20 @@ class _ElencoPortafogliState extends State<ElencoPortafogli> {
       builder: (context, snapshot) {
         final carte = snapshot.data ?? const <CartaConStato>[];
         final idCarte = {for (final c in carte) c.portafoglio.id};
-        final visibili = raggruppabili(widget.portafogli, idCarte);
-        final preferiti = visibili
-            .where((p) => p.portafoglio.preferito)
-            .toList();
-        final altri = visibili.where((p) => !p.portafoglio.preferito);
-        final senzaGruppo = altri
-            .where((p) => p.portafoglio.gruppo == null)
-            .toList();
-        final gruppi = <String, List<PortafoglioConSaldo>>{};
-        for (final p in altri.where((p) => p.portafoglio.gruppo != null)) {
-          gruppi.putIfAbsent(p.portafoglio.gruppo!, () => []).add(p);
-        }
-        final nomiGruppi = gruppi.keys.toList()..sort();
-        for (final g in nomiGruppi) {
-          _caricaStato(g);
-        }
+        final visibili = portafogliVisibili(widget.portafogli, idCarte);
+        final preferiti = [
+          for (final p in visibili)
+            if (p.portafoglio.preferito) p,
+        ];
+        final altri = [
+          for (final p in visibili)
+            if (!p.portafoglio.preferito) p,
+        ];
+        // Da chiuso: solo i preferiti; senza preferiti, i primi tre.
+        final sempre = preferiti.isEmpty
+            ? altri.take(_minimoVisibili).toList()
+            : const <PortafoglioConSaldo>[];
+        final nascosti = altri.skip(sempre.length).toList();
 
         Widget riga(PortafoglioConSaldo p) => _RigaPortafoglio(
           sessione: widget.sessione,
@@ -93,120 +104,31 @@ class _ElencoPortafogliState extends State<ElencoPortafogli> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (final p in preferiti) riga(p),
-            for (final p in senzaGruppo) riga(p),
-            for (final g in nomiGruppi)
-              _Gruppo(
-                nome: g,
-                portafogli: gruppi[g]!,
-                aperto: _aperti[g] ?? false,
-                onAlterna: () => _alterna(g),
-                riga: riga,
-                onModifica: () => apriRaggruppa(
-                  context,
-                  widget.sessione,
-                  visibili,
-                  gruppo: g,
+            for (final p in sempre) riga(p),
+            if (_tutti)
+              for (final p in nascosti) riga(p),
+            if (nascosti.isNotEmpty)
+              Align(
+                child: TextButton.icon(
+                  onPressed: _alterna,
+                  icon: Icon(_tutti ? Icons.expand_less : Icons.expand_more),
+                  label: Text(
+                    _tutti
+                        ? 'Mostra meno'
+                        : 'Mostra altro (${nascosti.length} '
+                              'portafogl${nascosti.length == 1 ? 'io' : 'i'})',
+                  ),
                 ),
-                onSciogli: () => sciogliGruppo(
-                  context,
-                  widget.sessione,
-                  g,
-                  // Anche i preferiti del gruppo (mostrati in cima) ne escono.
-                  [
-                    for (final p in visibili)
-                      if (p.portafoglio.gruppo == g) p,
-                  ],
-                ),
+              ),
+            if (nascosti.isNotEmpty && preferiti.isEmpty && !_tutti)
+              Text(
+                'Tocca ☆ su un portafoglio per tenerlo sempre in vista.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall,
               ),
           ],
         );
       },
-    );
-  }
-}
-
-class _Gruppo extends StatelessWidget {
-  const _Gruppo({
-    required this.nome,
-    required this.portafogli,
-    required this.aperto,
-    required this.onAlterna,
-    required this.riga,
-    required this.onModifica,
-    required this.onSciogli,
-  });
-
-  final String nome;
-  final List<PortafoglioConSaldo> portafogli;
-  final bool aperto;
-  final VoidCallback onAlterna;
-  final Widget Function(PortafoglioConSaldo) riga;
-  final VoidCallback onModifica;
-  final VoidCallback onSciogli;
-
-  @override
-  Widget build(BuildContext context) {
-    final valute = portafogli.map((p) => p.portafoglio.valuta).toSet();
-    final totale = valute.length == 1
-        ? Importo.formatta(
-            portafogli.fold<int>(0, (t, p) => t + p.saldo),
-            valute.single,
-          )
-        : '${portafogli.length} portafogli';
-    final schema = Theme.of(context).colorScheme;
-    return Card(
-      color: schema.surfaceContainerHigh,
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          ListTile(
-            leading: Icon(aperto ? Icons.folder_open : Icons.folder_outlined),
-            title: Text(nome),
-            subtitle: Text(
-              '${portafogli.length} portafogl${portafogli.length == 1 ? 'io' : 'i'}',
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  totale,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-                Icon(aperto ? Icons.expand_less : Icons.expand_more),
-                PopupMenuButton<String>(
-                  tooltip: 'Modifica o sciogli il gruppo',
-                  onSelected: (scelta) =>
-                      scelta == 'sciogli' ? onSciogli() : onModifica(),
-                  itemBuilder: (context) => const [
-                    PopupMenuItem(
-                      value: 'modifica',
-                      child: ListTile(
-                        leading: Icon(Icons.edit_outlined),
-                        title: Text('Modifica gruppo'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'sciogli',
-                      child: ListTile(
-                        leading: Icon(Icons.folder_off_outlined),
-                        title: Text('Sciogli gruppo'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            onTap: onAlterna,
-          ),
-          if (aperto)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-              child: Column(children: [for (final p in portafogli) riga(p)]),
-            ),
-        ],
-      ),
     );
   }
 }
@@ -254,7 +176,7 @@ class _RigaPortafoglio extends StatelessWidget {
                     sessione.contabilita.impostaPreferito(p.id, !p.preferito),
               ),
               title: Text(p.nome),
-              subtitle: Text([voce.tipo.nome, ?p.gruppo].join(' · ')),
+              subtitle: Text(voce.tipo.nome),
               trailing: Text(
                 Importo.formatta(voce.saldo, p.valuta),
                 style: testo.titleMedium?.copyWith(

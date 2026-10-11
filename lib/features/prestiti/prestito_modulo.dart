@@ -344,10 +344,15 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
                             : 'Non ho trovato dati nel contratto',
                       ),
                       subtitle: Text(
-                        p.campiTrovati > 0
-                            ? 'Controllali e completa quelli mancanti '
-                                  '(di solito la data della prima rata).'
-                            : 'Forse è una scansione: compila i campi a mano.',
+                        [
+                          p.campiTrovati > 0
+                              ? 'Controllali e completa quelli mancanti.'
+                              : 'Forse è una scansione: compila i campi a mano.',
+                          if (p.speseRata case final spese?)
+                            'Il contratto indica anche '
+                                '${Importo.formatta(spese, 'EUR')} di spese di '
+                                'incasso per ogni rata.',
+                        ].join(' '),
                       ),
                     ),
                   ),

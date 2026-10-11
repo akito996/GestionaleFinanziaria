@@ -18,7 +18,6 @@ import '../movimenti/movimento_modulo.dart';
 import '../movimenti/riga_movimento.dart';
 import '../portafogli/portafoglio_modulo.dart';
 import '../portafogli/elenco_portafogli.dart';
-import '../portafogli/raggruppa_portafogli.dart';
 import 'entrate_uscite.dart';
 import 'schede_panoramica.dart';
 
@@ -203,25 +202,10 @@ class _HomePaginaState extends State<HomePagina> {
       const SizedBox(height: 16),
       _Intestazione(
         titolo: 'Portafogli',
-        azione: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (raggruppabili(portafogli, const {}).length > 1)
-              TextButton.icon(
-                onPressed: () => apriRaggruppa(
-                  context,
-                  _sessione,
-                  raggruppabili(portafogli, const {}),
-                ),
-                icon: const Icon(Icons.create_new_folder_outlined),
-                label: const Text('Raggruppa'),
-              ),
-            TextButton.icon(
-              onPressed: () => apriModuloPortafoglio(context, _sessione),
-              icon: const Icon(Icons.add),
-              label: const Text('Nuovo'),
-            ),
-          ],
+        azione: TextButton.icon(
+          onPressed: () => apriModuloPortafoglio(context, _sessione),
+          icon: const Icon(Icons.add),
+          label: const Text('Nuovo'),
         ),
       ),
       ElencoPortafogli(sessione: _sessione, portafogli: portafogli),

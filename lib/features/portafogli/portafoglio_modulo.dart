@@ -44,12 +44,9 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
   final _form = GlobalKey<FormState>();
   final _nome = TextEditingController();
   final _saldo = TextEditingController();
-  final _gruppo = TextEditingController();
 
   List<DefinizioneTipo> _tipi = const [];
-  List<String> _gruppi = const [];
   bool _preferito = false;
-  bool _gruppoCollegato = false;
   String? _tipo;
   String _valuta = 'EUR';
   bool _salvataggio = false;
@@ -61,7 +58,6 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
     _nome.text = p?.nome ?? widget.nomeSuggerito ?? '';
     if (p != null) {
       _valuta = p.valuta;
-      _gruppo.text = p.gruppo ?? '';
       _preferito = p.preferito;
       _saldo.text = p.saldoInizialeMinimo == 0
           ? ''
@@ -74,7 +70,6 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
     final tipi = (await widget.sessione.contabilita.tipi(
       AmbitoTipo.portafoglio,
     )).where((t) => t.nome != tipoCartaDiCredito).toList();
-    final gruppi = await widget.sessione.contabilita.gruppiPortafogli();
     if (!mounted) {
       return;
     }
@@ -83,7 +78,6 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
         .firstOrNull;
     setState(() {
       _tipi = tipi;
-      _gruppi = gruppi;
       _tipo = widget.esistente?.tipoId ?? suggerito?.id ?? tipi.firstOrNull?.id;
     });
   }
@@ -92,7 +86,6 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
   void dispose() {
     _nome.dispose();
     _saldo.dispose();
-    _gruppo.dispose();
     super.dispose();
   }
 
@@ -105,13 +98,15 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
     setState(() => _salvataggio = true);
     try {
       if (widget.esistente == null) {
-        await contabilita.creaPortafoglio(
+        final id = await contabilita.creaPortafoglio(
           nome: _nome.text,
           tipoId: _tipo!,
           valuta: _valuta,
           saldoIniziale: saldo,
-          gruppo: _gruppo.text,
         );
+        if (_preferito) {
+          await contabilita.impostaPreferito(id, true);
+        }
       } else {
         await contabilita.modificaPortafoglio(
           widget.esistente!.id,
@@ -119,7 +114,6 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
           tipoId: _tipo!,
           valuta: _valuta,
           saldoIniziale: saldo,
-          gruppo: _gruppo.text,
         );
       }
       final id = widget.esistente?.id;
@@ -188,46 +182,16 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
                   onChanged: (v) => setState(() => _valuta = v ?? 'EUR'),
                 ),
                 const SizedBox(height: 16),
-                Autocomplete<String>(
-                  initialValue: TextEditingValue(text: _gruppo.text),
-                  optionsBuilder: (v) => _gruppi.where(
-                    (g) => g.toLowerCase().contains(v.text.toLowerCase()),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: _preferito,
+                  onChanged: (v) => setState(() => _preferito = v),
+                  secondary: Icon(_preferito ? Icons.star : Icons.star_border),
+                  title: const Text('Preferito'),
+                  subtitle: const Text(
+                    'Sempre in evidenza in cima alla Panoramica',
                   ),
-                  onSelected: (g) => _gruppo.text = g,
-                  fieldViewBuilder: (context, controllo, fuoco, invio) {
-                    if (!_gruppoCollegato) {
-                      _gruppoCollegato = true;
-                      controllo.addListener(
-                        () => _gruppo.text = controllo.text,
-                      );
-                    }
-                    return TextField(
-                      controller: controllo,
-                      focusNode: fuoco,
-                      decoration: const InputDecoration(
-                        labelText: 'Gruppo (facoltativo)',
-                        hintText: 'Es. Conti, Risparmi, Investimenti',
-                        helperText:
-                            'I portafogli dello stesso gruppo stanno insieme '
-                            'nella Panoramica e si possono richiudere.',
-                        helperMaxLines: 2,
-                      ),
-                    );
-                  },
                 ),
-                if (widget.esistente != null)
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    value: _preferito,
-                    onChanged: (v) => setState(() => _preferito = v),
-                    secondary: Icon(
-                      _preferito ? Icons.star : Icons.star_border,
-                    ),
-                    title: const Text('Preferito'),
-                    subtitle: const Text(
-                      'Sempre in evidenza in cima alla Panoramica',
-                    ),
-                  ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _saldo,

@@ -93,13 +93,12 @@ void main() {
         valuta: 'EUR',
         saldoIniziale: 100000,
       );
-      for (final nome in ['Fondo casa', 'Fondo viaggi']) {
+      for (final nome in ['Fondo casa', 'Fondo viaggi', 'Salvadanaio']) {
         await c.creaPortafoglio(
           nome: nome,
           tipoId: tipi['Risparmi']!,
           valuta: 'EUR',
           saldoIniziale: 20000,
-          gruppo: 'Risparmi',
         );
       }
       await sessione.carte.crea(
@@ -129,33 +128,36 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
   }
 
-  testWidgets('gruppi, preferiti e carta dentro il conto', (tester) async {
+  testWidgets('mostra altro / meno, preferiti in cima, carta nel conto', (
+    tester,
+  ) async {
     await apri(tester);
 
     // La carta non è un riquadro a sé: il suo avviso è nel conto collegato.
     expect(find.text('Visa'), findsNothing);
     expect(find.textContaining('Carta "Visa"'), findsOneWidget);
 
-    // Il gruppo parte chiuso; un tocco lo apre.
-    expect(find.text('Risparmi'), findsWidgets);
-    expect(find.text('Fondo casa'), findsNothing);
-    await tocca(tester, find.text('2 portafogli'));
-    await attendi(tester, find.text('Fondo casa'));
+    // Senza preferiti: i primi 3, il quarto dietro "Mostra altro".
+    expect(find.text('Conto principale'), findsOneWidget);
+    expect(find.text('Salvadanaio'), findsNothing);
+    await tocca(tester, find.text('Mostra altro (1 portafoglio)'));
+    await attendi(tester, find.text('Salvadanaio'));
 
-    // Preferito: resta visibile anche con il gruppo chiuso.
+    // Preferito: sempre in vista, anche con "Mostra meno".
     final stella = find.descendant(
       of: find.ancestor(
-        of: find.text('Fondo casa'),
+        of: find.text('Salvadanaio'),
         matching: find.byType(ListTile),
       ),
       matching: find.byTooltip('Aggiungi ai preferiti'),
     );
     await tocca(tester, stella);
     await attendi(tester, find.byTooltip('Togli dai preferiti'));
-    await tocca(tester, find.text('1 portafoglio'));
+    await tocca(tester, find.text('Mostra meno'));
     await assestamento(tester);
-    expect(find.text('Fondo casa'), findsOneWidget);
-    expect(find.text('Fondo viaggi'), findsNothing);
+    expect(find.text('Salvadanaio'), findsOneWidget);
+    expect(find.text('Conto principale'), findsNothing);
+    expect(find.text('Mostra altro (3 portafogli)'), findsOneWidget);
 
     await chiudi(tester);
   });
@@ -212,38 +214,6 @@ void main() {
     await chiudi(tester);
   });
 
-  testWidgets('raggruppa dal pulsante e scioglie il gruppo', (tester) async {
-    await apri(tester);
-    Finder nelDialogo(Finder f) =>
-        find.descendant(of: find.byType(AlertDialog), matching: f);
-
-    await tocca(tester, find.text('Raggruppa'));
-    await attendi(tester, nelDialogo(find.text('Nome del gruppo')));
-    await tester.enterText(
-      nelDialogo(find.widgetWithText(TextFormField, 'Nome del gruppo')),
-      'Banche',
-    );
-    await tocca(tester, nelDialogo(find.text('Conto principale')));
-    await tocca(tester, nelDialogo(find.text('Salva')));
-    await attendi(tester, find.text('1 portafoglio'));
-    await assestamento(tester); // chiusura animata del dialogo
-    expect(find.text('Banche'), findsOneWidget);
-    expect(find.text('Conto principale'), findsNothing); // gruppo chiuso
-
-    await tocca(
-      tester,
-      find.descendant(
-        of: find.ancestor(of: find.text('Banche'), matching: find.byType(Card)),
-        matching: find.byTooltip('Modifica o sciogli il gruppo'),
-      ),
-    );
-    await tocca(tester, find.text('Sciogli gruppo'));
-    await attendi(tester, find.text('Conto principale'));
-    expect(find.text('Banche'), findsNothing);
-
-    await chiudi(tester);
-  });
-
   testWidgets('personalizza: nascondi una scheda; entrate e uscite', (
     tester,
   ) async {
@@ -266,7 +236,7 @@ void main() {
     expect(find.text('Patrimonio'), findsNothing);
     // Totale e portafogli restano sempre.
     expect(find.text('Totale'), findsOneWidget);
-    expect(find.text('Conto principale'), findsOneWidget);
+    expect(find.text('Portafogli'), findsOneWidget);
     // La versione, come firma, è sempre visibile.
     expect(find.text(Versione.firma), findsOneWidget);
 

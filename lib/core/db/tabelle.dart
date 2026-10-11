@@ -50,10 +50,11 @@ class Portafogli extends Table with ColonneSincronizzate {
   BoolColumn get archiviato => boolean().withDefault(const Constant(false))();
   IntColumn get ordine => integer().withDefault(const Constant(0))();
 
-  /// Gruppo scelto dall'utente (es. "Conti", "Risparmi"); `null` = senza gruppo.
+  /// Non più usata (v7): i gruppi sono stati sostituiti da "Mostra altro".
+  /// Resta per compatibilità con gli archivi esistenti.
   TextColumn get gruppo => text().nullable()();
 
-  /// Preferito: sempre in evidenza in cima, mai dentro un gruppo chiuso.
+  /// Preferito: sempre in evidenza in cima, anche con "Mostra meno".
   BoolColumn get preferito => boolean().withDefault(const Constant(false))();
 }
 

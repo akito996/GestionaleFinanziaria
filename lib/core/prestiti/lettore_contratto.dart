@@ -14,6 +14,7 @@ class ProposteContratto {
     this.totaleDovuto,
     this.durataMesi,
     this.primaRata,
+    this.speseRata,
     this.mutuo = false,
   });
 
@@ -29,6 +30,9 @@ class ProposteContratto {
   final int? totaleDovuto;
   final int? durataMesi;
   final DateTime? primaRata;
+
+  /// Spese di incasso addebitate con ogni rata (es. 3,50 €), se indicate.
+  final int? speseRata;
 
   /// Modulo PIES / contratto di mutuo.
   final bool mutuo;
@@ -46,9 +50,28 @@ class ProposteContratto {
   ].whereType<Object>().length;
 }
 
+/// Una riga del piano di ammortamento trovata nel testo.
+class _RigaPiano {
+  const _RigaPiano(
+    this.numero,
+    this.data,
+    this.rata,
+    this.quotaCapitale,
+    this.residuo,
+  );
+
+  final int numero;
+  final DateTime data;
+  final int rata;
+  final int quotaCapitale;
+  final int residuo;
+}
+
 /// Legge il testo dei moduli standard europei: **SECCI** ("Informazioni europee
-/// di base sul credito ai consumatori", prestiti e rate) e **PIES/ESIS**
-/// (mutui). Tutto sul dispositivo: il contratto non viene inviato a nessuno.
+/// di base sul credito ai consumatori", prestiti e rate), **PIES/ESIS** (mutui)
+/// e i **documenti di trasparenza** delle finanziarie, compreso il **piano di
+/// ammortamento** quando c'è (da lì si ricavano rate, date e maxi rata).
+/// Tutto sul dispositivo: il contratto non viene inviato a nessuno.
 abstract final class LettoreContratto {
   static final _altraVoce = RegExp(
     r'\b(?:importo\s*totale|credito|prezzo|TAN|TAEG|anticipo|durata)\b',
@@ -68,10 +91,9 @@ abstract final class LettoreContratto {
       r'(\d{1,3})\s*rate\s*(?:mensili|trimestrali|semestrali|annuali)',
       r'numero\s*(?:totale\s*)?(?:di\s*)?rate[^\d]{0,30}(\d{1,3})',
     ]);
-    final durataMesi = _intero(t, [
-      r'durata[^\d]{0,60}?(\d{1,3})\s*mesi',
-      r'(\d{1,3})\s*mesi',
-    ]);
+    // Solo "durata ... N mesi": un "12 mesi" qualsiasi (es. nel testo sulla
+    // privacy) non è la durata del finanziamento.
+    final durataMesi = _intero(t, [r'durata[^\d]{0,60}?(\d{1,3})\s*mesi']);
     final durataAnni = _intero(t, [r'durata[^\d]{0,60}?(\d{1,2})\s*anni']);
     final maxiRata = _importo(t, [
       r'maxi\s*-?\s*rata(?:\s*finale)?',
@@ -93,38 +115,68 @@ abstract final class LettoreContratto {
       }
     }
 
+    // Il piano di ammortamento, se c'è, è la fonte più affidabile.
+    final piano = _piano(t);
+    final rataPiano = piano == null ? null : _piuFrequente(piano);
+    final maxiPiano =
+        piano != null &&
+            piano.length > 1 &&
+            rataPiano != null &&
+            piano.last.rata > rataPiano * 3 ~/ 2
+        ? piano.last.rata
+        : null;
+    // Piano completo (dalla prima rata): dà anche capitale e data d'inizio.
+    final primaDelPiano = piano != null && piano.first.numero == 1
+        ? piano.first
+        : null;
+
     return ProposteContratto(
-      finanziatore: _finanziatore(t),
-      capitale: _importo(t, [
-        r'importo\s*totale\s*del\s*credito',
-        r'importo\s*(?:e\s*valuta\s*)?del\s*(?:prestito|finanziamento|mutuo)(?:\s*da\s*concedere)?',
-        r'importo\s*finanziato',
-        r'capitale\s*(?:finanziato|erogato)',
-      ]),
+      finanziatore: _finanziatore(t, testo),
+      capitale:
+          _importo(t, [
+            r'importo\s*totale\s*del\s*credito',
+            r'importo\s*(?:e\s*valuta\s*)?del\s*(?:prestito|finanziamento|mutuo)(?:\s*da\s*concedere)?',
+            r'importo\s*finanziato',
+            r'capitale\s*(?:finanziato|erogato)',
+          ]) ??
+          (primaDelPiano == null
+              ? null
+              : primaDelPiano.quotaCapitale + primaDelPiano.residuo),
       numeroRate:
-          rate ?? durataMesi ?? (durataAnni == null ? null : durataAnni * 12),
-      importoRata: _importo(t, [
-        r'importo\s*(?:di\s*ciascuna|della|delle)\s*rat[ae]',
-        r'(?<!maxi[\s-]{0,2})\brat[ae]\s*(?:mensil[ei]\s*)?(?:costant[ei]\s*)?(?:di|da|pari\s*a)',
-        r'rate\s*mensili\s*di',
-      ]),
-      maxiRata: maxiRata,
+          piano?.last.numero ??
+          rate ??
+          durataMesi ??
+          (durataAnni == null ? null : durataAnni * 12),
+      importoRata:
+          rataPiano ??
+          _importo(t, [
+            r'importo\s*(?:di\s*ciascuna|della|delle)\s*rat[ae]',
+            r'(?<!maxi[\s-]{0,2})\brat[ae]\s*(?:mensil[ei]\s*)?(?:costant[ei]\s*)?(?:di|da|pari\s*a)\b',
+            r'rate\s*mensili\s*di',
+          ]),
+      maxiRata: maxiPiano ?? maxiRata,
+      // "TAN", "T.A.N.", "Tasso annuo nominale".
       tanPuntiBase: _percentuale(t, [
-        r'tasso\s*(?:annuo\s*)?(?:di\s*interesse\s*)?nominale(?:\s*annuo)?(?:\s*\(?TAN\)?)?',
-        r'\bTAN\b',
+        r'tasso\s*(?:annuo\s*)?(?:di\s*interesse\s*)?nominale(?:\s*annuo)?(?:\s*\(?T\.?A\.?N\.?\)?)?',
+        r'\bT\.?\s?A\.?\s?N\.?(?![a-z])',
       ]),
       taegPuntiBase: _percentuale(t, [
-        r'tasso\s*annuo\s*effettivo\s*globale(?:\s*\(?TAEG\)?)?',
-        r'\bTAEG\b',
+        r'tasso\s*annuo\s*effettivo\s*globale(?:\s*\(?T\.?A\.?E\.?G\.?\)?)?',
+        r'\bT\.?\s?A\.?\s?E\.?\s?G\.?(?![a-z])',
+      ]),
+      speseRata: _importo(t, [
+        r'spese\s*(?:di\s*)?(?:gestione\s*e/o\s*)?incasso(?:\s*rat[ae])?',
       ]),
       totaleDovuto: _importo(t, [
         r'importo\s*totale\s*dovuto(?:\s*dal\s*consumatore)?',
         r'importo\s*totale\s*da\s*rimborsare',
       ]),
       durataMesi: durataMesi ?? (durataAnni == null ? null : durataAnni * 12),
-      primaRata: _data(t, [
-        r'(?:prima\s*rata|decorrenza\s*(?:del\s*)?(?:piano|ammortamento)|scadenza\s*(?:della\s*)?prima\s*rata)',
-      ]),
+      primaRata:
+          primaDelPiano?.data ??
+          _data(t, [
+            r'(?:prima\s*rata|decorrenza\s*(?:del\s*)?(?:piano|ammortamento)|scadenza\s*(?:della\s*)?prima\s*rata)',
+          ]),
       mutuo: mutuo,
     );
   }
@@ -143,8 +195,17 @@ abstract final class LettoreContratto {
         if (escludi != null && escludi.hasMatch(m.group(1)!)) {
           continue;
         }
-        final valore = Importo.leggi(m.group(2)!);
-        if (valore != null && valore > 0) {
+        // Un importo ha i centesimi ("139,00") o la valuta accanto ("€ 50"):
+        // un numero da solo (es. il numero di riga di una tabella) non lo è.
+        final cifra = m.group(2)!;
+        final conValuta = RegExp(
+          r'€|\bEUR\b|\beuro\b',
+          caseSensitive: false,
+        ).hasMatch(m.group(0)!);
+        final valore = Importo.leggi(cifra);
+        if (valore != null &&
+            valore > 0 &&
+            (cifra.contains(',') || conValuta)) {
           return valore;
         }
         if (escludi == null) {
@@ -206,10 +267,100 @@ abstract final class LettoreContratto {
     return null;
   }
 
-  static String? _finanziatore(String t) {
+  static String? _finanziatore(String t, String originale) {
     final m = RegExp(
       r'(?:Finanziatore|Creditore|Mutuante|Banca)\s*[:\-]?\s*([A-Z][\w&.\x27 ]{2,60}?(?:S\.?p\.?A\.?|S\.?r\.?l\.?|Banca[\w ]*|Bank|Credit[\w ]*))',
     ).firstMatch(t);
-    return m?.group(1)?.trim();
+    if (m != null) {
+      return m.group(1)!.trim();
+    }
+    // Senza etichetta: una riga che contiene solo il nome della società
+    // (es. l'intestazione "Finanziaria Esempio S.p.A.").
+    final riga = RegExp(
+      r'^\s*([A-Z][\w&.\x27 ]{2,60}?(?:S\.p\.A\.|S\.r\.l\.))\s*$',
+      multiLine: true,
+    ).firstMatch(originale);
+    return riga?.group(1)?.trim();
+  }
+
+  static const _cifra = r'(\d{1,3}(?:\.\d{3})*,\d{2})\s*(?:EUR|€)?';
+
+  /// Righe del piano di ammortamento: "N data importo importo importo importo".
+  /// Le colonne cambiano da una finanziaria all'altra: la rata è l'importo che
+  /// è somma di altri due (quota capitale + quota interessi). Restituisce la
+  /// sequenza più lunga di righe consecutive (almeno 2), oppure `null`.
+  static List<_RigaPiano>? _piano(String t) {
+    final modello = RegExp(
+      '(?<![\\d.,/])(\\d{1,3}) (\\d{1,2})[./-](\\d{1,2})[./-](\\d{4}) '
+      '$_cifra $_cifra $_cifra $_cifra',
+    );
+    final righe = <_RigaPiano>[];
+    for (final m in modello.allMatches(t)) {
+      final valori = [
+        for (var g = 5; g <= 8; g++) Importo.leggi(m.group(g)!) ?? -1,
+      ];
+      final riga = _interpreta(
+        int.parse(m.group(1)!),
+        DateTime(
+          int.parse(m.group(4)!),
+          int.parse(m.group(3)!),
+          int.parse(m.group(2)!),
+        ),
+        valori,
+      );
+      if (riga != null) {
+        righe.add(riga);
+      }
+    }
+    // La sequenza consecutiva più lunga (1, 2, 3, ...).
+    var migliore = <_RigaPiano>[];
+    var corrente = <_RigaPiano>[];
+    for (final r in righe) {
+      if (corrente.isNotEmpty && r.numero == corrente.last.numero + 1) {
+        corrente.add(r);
+      } else {
+        corrente = [r];
+      }
+      if (corrente.length > migliore.length) {
+        migliore = [...corrente];
+      }
+    }
+    return migliore.length >= 2 ? migliore : null;
+  }
+
+  static _RigaPiano? _interpreta(int numero, DateTime data, List<int> v) {
+    if (v.any((x) => x < 0) || numero < 1 || numero > 600) {
+      return null;
+    }
+    // Cerca i, j, k tra i primi tre importi con v[i] + v[j] = v[k] (± 1 cent).
+    for (var k = 0; k < 4; k++) {
+      for (var i = 0; i < 4; i++) {
+        for (var j = i + 1; j < 4; j++) {
+          if (i == k || j == k) {
+            continue;
+          }
+          if ((v[i] + v[j] - v[k]).abs() <= 1) {
+            final residuo = [
+              0,
+              1,
+              2,
+              3,
+            ].firstWhere((x) => x != i && x != j && x != k);
+            // La quota capitale è la prima delle due quote nella riga.
+            return _RigaPiano(numero, data, v[k], v[i], v[residuo]);
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  /// La rata che compare più spesso (la rata "normale" del piano).
+  static int? _piuFrequente(List<_RigaPiano> piano) {
+    final conteggi = <int, int>{};
+    for (final r in piano) {
+      conteggi.update(r.rata, (n) => n + 1, ifAbsent: () => 1);
+    }
+    return conteggi.entries.reduce((a, b) => b.value > a.value ? b : a).key;
   }
 }

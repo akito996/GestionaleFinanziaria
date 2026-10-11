@@ -1021,10 +1021,11 @@ class Portafoglio extends DataClass implements Insertable<Portafoglio> {
   final bool archiviato;
   final int ordine;
 
-  /// Gruppo scelto dall'utente (es. "Conti", "Risparmi"); `null` = senza gruppo.
+  /// Non più usata (v7): i gruppi sono stati sostituiti da "Mostra altro".
+  /// Resta per compatibilità con gli archivi esistenti.
   final String? gruppo;
 
-  /// Preferito: sempre in evidenza in cima, mai dentro un gruppo chiuso.
+  /// Preferito: sempre in evidenza in cima, anche con "Mostra meno".
   final bool preferito;
   const Portafoglio({
     required this.id,

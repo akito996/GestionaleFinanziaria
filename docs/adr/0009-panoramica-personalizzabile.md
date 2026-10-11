@@ -29,7 +29,11 @@ Bug segnalato: dopo aver stretto e riallargato la finestra, la scheda "Costo del
   - grafici: colonne affiancate (consigliato), linee per l'andamento con la serie "Risparmio", tabella;
   - i trasferimenti tra i propri portafogli non contano;
   - riepilogo del periodo in corso con un **confronto alla pari**: stesso tratto del periodo precedente (1–11 ottobre contro 1–11 settembre; anno in corso contro lo stesso periodo dell'anno prima), non il mese intero contro un mese parziale.
-- **Gruppi di portafogli**: pulsante "Raggruppa" accanto a "Nuovo" (nome del gruppo e portafogli da spuntare); menu del gruppo con "Modifica" e "Sciogli", annullabile. I preferiti restano in cima, fuori dai gruppi.
+- **Portafogli: "Mostra altro" / "Mostra meno"** (chiarimento dell'utente: "raggruppare" voleva dire questo, non cartelle con un nome):
+  - i preferiti ⭐ sono sempre visibili, in cima; gli altri si aprono con "Mostra altro (N portafogli)";
+  - senza preferiti, da chiuso si vedono i primi 3; la scelta aperto/chiuso è ricordata;
+  - il "Preferito" si può impostare anche quando si crea un portafoglio.
+  - I gruppi con nome (prima versione) sono stati tolti dall'interfaccia; la colonna `portafogli.gruppo` resta nello schema solo per compatibilità.
 - **Campi comuni**:
   - `CampoImporto`: grande, centrato, con il simbolo della valuta;
   - `CampoData` e `scegliData`: calendario in una finestra con "Oggi" e "Ieri";

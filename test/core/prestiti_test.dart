@@ -48,6 +48,45 @@ Tasso annuo nominale (TAN) fisso 5,95 %
 Tasso annuo effettivo globale (TAEG) 7,40 %
 ''';
 
+/// Documento di trasparenza di una finanziaria (dati inventati), con la
+/// struttura reale: sigle puntate (T.A.N.), tabella delle rate e piano di
+/// ammortamento. Contiene anche le trappole viste in un documento vero:
+/// "12 mesi" nel testo sulla privacy e l'intestazione "Rata Data scadenza".
+const _trasparenza = '''
+Documento di trasparenza n°001
+Finanziaria Esempio S.p.A.
+Via Roma 1, 00100 ROMA - C.F. e P.Iva 00000000000
+Capitale sociale Euro 1.000.000 i.v.
+DOCUMENTO DI TRASPARENZA
+Condizioni del Finanziamento
+Prezzo di vendita del veicolo : 15.000,00 EUR
+Importo anticipo : 9.000,00 EUR
+Capitale finanziato : 6.000,00 EUR
+T.A.N. : 3,50 %
+T.A.E.G : 6.10 %
+Prima rata
+piano rientro
+Ultima rata
+piano rientro
+Numero
+rate
+Importo
+rata finanziaria
+05/01/2027 05/05/2027 5 615,74 EUR 2,00 EUR 617,74 EUR
+05/06/2027 05/06/2027 1 3.000,03 EUR 2,00 EUR 3.002,03 EUR
+Spese di gestione e/o incasso : 2,00 EUR
+Piano di Ammortamento
+Rata Data
+scadenza Quota Capitale Quota interessi Importo rata Capitale residuo
+1 05.01.2027 598,24 EUR 17,50 EUR 615,74 EUR 5.401,76 EUR
+2 05.02.2027 599,98 EUR 15,76 EUR 615,74 EUR 4.801,78 EUR
+3 05.03.2027 601,73 EUR 14,01 EUR 615,74 EUR 4.200,05 EUR
+4 05.04.2027 603,49 EUR 12,25 EUR 615,74 EUR 3.596,56 EUR
+5 05.05.2027 605,25 EUR 10,49 EUR 615,74 EUR 2.991,31 EUR
+6 05.06.2027 2.991,31 EUR 8,72 EUR 3.000,03 EUR 0,00 EUR
+Pagamenti successivamente regolarizzati 12 mesi dalla data di registrazione.
+''';
+
 void main() {
   group('piano di ammortamento alla francese', () {
     test('rata costante (verificata con la formula standard)', () {
@@ -195,6 +234,32 @@ void main() {
       );
       expect(p.maxiRata, isNull);
       expect(p.importoRata, isNull);
+    });
+
+    test('documento di trasparenza: sigle puntate e piano di ammortamento', () {
+      final p = LettoreContratto.leggi(_trasparenza);
+      expect(p.finanziatore, 'Finanziaria Esempio S.p.A.');
+      expect(p.capitale, 600000);
+      expect(p.numeroRate, 6); // dal piano, non i "12 mesi" della privacy
+      expect(p.importoRata, 61574); // non "1" dall'intestazione "Rata Data"
+      expect(p.maxiRata, 300003);
+      expect(p.tanPuntiBase, 350); // "T.A.N."
+      expect(p.taegPuntiBase, 610); // "T.A.E.G" con il punto decimale
+      expect(p.primaRata, DateTime(2027, 1, 5));
+      expect(p.speseRata, 200);
+      expect(p.campiTrovati, 8);
+
+      // Senza la riga "Capitale finanziato" il capitale si ricava dal piano.
+      final senza = LettoreContratto.leggi(
+        _trasparenza.replaceFirst('Capitale finanziato : 6.000,00 EUR', ''),
+      );
+      expect(senza.capitale, 600000);
+    });
+
+    test('un numero senza centesimi né valuta non è un importo', () {
+      final p = LettoreContratto.leggi('Rata Data scadenza 1 e altro testo');
+      expect(p.importoRata, isNull);
+      expect(LettoreContratto.leggi('rata di € 250').importoRata, 25000);
     });
 
     test('testo senza dati: nessuna invenzione', () {

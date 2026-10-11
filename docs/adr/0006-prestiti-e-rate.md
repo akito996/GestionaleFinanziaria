@@ -24,6 +24,17 @@ L'utente vuole inserire mutui, prestiti e acquisti a rate, anche facendo leggere
   - "35 rate + maxi rata" diventa 36 rate;
   - scarta le date (es. "rata finale: 05/12/2030") e gli importi che appartengono a un'altra voce.
 
+## Aggiornamento dell'11/10/2026 – documenti di trasparenza e piano di ammortamento
+Prova con un documento reale dell'utente (documento di trasparenza di una finanziaria auto; non è nel repository, il test usa dati inventati con la stessa struttura).
+- **Sigle puntate**: "T.A.N." e "T.A.E.G" (anche con il punto decimale, "5.41 %").
+- **Piano di ammortamento**: righe "N data importo importo importo importo". La rata è l'importo che è somma di altri due (quota capitale + quota interessi), così l'ordine delle colonne può cambiare tra le finanziarie. Dal piano: numero di rate (ultima riga), prima rata (data della riga 1), rata (la più frequente), maxi rata (ultima rata più alta di una volta e mezza), capitale (quota capitale + residuo della riga 1, se manca l'etichetta).
+- **Falsi positivi corretti**:
+  - "12 mesi" nel testo sulla privacy non è più la durata (vale solo "durata … N mesi");
+  - "Rata Data" (intestazione di tabella) non è più "rata da";
+  - un numero senza centesimi né valuta non è un importo.
+- **Finanziatore senza etichetta**: si usa una riga che contiene solo il nome della società (es. "… S.p.A.").
+- **Spese di incasso per rata** ("Spese di gestione e/o incasso"): lette e mostrate; per ora non entrano nei movimenti (decisione dell'utente in sospeso).
+
 ## Conseguenze
 - ✅ Nessun contratto lascia il dispositivo; funziona offline.
 - ⚠️ Le scansioni (PDF immagine) non hanno testo: si compila a mano (OCR on-device previsto in Fase 3).
