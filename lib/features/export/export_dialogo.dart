@@ -1,7 +1,5 @@
-import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
@@ -9,6 +7,8 @@ import '../../core/export/esportazione.dart';
 import '../../core/sessione.dart';
 import '../comuni/campi.dart';
 import '../comuni/errori.dart';
+import '../comuni/icone.dart';
+import '../comuni/salva_file.dart';
 import '../movimenti/riga_movimento.dart';
 
 enum _Periodo { meseCorrente, ultimiTre, annoCorrente, personalizzato }
@@ -67,27 +67,15 @@ class _ExportDialogoState extends State<_ExportDialogo> {
     return 'GestionaleFinanziaria_${g(i.start)}-${g(i.end)}';
   }
 
-  Future<bool> _salva(String nome, String estensione, Uint8List byte) async {
-    final destinazione = await getSaveLocation(
-      suggestedName: '$nome.$estensione',
-      acceptedTypeGroups: [
-        XTypeGroup(
-          label: estensione == 'pdf' ? 'PDF' : 'Excel',
-          extensions: [estensione],
-        ),
-      ],
-      confirmButtonText: 'Salva',
-    );
-    if (destinazione == null) {
-      return false;
-    }
-    var percorso = destinazione.path;
-    if (!percorso.toLowerCase().endsWith('.$estensione')) {
-      percorso = '$percorso.$estensione';
-    }
-    await File(percorso).writeAsBytes(byte, flush: true);
-    return true;
-  }
+  Future<bool> _salva(String nome, String estensione, Uint8List byte) async =>
+      await salvaConNome(
+        nome: '$nome.$estensione',
+        byte: byte,
+        tipo: estensione == 'pdf' ? 'PDF' : 'Excel',
+        estensione: estensione,
+        mime: estensione == 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      ) !=
+      null;
 
   Future<void> _esporta() async {
     setState(() => _inCorso = true);
@@ -290,7 +278,7 @@ class _ExportDialogoState extends State<_ExportDialogo> {
                   dimension: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Icon(Icons.file_download_outlined),
+              : const IconaEsporta(),
           label: const Text('Esporta'),
         ),
       ],

@@ -7,6 +7,7 @@ import 'package:gestionale_finanziaria/app.dart';
 import 'package:gestionale_finanziaria/core/crypto/derivazione.dart';
 import 'package:gestionale_finanziaria/core/db/deposito_locale.dart';
 import 'package:gestionale_finanziaria/core/sessione.dart';
+import 'package:gestionale_finanziaria/features/comuni/campi.dart';
 import 'package:sodium/sodium_sumo.dart';
 
 void main() {
@@ -88,7 +89,12 @@ void main() {
       'Regalo Anna',
     );
     await tester.enterText(
-      nelDialogo(find.widgetWithText(TextFormField, 'Totale da raccogliere')),
+      nelDialogo(
+        find.descendant(
+          of: find.widgetWithText(CampoImporto, 'Totale da raccogliere'),
+          matching: find.byType(TextFormField),
+        ),
+      ),
       '90',
     );
     for (final nome in ['Marco', 'Giulia']) {
@@ -110,7 +116,7 @@ void main() {
       tester
           .widget<TextField>(
             find.descendant(
-              of: nelDialogo(find.widgetWithText(TextFormField, 'Importo')),
+              of: nelDialogo(find.widgetWithText(CampoImporto, 'Importo')),
               matching: find.byType(TextField),
             ),
           )

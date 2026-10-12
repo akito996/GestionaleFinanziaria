@@ -63,6 +63,22 @@ abstract final class Importo {
         '${(assoluto % 100).toString().padLeft(2, '0')}';
   }
 
+  /// Testo per il campo importo dopo la modifica: "1.234,56" (con il punto
+  /// delle migliaia e sempre i due decimali).
+  static String perCampo(int minimo) {
+    final assoluto = minimo.abs();
+    final interi = (assoluto ~/ 100).toString();
+    final gruppi = StringBuffer();
+    for (var i = 0; i < interi.length; i++) {
+      if (i > 0 && (interi.length - i) % 3 == 0) {
+        gruppi.write('.');
+      }
+      gruppi.write(interi[i]);
+    }
+    return '${minimo < 0 ? '-' : ''}$gruppi,'
+        '${(assoluto % 100).toString().padLeft(2, '0')}';
+  }
+
   static String simbolo(String valuta) => switch (valuta) {
     'EUR' => '€',
     'USD' => r'$',

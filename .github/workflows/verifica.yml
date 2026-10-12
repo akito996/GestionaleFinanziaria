@@ -108,3 +108,64 @@ jobs:
           path: build/windows/x64/runner/Release/
           if-no-files-found: error
           retention-days: 14
+
+  # App Android da installare sul telefono (Actions -> esecuzione -> Artifacts) e
+  # test sull'app vera in un emulatore Android. APK firmato con la chiave di debug:
+  # solo per prova, non per i dati veri (vedi docs/adr/0010).
+  android:
+    name: Android (APK e test nell'emulatore)
+    needs: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Java 17
+        run: echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+      - name: Flutter (versione da pubspec.yaml)
+        run: |
+          version="$(sed -n 's/^  flutter: *//p' pubspec.yaml)"
+          git clone --depth 1 --branch "$version" https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - name: Prima configurazione di Flutter e licenze Android
+        run: |
+          flutter --disable-analytics
+          flutter --version
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+      - name: Dipendenze (bloccate da pubspec.lock)
+        run: flutter pub get --enforce-lockfile
+      - name: Build APK (telefoni a 64 bit)
+        run: |
+          set -o pipefail
+          flutter build apk --release --target-platform android-arm64             --dart-define=GF_COMMIT=${{ github.sha }} 2>&1 | tee "$RUNNER_TEMP/build-android.log"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: GestionaleFinanziaria-android-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 14
+      - name: Accelerazione KVM per l'emulatore
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Test sull'app vera nell'emulatore Android
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          ram-size: 4096M
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash -c 'set -o pipefail; flutter test integration_test -d emulator-5554 -r expanded 2>&1 | tee "$RUNNER_TEMP/integration-android.log"'
+      - name: Motivo dell'errore
+        if: failure()
+        run: |
+          log="$(cat "$RUNNER_TEMP/build-android.log" "$RUNNER_TEMP/integration-android.log" 2>/dev/null)"
+          motivo="$( (echo "$log" | grep -E 'SCHERMO:|FINESTRA:|PULSANTE:|Warning: A call to tap'; echo "$log" | grep -v -E '^\s*$' | grep -E -A25 'EXCEPTION CAUGHT|Expected:|\[E\]|Error|FAILURE|What went wrong') | head -70)"
+          motivo="${motivo//'%'/'%25'}"
+          motivo="${motivo//$'\n'/'%0A'}"
+          motivo="${motivo//$'\r'/}"
+          echo "::error title=Android::${motivo}"

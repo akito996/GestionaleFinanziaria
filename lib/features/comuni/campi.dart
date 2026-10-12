@@ -181,8 +181,48 @@ class CampoData extends StatelessWidget {
   }
 }
 
+/// Quanto sono più piccoli i decimali rispetto agli interi.
+const _quotaDecimali = 0.6;
+
+/// Controller dei campi importo: dalla virgola in poi il testo è più piccolo
+/// ("5" grande, ",00" piccolo).
+class ControllerImporto extends TextEditingController {
+  ControllerImporto({super.text});
+
+  @override
+  TextSpan buildTextSpan({
+    required BuildContext context,
+    TextStyle? style,
+    required bool withComposing,
+  }) {
+    final virgola = text.indexOf(',');
+    final dimensione = style?.fontSize;
+    if (virgola < 0 || dimensione == null) {
+      return super.buildTextSpan(
+        context: context,
+        style: style,
+        withComposing: withComposing,
+      );
+    }
+    return TextSpan(
+      style: style,
+      children: [
+        TextSpan(text: text.substring(0, virgola)),
+        TextSpan(
+          text: text.substring(virgola),
+          style: TextStyle(fontSize: dimensione * _quotaDecimali),
+        ),
+      ],
+    );
+  }
+}
+
 /// Campo importo grande e centrato, con il simbolo della valuta.
-class CampoImporto extends StatelessWidget {
+///
+/// I decimali si vedono sempre: mentre si scrive "5" compare ",00" in grigio,
+/// e uscendo dal campo il testo diventa "5,00". I decimali sono più piccoli
+/// degli interi.
+class CampoImporto extends StatefulWidget {
   const CampoImporto({
     super.key,
     required this.controller,
@@ -197,7 +237,7 @@ class CampoImporto extends StatelessWidget {
     this.textInputAction = TextInputAction.next,
   });
 
-  final TextEditingController controller;
+  final ControllerImporto controller;
   final String etichetta;
   final String valuta;
   final Color? colore;
@@ -209,52 +249,158 @@ class CampoImporto extends StatelessWidget {
   final TextInputAction textInputAction;
 
   @override
+  State<CampoImporto> createState() => _CampoImportoState();
+}
+
+class _CampoImportoState extends State<CampoImporto> {
+  final _fuoco = FocusNode();
+
+  ControllerImporto get _testo => widget.controller;
+
+  @override
+  void initState() {
+    super.initState();
+    // Dopo il primo disegno: chi ascolta il controller può aggiornarsi.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _normalizza();
+      }
+    });
+    _fuoco.addListener(_alCambioFuoco);
+    _testo.addListener(_aggiorna);
+  }
+
+  @override
+  void dispose() {
+    _testo.removeListener(_aggiorna);
+    _fuoco.dispose();
+    super.dispose();
+  }
+
+  void _aggiorna() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _alCambioFuoco() {
+    if (!_fuoco.hasFocus) {
+      _normalizza();
+    }
+    _aggiorna();
+  }
+
+  /// "5" → "5,00", "1234,5" → "1.234,50" (solo se l'importo è valido).
+  void _normalizza() {
+    final valore = Importo.leggi(_testo.text);
+    if (valore == null) {
+      return;
+    }
+    final testo = Importo.perCampo(valore);
+    if (testo != _testo.text) {
+      _testo.value = TextEditingValue(
+        text: testo,
+        selection: TextSelection.collapsed(offset: testo.length),
+      );
+    }
+  }
+
+  /// Le cifre decimali che mancano, da mostrare in grigio (",00", "00", "0").
+  String get _decimaliMancanti {
+    final t = _testo.text;
+    final virgola = t.indexOf(',');
+    if (virgola < 0) {
+      return ',00';
+    }
+    final scritti = t.length - virgola - 1;
+    return scritti >= 2 ? '' : '0' * (2 - scritti);
+  }
+
+  String? _valida(String? v) {
+    final testo = v?.trim() ?? '';
+    if (testo.isEmpty) {
+      return widget.obbligatorio
+          ? 'Scrivi un importo, per esempio 12,50'
+          : null;
+    }
+    final importo = Importo.leggi(testo);
+    if (importo == null) {
+      return 'Scrivi un importo, per esempio 12,50';
+    }
+    if (!widget.ammettiNegativo && importo < 0) {
+      return 'L\'importo non può essere negativo';
+    }
+    if (!widget.ammettiZero && importo == 0) {
+      return 'L\'importo deve essere maggiore di zero';
+    }
+    return null;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final stile = Theme.of(context).textTheme.displaySmall?.copyWith(
-      color: colore,
+    final tema = Theme.of(context);
+    final stile = tema.textTheme.displaySmall!.copyWith(
+      color: widget.colore,
       fontWeight: FontWeight.w500,
       fontFeatures: const [FontFeature.tabularFigures()],
     );
-    return TextFormField(
-      controller: controller,
-      autofocus: autofocus,
-      textAlign: TextAlign.center,
-      style: stile,
-      keyboardType: TextInputType.numberWithOptions(
-        decimal: true,
-        signed: ammettiNegativo,
-      ),
-      textInputAction: textInputAction,
-      onFieldSubmitted: onInvio == null ? null : (_) => onInvio!(),
-      decoration: InputDecoration(
-        labelText: etichetta,
-        floatingLabelAlignment: FloatingLabelAlignment.center,
-        hintText: '0,00',
-        hintStyle: stile?.copyWith(color: Theme.of(context).hintColor),
-        suffixText: Importo.simbolo(valuta),
-        suffixStyle: stile?.copyWith(fontSize: (stile.fontSize ?? 36) * 0.6),
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 16,
-          horizontal: 12,
+    final piccolo = stile.copyWith(
+      fontSize: (stile.fontSize ?? 36) * _quotaDecimali,
+    );
+    final grigio = piccolo.copyWith(color: tema.hintColor);
+    return FormField<String>(
+      validator: (_) => _valida(_testo.text),
+      builder: (campo) => GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _fuoco.requestFocus,
+        child: InputDecorator(
+          isFocused: _fuoco.hasFocus,
+          decoration: InputDecoration(
+            labelText: widget.etichetta,
+            floatingLabelAlignment: FloatingLabelAlignment.center,
+            floatingLabelBehavior: FloatingLabelBehavior.always,
+            errorText: campo.errorText,
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 12,
+              horizontal: 12,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Flexible(
+                child: IntrinsicWidth(
+                  child: TextFormField(
+                    controller: _testo,
+                    focusNode: _fuoco,
+                    autofocus: widget.autofocus,
+                    textAlign: TextAlign.end,
+                    style: stile,
+                    keyboardType: TextInputType.numberWithOptions(
+                      decimal: true,
+                      signed: widget.ammettiNegativo,
+                    ),
+                    textInputAction: widget.textInputAction,
+                    onChanged: campo.didChange,
+                    onFieldSubmitted: (_) {
+                      _normalizza();
+                      widget.onInvio?.call();
+                    },
+                    decoration: InputDecoration.collapsed(
+                      hintText: '0',
+                      hintStyle: stile.copyWith(color: tema.hintColor),
+                    ),
+                  ),
+                ),
+              ),
+              Text(_decimaliMancanti, style: grigio),
+              Text(' ${Importo.simbolo(widget.valuta)}', style: piccolo),
+            ],
+          ),
         ),
       ),
-      validator: (v) {
-        final testo = v?.trim() ?? '';
-        if (testo.isEmpty) {
-          return obbligatorio ? 'Scrivi un importo, per esempio 12,50' : null;
-        }
-        final importo = Importo.leggi(testo);
-        if (importo == null) {
-          return 'Scrivi un importo, per esempio 12,50';
-        }
-        if (!ammettiNegativo && importo < 0) {
-          return 'L\'importo non può essere negativo';
-        }
-        if (!ammettiZero && importo == 0) {
-          return 'L\'importo deve essere maggiore di zero';
-        }
-        return null;
-      },
     );
   }
 }

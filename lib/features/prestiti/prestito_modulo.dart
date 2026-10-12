@@ -61,13 +61,19 @@ Future<void> apriNuovoPrestito(BuildContext context, Sessione sessione) async {
     if (modo == 'pdf') {
       final file = await openFile(
         acceptedTypeGroups: const [
-          XTypeGroup(label: 'Contratto (PDF)', extensions: ['pdf']),
+          XTypeGroup(
+            label: 'Contratto (PDF)',
+            extensions: ['pdf'],
+            mimeTypes: ['application/pdf'],
+          ),
         ],
       );
       if (file == null) {
         return;
       }
-      proposte = LettoreContratto.leggi(await testoDaPdf(file.path));
+      proposte = LettoreContratto.leggi(
+        await testoDaPdfDati(await file.readAsBytes()),
+      );
     } else if (modo == 'testo') {
       if (!context.mounted) {
         return;

@@ -140,7 +140,7 @@ class _HomePaginaState extends State<HomePagina> {
                     ),
                   IconButton(
                     tooltip: 'Esporta (PDF o Excel)',
-                    icon: const Icon(Icons.file_download_outlined),
+                    icon: const IconaEsporta(),
                     onPressed: () => apriExport(context, _sessione),
                   ),
                   PulsanteBlocca(sessione: _sessione),

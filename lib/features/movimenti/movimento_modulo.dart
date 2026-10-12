@@ -50,7 +50,7 @@ class _MovimentoModulo extends StatefulWidget {
 
 class _MovimentoModuloState extends State<_MovimentoModulo> {
   final _form = GlobalKey<FormState>();
-  final _importo = TextEditingController();
+  final _importo = ControllerImporto();
   final _descrizione = TextEditingController();
 
   List<DefinizioneTipo> _tipi = const [];

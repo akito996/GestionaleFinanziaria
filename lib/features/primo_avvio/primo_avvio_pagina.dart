@@ -1,6 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
 
-import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -9,6 +9,7 @@ import '../../core/sessione.dart';
 import '../comuni/campo_secret_key.dart';
 import '../comuni/errori.dart';
 import '../comuni/nuova_password.dart';
+import '../comuni/salva_file.dart';
 
 /// Primo avvio: spiegazione → password → Secret Key (salva file o copia) → verifica.
 /// L'archivio viene creato solo alla fine, dopo la verifica.
@@ -98,19 +99,18 @@ class _PrimoAvvioPaginaState extends State<PrimoAvvioPagina> {
   }
 
   Future<void> _salvaFile() => _esegui(() async {
-    final destinazione = await getSaveLocation(
-      suggestedName: _nomeFile,
-      acceptedTypeGroups: const [
-        XTypeGroup(label: 'Testo', extensions: ['txt']),
-      ],
-      confirmButtonText: 'Salva',
+    final dove = await salvaConNome(
+      nome: _nomeFile,
+      byte: Uint8List.fromList(utf8.encode(_contenutoFile())),
+      tipo: 'Testo',
+      estensione: 'txt',
+      mime: 'text/plain',
     );
-    if (destinazione == null) {
+    if (dove == null) {
       return;
     }
-    await File(destinazione.path).writeAsString(_contenutoFile(), flush: true);
     if (mounted) {
-      setState(() => _salvataggio = 'Salvata nel file ${destinazione.path}');
+      setState(() => _salvataggio = 'Salvata nel file $dove');
     }
   });
 

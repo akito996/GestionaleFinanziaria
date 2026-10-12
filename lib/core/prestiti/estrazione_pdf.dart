@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:pdfrx_engine/pdfrx_engine.dart';
 
 /// Testo di un PDF (tutte le pagine), estratto sul dispositivo con PDFium.
@@ -7,7 +9,17 @@ import 'package:pdfrx_engine/pdfrx_engine.dart';
 /// in quel caso l'utente può incollare il testo o compilare a mano.
 Future<String> testoDaPdf(String percorso) async {
   await pdfrxInitialize();
-  final documento = await PdfDocument.openFile(percorso);
+  return _testo(await PdfDocument.openFile(percorso));
+}
+
+/// Come [testoDaPdf], dal contenuto del file (su Android il file scelto non ha
+/// sempre un percorso: si leggono i byte).
+Future<String> testoDaPdfDati(Uint8List dati) async {
+  await pdfrxInitialize();
+  return _testo(await PdfDocument.openData(dati, sourceName: 'contratto.pdf'));
+}
+
+Future<String> _testo(PdfDocument documento) async {
   try {
     final testo = StringBuffer();
     for (final pagina in documento.pages) {

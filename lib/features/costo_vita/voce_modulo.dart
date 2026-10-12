@@ -48,7 +48,7 @@ class _NuovaVoce extends StatefulWidget {
 class _NuovaVoceState extends State<_NuovaVoce> {
   final _form = GlobalKey<FormState>();
   late final _nome = TextEditingController(text: widget.nomeSuggerito ?? '');
-  final _importo = TextEditingController();
+  final _importo = ControllerImporto();
   String? _categoria;
   late String _tipo = widget.tipo;
   final _addebito = ImpostazioneAddebito();
@@ -271,7 +271,7 @@ class _ModificaVoceState extends State<_ModificaVoce> {
   late final int _importoMostrato = widget.voce.variato
       ? widget.voce.previsto
       : widget.voce.importoUnitario;
-  late final _importo = TextEditingController(
+  late final _importo = ControllerImporto(
     text: Importo.perModifica(_importoMostrato),
   );
   late String? _categoria = widget.voce.voce.categoriaId;

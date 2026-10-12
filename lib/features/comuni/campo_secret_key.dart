@@ -70,7 +70,11 @@ class _CampoSecretKeyState extends State<CampoSecretKey> {
   Future<void> _scegliFile() async {
     final file = await openFile(
       acceptedTypeGroups: const [
-        XTypeGroup(label: 'Secret Key (.txt)', extensions: ['txt']),
+        XTypeGroup(
+          label: 'Secret Key (.txt)',
+          extensions: ['txt'],
+          mimeTypes: ['text/plain'],
+        ),
       ],
       confirmButtonText: 'Usa questo file',
     );

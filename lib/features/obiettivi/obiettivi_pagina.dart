@@ -472,7 +472,7 @@ class _Versamento extends StatefulWidget {
 
 class _VersamentoState extends State<_Versamento> {
   final _form = GlobalKey<FormState>();
-  final _importo = TextEditingController();
+  final _importo = ControllerImporto();
   String? _partecipante;
   String? _portafoglio;
   List<PortafoglioConSaldo> _portafogli = const [];
@@ -634,7 +634,7 @@ class _ModuloObiettivoState extends State<_ModuloObiettivo> {
   late final _nome = TextEditingController(
     text: widget.esistente?.obiettivo.nome ?? '',
   );
-  late final _importo = TextEditingController(
+  late final _importo = ControllerImporto(
     text: widget.esistente == null
         ? ''
         : Importo.perModifica(
