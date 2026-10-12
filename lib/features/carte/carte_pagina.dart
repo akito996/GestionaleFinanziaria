@@ -158,12 +158,15 @@ class _SchedaCarta extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Row(
+              // Sul telefono il pulsante va sotto, invece di uscire dal bordo.
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Expanded(
-                    child: Text(
-                      'Debito totale: ${Importo.formatta(s.debitoTotale, valuta)}',
-                    ),
+                  Text(
+                    'Debito totale: ${Importo.formatta(s.debitoTotale, valuta)}',
                   ),
                   FilledButton.tonalIcon(
                     onPressed: () => apriModuloMovimento(

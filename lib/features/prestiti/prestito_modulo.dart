@@ -617,6 +617,7 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<Frequenza>(
+                  isExpanded: true,
                   initialValue: _frequenza,
                   decoration: const InputDecoration(labelText: 'Ogni quanto'),
                   items: [

@@ -89,7 +89,8 @@ class _HomePaginaState extends State<HomePagina> {
                   children: [
                     const LucchettoAperto(colore: Colors.white),
                     const SizedBox(width: 12),
-                    Text(avviso),
+                    // Sul telefono il testo va a capo invece di uscire dal bordo.
+                    Expanded(child: Text(avviso)),
                   ],
                 ),
                 duration: const Duration(seconds: 2),

@@ -35,6 +35,8 @@ Future<void> chiediDecisioneMaxi(
     builder: (context) {
       final testo = Theme.of(context).textTheme;
       return AlertDialog(
+        // Sul telefono piccolo il contenuto scorre invece di uscire dal bordo.
+        scrollable: true,
         icon: const Icon(Icons.flag_outlined),
         title: const Text('Maxi rata in arrivo'),
         content: SizedBox(

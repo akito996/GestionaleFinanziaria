@@ -153,6 +153,7 @@ class _SezioneAddebitoState extends State<SezioneAddebito> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<Frequenza>(
+            isExpanded: true,
             initialValue: v.frequenza,
             decoration: const InputDecoration(labelText: 'Ogni quanto'),
             items: [

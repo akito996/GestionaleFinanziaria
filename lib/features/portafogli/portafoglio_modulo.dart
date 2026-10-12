@@ -160,6 +160,7 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
                 const SizedBox(height: 16),
                 if (_tipi.isNotEmpty)
                   DropdownButtonFormField<String>(
+                    isExpanded: true,
                     initialValue: _tipo,
                     decoration: const InputDecoration(labelText: 'Tipo'),
                     items: [
@@ -170,6 +171,7 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
                   ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
+                  isExpanded: true,
                   initialValue: _valuta,
                   decoration: const InputDecoration(labelText: 'Valuta'),
                   items: [

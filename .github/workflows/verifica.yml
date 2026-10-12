@@ -109,9 +109,9 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  # App Android da installare sul telefono (Actions -> esecuzione -> Artifacts) e
-  # test sull'app vera in un emulatore Android. APK firmato con la chiave di debug:
-  # solo per prova, non per i dati veri (vedi docs/adr/0010).
+  # App Android da installare sul telefono (Actions -> esecuzione -> Artifacts):
+  # variante "ufficiale" (dati veri) e "prova" (installabile accanto), più il test
+  # sull'app vera in un emulatore Android (vedi docs/adr/0010).
   android:
     name: Android (APK e test nell'emulatore)
     needs: test
@@ -135,14 +135,41 @@ jobs:
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
       - name: Dipendenze (bloccate da pubspec.lock)
         run: flutter pub get --enforce-lockfile
-      - name: Build APK (telefoni a 64 bit)
+      # Chiave definitiva dai secret di GitHub (mai nel repository). Senza secret
+      # (es. pull request da fork) si usa la chiave di debug: APK solo per prova.
+      - name: Chiave di firma definitiva
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::warning title=Android::Chiave di firma non configurata: APK firmati con la chiave di debug (solo per prova, i dati non sopravvivono al cambio di chiave)."
+            exit 0
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+          {
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyPassword=$KEY_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "storeFile=upload-keystore.jks"
+          } > android/key.properties
+      - name: Build APK (ufficiale e prova, telefoni a 64 bit)
         run: |
           set -o pipefail
-          flutter build apk --release --target-platform android-arm64             --dart-define=GF_COMMIT=${{ github.sha }} 2>&1 | tee "$RUNNER_TEMP/build-android.log"
+          for variante in ufficiale prova; do
+            flutter build apk --release --flavor "$variante" \
+              --target-platform android-arm64 \
+              --dart-define=GF_COMMIT=${{ github.sha }} \
+              2>&1 | tee -a "$RUNNER_TEMP/build-android.log"
+          done
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: GestionaleFinanziaria-android-${{ github.sha }}
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: |
+            build/app/outputs/flutter-apk/app-ufficiale-release.apk
+            build/app/outputs/flutter-apk/app-prova-release.apk
           if-no-files-found: error
           retention-days: 14
       - name: Accelerazione KVM per l'emulatore
@@ -159,7 +186,7 @@ jobs:
           ram-size: 4096M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: bash -c 'set -o pipefail; flutter test integration_test -d emulator-5554 -r expanded 2>&1 | tee "$RUNNER_TEMP/integration-android.log"'
+          script: bash -c 'set -o pipefail; flutter test integration_test --flavor prova -d emulator-5554 -r expanded 2>&1 | tee "$RUNNER_TEMP/integration-android.log"'
       - name: Motivo dell'errore
         if: failure()
         run: |
@@ -169,3 +196,6 @@ jobs:
           motivo="${motivo//$'\n'/'%0A'}"
           motivo="${motivo//$'\r'/}"
           echo "::error title=Android::${motivo}"
+      - name: Via la chiave di firma dal runner
+        if: always()
+        run: rm -f android/key.properties android/app/upload-keystore.jks

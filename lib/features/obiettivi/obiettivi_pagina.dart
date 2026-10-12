@@ -540,6 +540,7 @@ class _VersamentoState extends State<_Versamento> {
             children: [
               if (s.colletta) ...[
                 DropdownButtonFormField<String>(
+                  isExpanded: true,
                   initialValue: _partecipante,
                   decoration: const InputDecoration(
                     labelText: 'Chi ha versato',
