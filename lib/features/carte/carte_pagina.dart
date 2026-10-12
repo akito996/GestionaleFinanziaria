@@ -7,6 +7,7 @@ import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import '../comuni/errori.dart';
 import '../comuni/navigazione.dart';
+import '../comuni/layout.dart';
 import '../movimenti/movimento_modulo.dart';
 import '../movimenti/riga_movimento.dart';
 import '../portafogli/portafoglio_pagina.dart';
@@ -48,9 +49,8 @@ class _CartePaginaState extends State<CartePagina> {
           if (carte.isEmpty) {
             return const _NessunaCarta();
           }
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-            children: [
+          return ElencoSchede(
+            schede: [
               for (final c in carte)
                 _SchedaCarta(sessione: widget.sessione, stato: c),
             ],

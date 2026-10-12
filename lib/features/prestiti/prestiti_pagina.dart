@@ -5,6 +5,7 @@ import '../../core/db/tabelle.dart';
 import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import '../comuni/navigazione.dart';
+import '../comuni/layout.dart';
 import '../movimenti/riga_movimento.dart';
 import 'avviso_maxi.dart';
 import 'prestito_modulo.dart';
@@ -54,9 +55,8 @@ class _PrestitiPaginaState extends State<PrestitiPagina> {
             return const _NessunPrestito();
           }
           final residuo = prestiti.fold<int>(0, (t, p) => t + p.debitoResiduo);
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-            children: [
+          return ElencoSchede(
+            intestazione: [
               Card(
                 child: ListTile(
                   title: const Text('Debito residuo totale'),
@@ -66,6 +66,8 @@ class _PrestitiPaginaState extends State<PrestitiPagina> {
                   ),
                 ),
               ),
+            ],
+            schede: [
               for (final p in prestiti)
                 _SchedaPrestito(sessione: widget.sessione, stato: p),
             ],
@@ -278,140 +280,142 @@ class PrestitoPagina extends StatelessWidget {
               ),
             ],
           ),
-          body: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Wrap(
-                    spacing: 32,
-                    runSpacing: 12,
-                    children: [
-                      _Dato('Importo finanziato', euro(p.capitaleMinimo)),
-                      _Dato('Rata', euro(p.importoRataMinimo)),
-                      if (p.maxiRataMinimo != null)
-                        _Dato('Maxi rata finale', euro(p.maxiRataMinimo!)),
-                      if (s.speseRata > 0)
-                        _Dato('Spese per rata', euro(s.speseRata)),
-                      _Dato('Rate', '${s.ratePagate} / ${p.numeroRate}'),
-                      _Dato('Debito residuo', euro(s.debitoResiduo)),
-                      _Dato('Ancora da pagare', euro(s.daPagare)),
-                      if (p.tanPuntiBase != null)
-                        _Dato(
-                          'TAN',
-                          '${(p.tanPuntiBase! / 100).toStringAsFixed(2).replaceAll('.', ',')} %',
-                        ),
-                      if (p.taegPuntiBase != null)
-                        _Dato(
-                          'TAEG',
-                          '${(p.taegPuntiBase! / 100).toStringAsFixed(2).replaceAll('.', ',')} %',
-                        ),
-                    ],
+          body: LayoutBuilder(
+            builder: (context, vincoli) => ListView(
+              padding: marginiPagina(vincoli, sotto: 16),
+              children: [
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Wrap(
+                      spacing: 32,
+                      runSpacing: 12,
+                      children: [
+                        _Dato('Importo finanziato', euro(p.capitaleMinimo)),
+                        _Dato('Rata', euro(p.importoRataMinimo)),
+                        if (p.maxiRataMinimo != null)
+                          _Dato('Maxi rata finale', euro(p.maxiRataMinimo!)),
+                        if (s.speseRata > 0)
+                          _Dato('Spese per rata', euro(s.speseRata)),
+                        _Dato('Rate', '${s.ratePagate} / ${p.numeroRate}'),
+                        _Dato('Debito residuo', euro(s.debitoResiduo)),
+                        _Dato('Ancora da pagare', euro(s.daPagare)),
+                        if (p.tanPuntiBase != null)
+                          _Dato(
+                            'TAN',
+                            '${(p.tanPuntiBase! / 100).toStringAsFixed(2).replaceAll('.', ',')} %',
+                          ),
+                        if (p.taegPuntiBase != null)
+                          _Dato(
+                            'TAEG',
+                            '${(p.taegPuntiBase! / 100).toStringAsFixed(2).replaceAll('.', ',')} %',
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              if (PrestitiServizio.avvisoMaxi(s, DateTime.now())
-                  case final maxi?)
-                Card(
-                  child: ListTile(
-                    leading: Icon(switch (p.decisioneMaxi) {
-                      DecisioneMaxi.rifinanzia => Icons.autorenew,
-                      DecisioneMaxi.estingui => Icons.payments_outlined,
-                      _ => Icons.help_outline,
-                    }),
-                    title: Text(switch (p.decisioneMaxi) {
-                      DecisioneMaxi.rifinanzia =>
-                        'Maxi rata: la rifinanzi con un altro prestito',
-                      DecisioneMaxi.estingui =>
-                        "Maxi rata: la paghi in un'unica soluzione",
-                      _ => 'Maxi rata: decisione da prendere',
-                    }),
-                    subtitle: Text(
-                      'Scadenza ${dataLeggibile(context, maxi.scadenza)} · '
-                      '${euro(maxi.importo)}',
-                    ),
-                    trailing: TextButton(
-                      onPressed: () =>
-                          chiediDecisioneMaxi(context, sessione, maxi),
-                      child: Text(
-                        p.decisioneMaxi == null ? 'Decidi' : 'Cambia',
+                if (PrestitiServizio.avvisoMaxi(s, DateTime.now())
+                    case final maxi?)
+                  Card(
+                    child: ListTile(
+                      leading: Icon(switch (p.decisioneMaxi) {
+                        DecisioneMaxi.rifinanzia => Icons.autorenew,
+                        DecisioneMaxi.estingui => Icons.payments_outlined,
+                        _ => Icons.help_outline,
+                      }),
+                      title: Text(switch (p.decisioneMaxi) {
+                        DecisioneMaxi.rifinanzia =>
+                          'Maxi rata: la rifinanzi con un altro prestito',
+                        DecisioneMaxi.estingui =>
+                          "Maxi rata: la paghi in un'unica soluzione",
+                        _ => 'Maxi rata: decisione da prendere',
+                      }),
+                      subtitle: Text(
+                        'Scadenza ${dataLeggibile(context, maxi.scadenza)} · '
+                        '${euro(maxi.importo)}',
+                      ),
+                      trailing: TextButton(
+                        onPressed: () =>
+                            chiediDecisioneMaxi(context, sessione, maxi),
+                        child: Text(
+                          p.decisioneMaxi == null ? 'Decidi' : 'Cambia',
+                        ),
                       ),
                     ),
                   ),
-                ),
-              const SizedBox(height: 16),
-              Text('Piano delle rate', style: testo.titleMedium),
-              const SizedBox(height: 8),
-              Card(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    columnSpacing: 24,
-                    columns: const [
-                      DataColumn(label: Text('N.')),
-                      DataColumn(label: Text('Data')),
-                      DataColumn(label: Text('Rata'), numeric: true),
-                      DataColumn(label: Text('Capitale'), numeric: true),
-                      DataColumn(label: Text('Interessi'), numeric: true),
-                      DataColumn(label: Text('Residuo'), numeric: true),
-                      DataColumn(label: Text('Stato')),
-                    ],
-                    rows: [
-                      for (final r in s.rate)
-                        DataRow(
-                          cells: [
-                            DataCell(Text('${r.piano.numero}')),
-                            DataCell(Text(dataLeggibile(context, r.data))),
-                            DataCell(Text(euro(r.piano.rata))),
-                            DataCell(Text(euro(r.piano.quotaCapitale))),
-                            DataCell(Text(euro(r.piano.quotaInteressi))),
-                            DataCell(Text(euro(r.piano.debitoResiduo))),
-                            DataCell(
-                              r.pagata
-                                  ? Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.check_circle,
-                                          size: 16,
-                                          color: coloreEntrata(context),
+                const SizedBox(height: 16),
+                Text('Piano delle rate', style: testo.titleMedium),
+                const SizedBox(height: 8),
+                Card(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      columnSpacing: 24,
+                      columns: const [
+                        DataColumn(label: Text('N.')),
+                        DataColumn(label: Text('Data')),
+                        DataColumn(label: Text('Rata'), numeric: true),
+                        DataColumn(label: Text('Capitale'), numeric: true),
+                        DataColumn(label: Text('Interessi'), numeric: true),
+                        DataColumn(label: Text('Residuo'), numeric: true),
+                        DataColumn(label: Text('Stato')),
+                      ],
+                      rows: [
+                        for (final r in s.rate)
+                          DataRow(
+                            cells: [
+                              DataCell(Text('${r.piano.numero}')),
+                              DataCell(Text(dataLeggibile(context, r.data))),
+                              DataCell(Text(euro(r.piano.rata))),
+                              DataCell(Text(euro(r.piano.quotaCapitale))),
+                              DataCell(Text(euro(r.piano.quotaInteressi))),
+                              DataCell(Text(euro(r.piano.debitoResiduo))),
+                              DataCell(
+                                r.pagata
+                                    ? Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.check_circle,
+                                            size: 16,
+                                            color: coloreEntrata(context),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          const Text('Pagata'),
+                                        ],
+                                      )
+                                    : Text(
+                                        'Da pagare',
+                                        style: TextStyle(
+                                          color: schema.onSurfaceVariant,
                                         ),
-                                        const SizedBox(width: 4),
-                                        const Text('Pagata'),
-                                      ],
-                                    )
-                                  : Text(
-                                      'Da pagare',
-                                      style: TextStyle(
-                                        color: schema.onSurfaceVariant,
                                       ),
-                                    ),
-                            ),
-                          ],
-                        ),
-                    ],
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              if (s.speseRata > 0)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    'A ogni rata si aggiungono ${euro(s.speseRata)} di spese di '
-                    'incasso: il movimento registrato è rata + spese.',
-                    style: testo.bodySmall,
+                if (s.speseRata > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      'A ogni rata si aggiungono ${euro(s.speseRata)} di spese di '
+                      'incasso: il movimento registrato è rata + spese.',
+                      style: testo.bodySmall,
+                    ),
                   ),
-                ),
-              if (p.tanPuntiBase == null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    'Quote di capitale e interessi stimate dalla rata (TAN non indicato).',
-                    style: testo.bodySmall,
+                if (p.tanPuntiBase == null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      'Quote di capitale e interessi stimate dalla rata (TAN non indicato).',
+                      style: testo.bodySmall,
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         );
       },

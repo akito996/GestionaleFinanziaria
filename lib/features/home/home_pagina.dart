@@ -8,6 +8,7 @@ import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import '../comuni/icone.dart';
 import '../comuni/in_arrivo.dart';
+import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
 import '../costo_vita/costo_vita_pagina.dart';
 import '../export/export_dialogo.dart';
@@ -478,33 +479,36 @@ class _HomePaginaState extends State<HomePagina> {
     return LayoutBuilder(
       builder: (context, vincoli) {
         const margine = EdgeInsets.fromLTRB(16, 16, 16, 96);
-        if (vincoli.maxWidth >= 900) {
+        if (vincoli.maxWidth >= Larghezze.ampia) {
           return SingleChildScrollView(
             padding: margine,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: colonnaPortafogli,
+            child: ContenutoCentrato(
+              larghezzaMassima: Larghezze.dueColonne,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: colonnaPortafogli,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 24),
-                Expanded(
-                  flex: 3,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: colonnaMovimenti,
+                  const SizedBox(width: 24),
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: colonnaMovimenti,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         }
         return ListView(
-          padding: margine,
+          padding: marginiPagina(vincoli),
           children: [
             ...colonnaPortafogli,
             const SizedBox(height: 16),

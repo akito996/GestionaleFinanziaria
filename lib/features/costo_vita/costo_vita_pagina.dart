@@ -6,6 +6,7 @@ import '../../core/db/tabelle.dart';
 import '../../core/importo.dart';
 import '../../core/ricorrenza.dart';
 import '../../core/sessione.dart';
+import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
 import '../grafici/grafici.dart';
 import '../grafici/grafici_avanzati.dart';
@@ -113,113 +114,117 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
           }
           final mese = storico.last;
           final senzaVoci = storico.every((m) => m.vuoto);
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-            children: [
-              _SceltaMese(
-                mese: _mese,
-                onPrecedente: () => _spostaMese(-1),
-                onSuccessivo: () => _spostaMese(1),
-              ),
-              if (senzaVoci)
-                _PrimaConfigurazione(
-                  onSuggerita: _suggerita,
-                  sessione: widget.sessione,
-                )
-              else ...[
-                _Riepilogo(mese: mese),
-                const SizedBox(height: 16),
-                SchedaGrafico(
-                  sessione: widget.sessione,
-                  chiave: 'costo_vita.storico',
-                  titolo: 'Ultimi 6 mesi',
-                  tipi: const [
-                    TipoGrafico.barreImpilate,
-                    TipoGrafico.colonne,
-                    TipoGrafico.linee,
-                    TipoGrafico.tabella,
-                  ],
-                  costruisci: (context, tipo) => switch (tipo) {
-                    TipoGrafico.colonne => ColonneRaggruppate(
-                      etichette: [
-                        for (final m in storico) meseBreve(context, m.mese),
-                      ],
-                      valuta: 'EUR',
-                      serie: [
-                        SerieTempo('Fisse', [for (final m in storico) m.fisse]),
-                        SerieTempo('Variabili previste', [
-                          for (final m in storico) m.variabiliPreviste,
-                        ]),
-                        SerieTempo('Variabili reali', [
-                          for (final m in storico) m.variabiliReali,
-                        ]),
-                      ],
-                    ),
-                    TipoGrafico.linee => GraficoLinee(
-                      etichette: [
-                        for (final m in storico) meseBreve(context, m.mese),
-                      ],
-                      valuta: 'EUR',
-                      serie: [
-                        SerieTempo('Previsto', [
-                          for (final m in storico) m.totalePrevisto,
-                        ]),
-                        SerieTempo('Speso davvero (fisse + variabili)', [
-                          for (final m in storico) m.fisse + m.variabiliReali,
-                        ]),
-                      ],
-                    ),
-                    TipoGrafico.tabella => TabellaDati(
-                      colonne: const [
-                        'Mese',
-                        'Fisse',
-                        'Variabili previste',
-                        'Variabili reali',
-                        'Totale previsto',
-                      ],
-                      righe: [
-                        for (final m in storico)
-                          [
-                            meseLeggibile(context, m.mese),
-                            Importo.formatta(m.fisse, 'EUR'),
-                            Importo.formatta(m.variabiliPreviste, 'EUR'),
-                            Importo.formatta(m.variabiliReali, 'EUR'),
-                            Importo.formatta(m.totalePrevisto, 'EUR'),
-                          ],
-                      ],
-                    ),
-                    _ => GraficoCostoVita(
-                      mesi: storico,
-                      nomeMese: (m) => meseBreve(context, m),
-                    ),
-                  },
-                ),
-                const SizedBox(height: 16),
-                _ElencoVoci(
-                  titolo: 'Spese fisse',
-                  voci: mese.voci.where((v) => v.fissa).toList(),
-                  sessione: widget.sessione,
+          return LayoutBuilder(
+            builder: (context, vincoli) => ListView(
+              padding: marginiPagina(vincoli, sopra: 8, sotto: 32),
+              children: [
+                _SceltaMese(
                   mese: _mese,
-                  tipo: TipoVoce.fissa,
-                  suggerite: _fisseSuggerite,
-                  onSuggerita: _suggerita,
+                  onPrecedente: () => _spostaMese(-1),
+                  onSuccessivo: () => _spostaMese(1),
                 ),
-                if (mese.rate.isNotEmpty) ...[
+                if (senzaVoci)
+                  _PrimaConfigurazione(
+                    onSuggerita: _suggerita,
+                    sessione: widget.sessione,
+                  )
+                else ...[
+                  _Riepilogo(mese: mese),
                   const SizedBox(height: 16),
-                  _ElencoRate(rate: mese.rate, sessione: widget.sessione),
+                  SchedaGrafico(
+                    sessione: widget.sessione,
+                    chiave: 'costo_vita.storico',
+                    titolo: 'Ultimi 6 mesi',
+                    tipi: const [
+                      TipoGrafico.barreImpilate,
+                      TipoGrafico.colonne,
+                      TipoGrafico.linee,
+                      TipoGrafico.tabella,
+                    ],
+                    costruisci: (context, tipo) => switch (tipo) {
+                      TipoGrafico.colonne => ColonneRaggruppate(
+                        etichette: [
+                          for (final m in storico) meseBreve(context, m.mese),
+                        ],
+                        valuta: 'EUR',
+                        serie: [
+                          SerieTempo('Fisse', [
+                            for (final m in storico) m.fisse,
+                          ]),
+                          SerieTempo('Variabili previste', [
+                            for (final m in storico) m.variabiliPreviste,
+                          ]),
+                          SerieTempo('Variabili reali', [
+                            for (final m in storico) m.variabiliReali,
+                          ]),
+                        ],
+                      ),
+                      TipoGrafico.linee => GraficoLinee(
+                        etichette: [
+                          for (final m in storico) meseBreve(context, m.mese),
+                        ],
+                        valuta: 'EUR',
+                        serie: [
+                          SerieTempo('Previsto', [
+                            for (final m in storico) m.totalePrevisto,
+                          ]),
+                          SerieTempo('Speso davvero (fisse + variabili)', [
+                            for (final m in storico) m.fisse + m.variabiliReali,
+                          ]),
+                        ],
+                      ),
+                      TipoGrafico.tabella => TabellaDati(
+                        colonne: const [
+                          'Mese',
+                          'Fisse',
+                          'Variabili previste',
+                          'Variabili reali',
+                          'Totale previsto',
+                        ],
+                        righe: [
+                          for (final m in storico)
+                            [
+                              meseLeggibile(context, m.mese),
+                              Importo.formatta(m.fisse, 'EUR'),
+                              Importo.formatta(m.variabiliPreviste, 'EUR'),
+                              Importo.formatta(m.variabiliReali, 'EUR'),
+                              Importo.formatta(m.totalePrevisto, 'EUR'),
+                            ],
+                        ],
+                      ),
+                      _ => GraficoCostoVita(
+                        mesi: storico,
+                        nomeMese: (m) => meseBreve(context, m),
+                      ),
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _ElencoVoci(
+                    titolo: 'Spese fisse',
+                    voci: mese.voci.where((v) => v.fissa).toList(),
+                    sessione: widget.sessione,
+                    mese: _mese,
+                    tipo: TipoVoce.fissa,
+                    suggerite: _fisseSuggerite,
+                    onSuggerita: _suggerita,
+                  ),
+                  if (mese.rate.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _ElencoRate(rate: mese.rate, sessione: widget.sessione),
+                  ],
+                  const SizedBox(height: 16),
+                  _ElencoVoci(
+                    titolo: 'Spese variabili',
+                    voci: mese.voci.where((v) => !v.fissa).toList(),
+                    sessione: widget.sessione,
+                    mese: _mese,
+                    tipo: TipoVoce.variabile,
+                    suggerite: _variabiliSuggerite,
+                    onSuggerita: _suggerita,
+                  ),
                 ],
-                const SizedBox(height: 16),
-                _ElencoVoci(
-                  titolo: 'Spese variabili',
-                  voci: mese.voci.where((v) => !v.fissa).toList(),
-                  sessione: widget.sessione,
-                  mese: _mese,
-                  tipo: TipoVoce.variabile,
-                  suggerite: _variabiliSuggerite,
-                  onSuggerita: _suggerita,
-                ),
               ],
-            ],
+            ),
           );
         },
       ),

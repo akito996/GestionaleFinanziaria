@@ -11,6 +11,7 @@ import '../costo_vita/costo_vita_pagina.dart';
 import '../home/home_pagina.dart';
 import '../obiettivi/obiettivi_pagina.dart';
 import 'icone.dart';
+import 'layout.dart';
 
 /// Pulsante "blocca" presente in ogni sezione: lucchetto aperto = archivio
 /// aperto. Accanto, la campanella delle decisioni in sospeso (maxi rate).
@@ -39,8 +40,8 @@ class PulsanteBlocca extends StatelessWidget {
 }
 
 /// Da questa larghezza la navigazione è una barra laterale; sotto, una barra
-/// in basso (telefono).
-const larghezzaBarraLaterale = 700.0;
+/// in basso (telefono in verticale).
+const larghezzaBarraLaterale = Larghezze.media;
 
 /// Sezioni dell'app: barra laterale su schermi larghi (Windows), barra in basso
 /// sul telefono.
@@ -157,18 +158,29 @@ class _GuscioState extends State<Guscio> {
           return Scaffold(
             body: Row(
               children: [
-                NavigationRail(
-                  selectedIndex: _sezione,
-                  onDestinationSelected: _vaiA,
-                  labelType: NavigationRailLabelType.all,
-                  destinations: [
-                    for (final (icona, selezionata, etichetta) in _voci)
-                      NavigationRailDestination(
-                        icon: Icon(icona),
-                        selectedIcon: Icon(selezionata),
-                        label: Text(etichetta),
+                // Scorrevole: sul telefono in orizzontale le voci non stanno
+                // tutte in altezza.
+                LayoutBuilder(
+                  builder: (context, barra) => SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: barra.maxHeight),
+                      child: IntrinsicHeight(
+                        child: NavigationRail(
+                          selectedIndex: _sezione,
+                          onDestinationSelected: _vaiA,
+                          labelType: NavigationRailLabelType.all,
+                          destinations: [
+                            for (final (icona, selezionata, etichetta) in _voci)
+                              NavigationRailDestination(
+                                icon: Icon(icona),
+                                selectedIcon: Icon(selezionata),
+                                label: Text(etichetta),
+                              ),
+                          ],
+                        ),
                       ),
-                  ],
+                    ),
+                  ),
                 ),
                 const VerticalDivider(width: 1),
                 Expanded(child: corpo),

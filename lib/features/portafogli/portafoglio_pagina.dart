@@ -5,6 +5,7 @@ import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import '../carte/carte_pagina.dart';
 import '../comuni/in_arrivo.dart';
+import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
 import '../costo_vita/costo_vita_pagina.dart' show meseBreve;
 import '../../core/db/statistiche.dart';
@@ -123,72 +124,74 @@ class PortafoglioPagina extends StatelessWidget {
             ),
             builder: (context, snapshot) {
               final movimenti = snapshot.data ?? const [];
-              return ListView(
-                padding: const EdgeInsets.only(bottom: 96),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      children: [
-                        Text(
-                          p.tipo.nome,
-                          style: Theme.of(context).textTheme.labelLarge,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          Importo.formatta(p.saldo, p.portafoglio.valuta),
-                          style: Theme.of(context).textTheme.displaySmall
-                              ?.copyWith(
-                                color: p.saldo < 0
-                                    ? Theme.of(context).colorScheme.error
-                                    : null,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      children: [
-                        AvvisiCarte(
-                          sessione: sessione,
-                          portafoglioId: portafoglioId,
-                        ),
-                        SchedaInArrivo(
-                          sessione: sessione,
-                          portafoglioId: portafoglioId,
-                          giorni: 30,
-                          titolo: 'Addebiti in arrivo su questo portafoglio',
-                          escludiOrigini: const {'carta'},
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: _AndamentoSaldo(
-                      sessione: sessione,
-                      portafoglioId: portafoglioId,
-                      valuta: p.portafoglio.valuta,
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  if (movimenti.isEmpty && snapshot.hasData)
-                    const Padding(
-                      padding: EdgeInsets.all(32),
-                      child: Text(
-                        'Nessun movimento. Premi "+ Movimento" per aggiungerne uno.',
-                        textAlign: TextAlign.center,
+              return LayoutBuilder(
+                builder: (context, vincoli) => ListView(
+                  padding: marginiPagina(vincoli, sopra: 0),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        children: [
+                          Text(
+                            p.tipo.nome,
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            Importo.formatta(p.saldo, p.portafoglio.valuta),
+                            style: Theme.of(context).textTheme.displaySmall
+                                ?.copyWith(
+                                  color: p.saldo < 0
+                                      ? Theme.of(context).colorScheme.error
+                                      : null,
+                                ),
+                          ),
+                        ],
                       ),
                     ),
-                  for (final m in movimenti)
-                    RigaMovimento(
-                      sessione: sessione,
-                      dettaglio: m,
-                      portafoglioId: portafoglioId,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: [
+                          AvvisiCarte(
+                            sessione: sessione,
+                            portafoglioId: portafoglioId,
+                          ),
+                          SchedaInArrivo(
+                            sessione: sessione,
+                            portafoglioId: portafoglioId,
+                            giorni: 30,
+                            titolo: 'Addebiti in arrivo su questo portafoglio',
+                            escludiOrigini: const {'carta'},
+                          ),
+                        ],
+                      ),
                     ),
-                ],
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: _AndamentoSaldo(
+                        sessione: sessione,
+                        portafoglioId: portafoglioId,
+                        valuta: p.portafoglio.valuta,
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    if (movimenti.isEmpty && snapshot.hasData)
+                      const Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Text(
+                          'Nessun movimento. Premi "+ Movimento" per aggiungerne uno.',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    for (final m in movimenti)
+                      RigaMovimento(
+                        sessione: sessione,
+                        dettaglio: m,
+                        portafoglioId: portafoglioId,
+                      ),
+                  ],
+                ),
               );
             },
           ),

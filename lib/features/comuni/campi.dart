@@ -62,6 +62,8 @@ class _DialogoCalendarioState extends State<_DialogoCalendario> {
     final ieri = oggi.subtract(const Duration(days: 1));
     final testo = Theme.of(context).textTheme;
     return AlertDialog(
+      // Sul telefono in orizzontale il calendario scorre invece di uscire.
+      scrollable: true,
       title: Text(widget.titolo),
       contentPadding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
       content: SizedBox(

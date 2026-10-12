@@ -9,6 +9,7 @@ import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import '../comuni/campi.dart';
 import '../comuni/errori.dart';
+import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
 import '../movimenti/riga_movimento.dart';
 
@@ -51,9 +52,8 @@ class _ObiettiviPaginaState extends State<ObiettiviPagina> {
           if (obiettivi.isEmpty) {
             return const _Vuoto();
           }
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-            children: [
+          return ElencoSchede(
+            schede: [
               for (final o in obiettivi)
                 _SchedaObiettivo(sessione: widget.sessione, stato: o),
             ],
@@ -260,134 +260,137 @@ class ObiettivoPagina extends StatelessWidget {
             icon: const Icon(Icons.add),
             label: const Text('Versamento'),
           ),
-          body: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-            children: [
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(euro(s.versato), style: testo.displaySmall),
-                      Text('di ${euro(o.importoObiettivoMinimo)}'),
-                      const SizedBox(height: 12),
-                      LinearProgressIndicator(
-                        value: s.avanzamento,
-                        minHeight: 10,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        s.raggiunto
-                            ? 'Obiettivo raggiunto!'
-                            : 'Mancano ${euro(s.mancante)}'
-                                  '${s.alMese == null ? '' : ' · ${euro(s.alMese!)} al mese fino al ${dataLeggibile(context, s.scadenza!)}'}',
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              if (s.colletta) ...[
-                const SizedBox(height: 16),
-                Text('Partecipanti', style: testo.titleMedium),
+          body: LayoutBuilder(
+            builder: (context, vincoli) => ListView(
+              padding: marginiPagina(vincoli),
+              children: [
                 Card(
-                  child: Column(
-                    children: [
-                      for (final q in s.quote)
-                        ListTile(
-                          leading: Icon(
-                            q.inRegola
-                                ? Icons.check_circle
-                                : Icons.hourglass_bottom,
-                            color: q.inRegola ? coloreEntrata(context) : null,
-                          ),
-                          title: Text(q.partecipante.nome),
-                          subtitle: Text(
-                            q.inRegola
-                                ? 'Ha versato ${euro(q.versato)}'
-                                : 'Ha versato ${euro(q.versato)} · mancano ${euro(q.mancante)}',
-                          ),
-                          trailing: Text('Quota ${euro(q.quota)}'),
-                          onTap: q.inRegola
-                              ? null
-                              : () => apriVersamento(
-                                  context,
-                                  sessione,
-                                  s,
-                                  partecipante: q,
-                                ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(euro(s.versato), style: testo.displaySmall),
+                        Text('di ${euro(o.importoObiettivoMinimo)}'),
+                        const SizedBox(height: 12),
+                        LinearProgressIndicator(
+                          value: s.avanzamento,
+                          minHeight: 10,
                         ),
-                      ListTile(
-                        leading: const Icon(Icons.person_add_alt),
-                        title: const Text('Aggiungi partecipante'),
-                        onTap: () async {
-                          final nome = await _chiediNome(context);
-                          if (nome != null) {
-                            await sessione.obiettivi.aggiungiPartecipante(
-                              o.id,
-                              nome,
-                            );
-                          }
-                        },
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+                        Text(
+                          s.raggiunto
+                              ? 'Obiettivo raggiunto!'
+                              : 'Mancano ${euro(s.mancante)}'
+                                    '${s.alMese == null ? '' : ' · ${euro(s.alMese!)} al mese fino al ${dataLeggibile(context, s.scadenza!)}'}',
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ],
-              const SizedBox(height: 16),
-              Text('Versamenti', style: testo.titleMedium),
-              Card(
-                child: Column(
-                  children: [
-                    if (s.versamenti.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(20),
-                        child: Text('Ancora nessun versamento.'),
-                      ),
-                    for (final v in s.versamenti)
-                      ListTile(
-                        leading: const Icon(Icons.payments_outlined),
-                        title: Text(euro(v.importoMinimo)),
-                        subtitle: Text(
-                          [
-                            if (v.partecipanteId != null)
-                              nomi[v.partecipanteId] ?? '',
-                            dataLeggibile(
-                              context,
-                              Contabilita.daGiorno(v.data),
+                if (s.colletta) ...[
+                  const SizedBox(height: 16),
+                  Text('Partecipanti', style: testo.titleMedium),
+                  Card(
+                    child: Column(
+                      children: [
+                        for (final q in s.quote)
+                          ListTile(
+                            leading: Icon(
+                              q.inRegola
+                                  ? Icons.check_circle
+                                  : Icons.hourglass_bottom,
+                              color: q.inRegola ? coloreEntrata(context) : null,
                             ),
-                            if (v.nota.isNotEmpty) v.nota,
-                            if (v.movimentoId != null)
-                              'registrato nel portafoglio',
-                          ].where((t) => t.isNotEmpty).join(' · '),
-                        ),
-                        trailing: IconButton(
-                          tooltip: 'Annulla versamento',
-                          icon: const Icon(Icons.undo),
-                          onPressed: () async {
-                            final servizio = sessione.obiettivi;
-                            await servizio.annullaVersamento(v.id);
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('Versamento annullato'),
-                                  action: SnackBarAction(
-                                    label: 'Ripristina',
-                                    onPressed: () => servizio.annullaVersamento(
-                                      v.id,
-                                      annullato: false,
-                                    ),
+                            title: Text(q.partecipante.nome),
+                            subtitle: Text(
+                              q.inRegola
+                                  ? 'Ha versato ${euro(q.versato)}'
+                                  : 'Ha versato ${euro(q.versato)} · mancano ${euro(q.mancante)}',
+                            ),
+                            trailing: Text('Quota ${euro(q.quota)}'),
+                            onTap: q.inRegola
+                                ? null
+                                : () => apriVersamento(
+                                    context,
+                                    sessione,
+                                    s,
+                                    partecipante: q,
                                   ),
-                                ),
+                          ),
+                        ListTile(
+                          leading: const Icon(Icons.person_add_alt),
+                          title: const Text('Aggiungi partecipante'),
+                          onTap: () async {
+                            final nome = await _chiediNome(context);
+                            if (nome != null) {
+                              await sessione.obiettivi.aggiungiPartecipante(
+                                o.id,
+                                nome,
                               );
                             }
                           },
                         ),
-                      ),
-                  ],
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                Text('Versamenti', style: testo.titleMedium),
+                Card(
+                  child: Column(
+                    children: [
+                      if (s.versamenti.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Text('Ancora nessun versamento.'),
+                        ),
+                      for (final v in s.versamenti)
+                        ListTile(
+                          leading: const Icon(Icons.payments_outlined),
+                          title: Text(euro(v.importoMinimo)),
+                          subtitle: Text(
+                            [
+                              if (v.partecipanteId != null)
+                                nomi[v.partecipanteId] ?? '',
+                              dataLeggibile(
+                                context,
+                                Contabilita.daGiorno(v.data),
+                              ),
+                              if (v.nota.isNotEmpty) v.nota,
+                              if (v.movimentoId != null)
+                                'registrato nel portafoglio',
+                            ].where((t) => t.isNotEmpty).join(' · '),
+                          ),
+                          trailing: IconButton(
+                            tooltip: 'Annulla versamento',
+                            icon: const Icon(Icons.undo),
+                            onPressed: () async {
+                              final servizio = sessione.obiettivi;
+                              await servizio.annullaVersamento(v.id);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text('Versamento annullato'),
+                                    action: SnackBarAction(
+                                      label: 'Ripristina',
+                                      onPressed: () =>
+                                          servizio.annullaVersamento(
+                                            v.id,
+                                            annullato: false,
+                                          ),
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

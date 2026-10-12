@@ -109,11 +109,11 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  # App Android da installare sul telefono (Actions -> esecuzione -> Artifacts):
-  # variante "ufficiale" (dati veri) e "prova" (installabile accanto), più il test
-  # sull'app vera in un emulatore Android (vedi docs/adr/0010).
+  # App Android da installare su telefono e tablet (Actions -> esecuzione ->
+  # Artifacts): variante "ufficiale" (dati veri) e "prova" (installabile accanto).
+  # Vedi docs/adr/0010.
   android:
-    name: Android (APK e test nell'emulatore)
+    name: Android (APK ufficiale e prova)
     needs: test
     runs-on: ubuntu-24.04
     timeout-minutes: 60
@@ -155,7 +155,7 @@ jobs:
             echo "keyAlias=$KEY_ALIAS"
             echo "storeFile=upload-keystore.jks"
           } > android/key.properties
-      - name: Build APK (ufficiale e prova, telefoni a 64 bit)
+      - name: Build APK (ufficiale e prova, telefoni e tablet a 64 bit)
         run: |
           set -o pipefail
           for variante in ufficiale prova; do
@@ -172,17 +172,61 @@ jobs:
             build/app/outputs/flutter-apk/app-prova-release.apk
           if-no-files-found: error
           retention-days: 14
+      - name: Motivo dell'errore (build)
+        if: failure()
+        run: |
+          motivo="$(grep -v -E '^\s*$' "$RUNNER_TEMP/build-android.log" 2>/dev/null | grep -E -A25 'FAILURE|What went wrong|Error' | head -60)"
+          motivo="${motivo//'%'/'%25'}"
+          motivo="${motivo//$'\n'/'%0A'}"
+          motivo="${motivo//$'\r'/}"
+          echo "::error title=Android (build)::${motivo}"
+      - name: Via la chiave di firma dal runner
+        if: always()
+        run: rm -f android/key.properties android/app/upload-keystore.jks
+
+  # Test sull'app vera in emulatori Android: un telefono e un tablet.
+  android-emulatore:
+    name: Android (${{ matrix.dispositivo }} nell'emulatore)
+    needs: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - dispositivo: telefono
+            profilo: pixel_6
+          - dispositivo: tablet
+            profilo: pixel_tablet
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Java 17
+        run: echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+      - name: Flutter (versione da pubspec.yaml)
+        run: |
+          version="$(sed -n 's/^  flutter: *//p' pubspec.yaml)"
+          git clone --depth 1 --branch "$version" https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - name: Prima configurazione di Flutter e licenze Android
+        run: |
+          flutter --disable-analytics
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+      - name: Dipendenze (bloccate da pubspec.lock)
+        run: flutter pub get --enforce-lockfile
       - name: Accelerazione KVM per l'emulatore
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Test sull'app vera nell'emulatore Android
+      - name: Test sull'app vera nell'emulatore (${{ matrix.dispositivo }})
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 34
           arch: x86_64
           target: google_apis
+          profile: ${{ matrix.profilo }}
           ram-size: 4096M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
@@ -190,12 +234,9 @@ jobs:
       - name: Motivo dell'errore
         if: failure()
         run: |
-          log="$(cat "$RUNNER_TEMP/build-android.log" "$RUNNER_TEMP/integration-android.log" 2>/dev/null)"
+          log="$(cat "$RUNNER_TEMP/integration-android.log" 2>/dev/null)"
           motivo="$( (echo "$log" | grep -E 'SCHERMO:|FINESTRA:|PULSANTE:|Warning: A call to tap'; echo "$log" | grep -v -E '^\s*$' | grep -E -A25 'EXCEPTION CAUGHT|Expected:|\[E\]|Error|FAILURE|What went wrong') | head -70)"
           motivo="${motivo//'%'/'%25'}"
           motivo="${motivo//$'\n'/'%0A'}"
           motivo="${motivo//$'\r'/}"
-          echo "::error title=Android::${motivo}"
-      - name: Via la chiave di firma dal runner
-        if: always()
-        run: rm -f android/key.properties android/app/upload-keystore.jks
+          echo "::error title=Android (${{ matrix.dispositivo }})::${motivo}"
