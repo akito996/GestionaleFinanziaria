@@ -1,7 +1,12 @@
-// Test sull'app vera (Windows in GitHub Actions): cartella dati reale, Argon2 a pieno
-// costo, SQLCipher e libsodium compilati per la piattaforma, appunti di sistema veri.
+// Test sull'app vera (in GitHub Actions: Windows, emulatori Android telefono e
+// tablet): cartella dati reale, Argon2 a pieno costo, SQLCipher e libsodium
+// compilati per la piattaforma, appunti di sistema veri.
 // Eseguire con: flutter test integration_test -d windows
+// (Android: flutter test integration_test --flavor prova -d <emulatore>)
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gestionale_finanziaria/app.dart';
 import 'package:gestionale_finanziaria/core/db/deposito_locale.dart';
@@ -99,7 +104,34 @@ void main() {
     await tocca(tester, find.text('Copia'));
     await attendi(tester, find.textContaining('Copiata'));
     await tocca(tester, find.widgetWithText(FilledButton, 'Continua'));
-    await tocca(tester, find.text('Incolla'));
+    // Su Android 13+ dopo una copia compare l'anteprima di sistema degli
+    // appunti: finché è aperta, l'app (senza il tocco di una persona) non può
+    // leggerli. Si aspetta che sparisca e, se serve, si riprova.
+    for (var tentativo = 1; tentativo <= 4; tentativo++) {
+      if (Platform.isAndroid) {
+        await Future<void>.delayed(const Duration(seconds: 3));
+      }
+      await tocca(tester, find.text('Incolla'));
+      for (
+        var i = 0;
+        i < 30 && find.text('Secret Key valida').evaluate().isEmpty;
+        i++
+      ) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      if (find.text('Secret Key valida').evaluate().isNotEmpty) {
+        break;
+      }
+      final appunti = await Clipboard.getData(Clipboard.kTextPlain);
+      debugPrint(
+        'APPUNTI (tentativo $tentativo): '
+        '${appunti?.text == null
+            ? 'vuoti'
+            : appunti!.text == secretKey
+            ? 'Secret Key giusta'
+            : 'altro testo'}',
+      );
+    }
     await attendi(tester, find.text('Secret Key valida'));
     await tocca(tester, find.text('Crea l\'archivio'));
     await attendi(tester, find.text('Crea il tuo primo portafoglio'));
