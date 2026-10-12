@@ -245,6 +245,12 @@ class Prestiti extends Table with ColonneSincronizzate {
   /// ammortamento resta sulla sola rata. `null` = nessuna.
   IntColumn get speseRataMinimo => integer().nullable()();
 
+  /// Cosa fare della maxi rata (vedi [DecisioneMaxi]); `null` = da decidere.
+  TextColumn get decisioneMaxi => text().nullable()();
+
+  /// AAAA-MM-GG dell'ultima volta che l'utente ha rimandato la decisione.
+  TextColumn get maxiRimandataIl => text().nullable()();
+
   /// Tassi in punti base (1% = 100), facoltativi.
   IntColumn get tanPuntiBase => integer().nullable()();
   IntColumn get taegPuntiBase => integer().nullable()();
@@ -261,6 +267,15 @@ class Prestiti extends Table with ColonneSincronizzate {
       text().withLength(min: 3, max: 10).withDefault(const Constant('EUR'))();
   TextColumn get note => text().withDefault(const Constant(''))();
   BoolColumn get archiviato => boolean().withDefault(const Constant(false))();
+}
+
+/// Valori ammessi per [Prestiti.decisioneMaxi].
+abstract final class DecisioneMaxi {
+  /// Un nuovo prestito paga la maxi rata: dal conto non esce.
+  static const rifinanzia = 'rifinanzia';
+
+  /// La maxi rata si paga in un'unica soluzione alla scadenza.
+  static const estingui = 'estingui';
 }
 
 /// Valori ammessi per [Prestiti.tipo].

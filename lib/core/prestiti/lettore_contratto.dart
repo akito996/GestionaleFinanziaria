@@ -4,6 +4,7 @@ import '../importo.dart';
 /// facoltativo: l'utente vede la proposta e la corregge prima di salvare.
 class ProposteContratto {
   const ProposteContratto({
+    this.nome,
     this.finanziatore,
     this.capitale,
     this.numeroRate,
@@ -18,6 +19,8 @@ class ProposteContratto {
     this.mutuo = false,
   });
 
+  /// Nome suggerito (es. "Rifinanziamento Auto"); il lettore non lo compila.
+  final String? nome;
   final String? finanziatore;
   final int? capitale;
   final int? numeroRate;

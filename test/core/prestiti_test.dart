@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gestionale_finanziaria/core/db/prestiti.dart';
 import 'package:gestionale_finanziaria/core/prestiti/ammortamento.dart';
 import 'package:gestionale_finanziaria/core/prestiti/lettore_contratto.dart';
 
@@ -268,5 +269,22 @@ void main() {
       expect(p.capitale, isNull);
       expect(p.numeroRate, isNull);
     });
+  });
+
+  test('maxi rata: quando richiedere la decisione dopo un rimando', () {
+    final scadenza = DateTime(2028, 11, 10);
+    DateTime prossimo(DateTime? r) =>
+        PrestitiServizio.prossimoAvvisoMaxi(scadenza, r);
+    // Mai chiesto: dai 6 mesi prima.
+    expect(prossimo(null), DateTime(2028, 5, 10));
+    // Lontano: 2 volte al mese (ogni 15 giorni).
+    expect(prossimo(DateTime(2028, 5, 10)), DateTime(2028, 5, 25));
+    // ...ma non oltre l'inizio degli ultimi 2 mesi (60 giorni prima).
+    expect(prossimo(DateTime(2028, 9, 5)), DateTime(2028, 9, 11));
+    // Ultimi 2 mesi: una volta a settimana, non oltre l'ultimo mese.
+    expect(prossimo(DateTime(2028, 9, 20)), DateTime(2028, 9, 27));
+    expect(prossimo(DateTime(2028, 10, 6)), DateTime(2028, 10, 11));
+    // Ultimo mese: ogni 3 giorni.
+    expect(prossimo(DateTime(2028, 10, 20)), DateTime(2028, 10, 23));
   });
 }

@@ -60,6 +60,27 @@ class RataDatata {
   final bool pagata;
 }
 
+/// Maxi rata in arrivo su cui l'utente deve decidere (rifinanziare o pagare).
+class AvvisoMaxi {
+  const AvvisoMaxi({
+    required this.stato,
+    required this.scadenza,
+    required this.importo,
+    required this.giorniMancanti,
+    required this.daChiedere,
+  });
+
+  final PrestitoConStato stato;
+  final DateTime scadenza;
+
+  /// Maxi rata + spese di incasso (quanto uscirebbe dal conto).
+  final int importo;
+  final int giorniMancanti;
+
+  /// `true` = va chiesto adesso (mai chiesto, o il rimando è scaduto).
+  final bool daChiedere;
+}
+
 class PrestitoConStato {
   const PrestitoConStato({
     required this.prestito,
@@ -124,18 +145,133 @@ class PrestitiServizio {
 
   /// Importo addebitato il giorno [data]: la rata (la maxi rata se è
   /// l'ultima) più le spese di incasso.
+  /// Con la maxi rata rifinanziata l'ultima rata non esce dal conto (0).
   static int importoRataAl(Prestito p, DateTime data) {
     final spese = p.speseRataMinimo ?? 0;
     final maxi = p.maxiRataMinimo;
     if (maxi == null) {
       return p.importoRataMinimo + spese;
     }
-    final date = _ricorrenza(p).tra(Contabilita.daGiorno(p.primaRata), data);
-    final ultima =
-        date.length == p.numeroRate &&
-        Contabilita.giorno(date.last) == Contabilita.giorno(data);
-    return (ultima ? maxi : p.importoRataMinimo) + spese;
+    if (!_ultima(p, data)) {
+      return p.importoRataMinimo + spese;
+    }
+    return p.decisioneMaxi == DecisioneMaxi.rifinanzia ? 0 : maxi + spese;
   }
+
+  static bool _ultima(Prestito p, DateTime data) {
+    final date = _ricorrenza(p).tra(Contabilita.daGiorno(p.primaRata), data);
+    return date.length == p.numeroRate &&
+        Contabilita.giorno(date.last) == Contabilita.giorno(data);
+  }
+
+  // --------------------------------------------------------- maxi rata
+
+  /// Da quando si chiede cosa fare della maxi rata: 6 mesi prima.
+  static DateTime inizioAvvisiMaxi(DateTime scadenza) =>
+      DateTime(scadenza.year, scadenza.month - 6, scadenza.day);
+
+  /// Prossima volta in cui chiedere, dopo un rimando del giorno [rimandataIl]:
+  /// ogni 15 giorni (2 volte al mese); negli ultimi 2 mesi ogni settimana;
+  /// nell'ultimo mese ogni 3 giorni. Senza rimandi: dall'inizio degli avvisi.
+  static DateTime prossimoAvvisoMaxi(DateTime scadenza, DateTime? rimandataIl) {
+    if (rimandataIl == null) {
+      return inizioAvvisiMaxi(scadenza);
+    }
+    final r = DateTime(rimandataIl.year, rimandataIl.month, rimandataIl.day);
+    final mancano = _giorniTra(r, scadenza);
+    final dueMesiPrima = DateTime(
+      scadenza.year,
+      scadenza.month,
+      scadenza.day - 60,
+    );
+    final unMesePrima = DateTime(
+      scadenza.year,
+      scadenza.month,
+      scadenza.day - 30,
+    );
+    if (mancano > 60) {
+      final p = DateTime(r.year, r.month, r.day + 15);
+      return p.isAfter(dueMesiPrima) ? dueMesiPrima : p;
+    }
+    if (mancano > 30) {
+      final p = DateTime(r.year, r.month, r.day + 7);
+      return p.isAfter(unMesePrima) ? unMesePrima : p;
+    }
+    return DateTime(r.year, r.month, r.day + 3);
+  }
+
+  /// Maxi rate senza decisione, dai 6 mesi prima fino alla scadenza.
+  static List<AvvisoMaxi> avvisiMaxi(
+    List<PrestitoConStato> stati,
+    DateTime adesso,
+  ) {
+    final oggi = DateTime(adesso.year, adesso.month, adesso.day);
+    final risultato = [
+      for (final s in stati)
+        if (avvisoMaxi(s, oggi) case final a?)
+          if (s.prestito.decisioneMaxi == null &&
+              !oggi.isBefore(inizioAvvisiMaxi(a.scadenza)))
+            a,
+    ]..sort((a, b) => a.scadenza.compareTo(b.scadenza));
+    return risultato;
+  }
+
+  /// La maxi rata di [s] non ancora pagata (anche già decisa o lontana),
+  /// oppure `null` se il prestito non ne ha o è già passata.
+  static AvvisoMaxi? avvisoMaxi(PrestitoConStato s, DateTime adesso) {
+    final p = s.prestito;
+    final oggi = DateTime(adesso.year, adesso.month, adesso.day);
+    if (p.maxiRataMinimo == null ||
+        s.rate.length != p.numeroRate ||
+        s.rate.last.pagata) {
+      return null;
+    }
+    final scadenza = s.rate.last.data;
+    if (oggi.isAfter(scadenza)) {
+      return null;
+    }
+    final rimandata = p.maxiRimandataIl == null
+        ? null
+        : Contabilita.daGiorno(p.maxiRimandataIl!);
+    return AvvisoMaxi(
+      stato: s,
+      scadenza: scadenza,
+      importo: p.maxiRataMinimo! + (p.speseRataMinimo ?? 0),
+      giorniMancanti: _giorniTra(oggi, scadenza),
+      daChiedere:
+          p.decisioneMaxi == null &&
+          !oggi.isBefore(prossimoAvvisoMaxi(scadenza, rimandata)),
+    );
+  }
+
+  static int _giorniTra(DateTime da, DateTime a) => DateTime.utc(
+    a.year,
+    a.month,
+    a.day,
+  ).difference(DateTime.utc(da.year, da.month, da.day)).inDays;
+
+  /// Avvisi sulle maxi rate, aggiornati quando cambiano prestiti o movimenti.
+  Stream<List<AvvisoMaxi>> osservaAvvisiMaxi() =>
+      osserva().map((stati) => avvisiMaxi(stati, _adesso()));
+
+  /// Decisione sulla maxi rata ([DecisioneMaxi]); `null` = di nuovo da decidere.
+  Future<void> decidiMaxi(String id, String? decisione) =>
+      (_db.update(_db.prestiti)..where((p) => p.id.equals(id))).write(
+        PrestitiCompanion(
+          aggiornatoIl: Value(_orologio.adesso()),
+          decisioneMaxi: Value(decisione),
+          maxiRimandataIl: const Value(null),
+        ),
+      );
+
+  /// "Ricordamelo più tardi": la prossima richiesta segue [prossimoAvvisoMaxi].
+  Future<void> rimandaMaxi(String id) =>
+      (_db.update(_db.prestiti)..where((p) => p.id.equals(id))).write(
+        PrestitiCompanion(
+          aggiornatoIl: Value(_orologio.adesso()),
+          maxiRimandataIl: Value(Contabilita.giorno(_oggi())),
+        ),
+      );
 
   static Ricorrenza _ricorrenza(Prestito p) => Ricorrenza(
     inizio: Contabilita.daGiorno(p.primaRata),
@@ -268,8 +404,14 @@ class PrestitiServizio {
     final rate = <RataDatata>[];
     for (var i = 0; i < piano.length && i < date.length; i++) {
       final data = date[i];
-      // Senza conto le rate non si registrano: si considerano pagate alla scadenza.
-      final pagata = p.portafoglioId == null
+      // Senza conto le rate non si registrano: si considerano pagate alla
+      // scadenza. Lo stesso per la maxi rata rifinanziata (la paga il nuovo
+      // prestito, dal conto non esce).
+      final rifinanziata =
+          i == p.numeroRate - 1 &&
+          p.maxiRataMinimo != null &&
+          p.decisioneMaxi == DecisioneMaxi.rifinanzia;
+      final pagata = p.portafoglioId == null || rifinanziata
           ? !data.isAfter(oggi)
           : pagate.contains(Contabilita.giorno(data));
       rate.add(RataDatata(piano[i], data, pagata: pagata));

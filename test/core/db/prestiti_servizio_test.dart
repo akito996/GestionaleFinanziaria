@@ -218,4 +218,73 @@ void main() {
     expect(s.debitoResiduo, 0);
     expect(s.daPagare, 0);
   });
+
+  group('maxi rata: decisione', () {
+    Future<String> autoConMaxi() => prestiti.crea(
+      DatiPrestito(
+        nome: 'Auto',
+        tipo: TipoPrestito.prestito,
+        capitale: 1200000,
+        numeroRate: 3,
+        importoRata: 300000,
+        maxiRata: 600000,
+        speseRata: 350,
+        primaRata: DateTime(2026, 10, 15),
+        portafoglioId: conto,
+      ),
+    );
+
+    test('si chiede da 6 mesi prima; rimandata torna dopo 15 giorni', () async {
+      // Ultima rata: 15/12/2026; avvisi dal 15/06/2026.
+      final id = await autoConMaxi();
+      adesso = DateTime(2026, 6, 1);
+      expect(
+        PrestitiServizio.avvisiMaxi(await prestiti.stati(), adesso),
+        isEmpty,
+      );
+
+      adesso = DateTime(2026, 7, 1);
+      var avvisi = await prestiti.osservaAvvisiMaxi().first;
+      expect(avvisi.single.daChiedere, isTrue);
+      expect(avvisi.single.importo, 600350);
+      expect(avvisi.single.scadenza, DateTime(2026, 12, 15));
+
+      await prestiti.rimandaMaxi(id);
+      avvisi = await prestiti.osservaAvvisiMaxi().first;
+      expect(avvisi.single.daChiedere, isFalse); // resta la campanella
+      adesso = DateTime(2026, 7, 16);
+      avvisi = await prestiti.osservaAvvisiMaxi().first;
+      expect(avvisi.single.daChiedere, isTrue);
+    });
+
+    test(
+      '"pago tutto": niente più avvisi, la maxi rata esce dal conto',
+      () async {
+        final id = await autoConMaxi();
+        adesso = DateTime(2026, 10, 1);
+        await prestiti.decidiMaxi(id, DecisioneMaxi.estingui);
+        expect(await prestiti.osservaAvvisiMaxi().first, isEmpty);
+        adesso = DateTime(2027, 1, 1);
+        await pian.registraScadute();
+        final importi = [
+          for (final m in await c.osservaMovimenti().first)
+            m.movimento.importoMinimo,
+        ]..sort();
+        expect(importi, [300350, 300350, 600350]);
+      },
+    );
+
+    test('"apro un altro prestito": la maxi rata non esce dal conto', () async {
+      final id = await autoConMaxi();
+      adesso = DateTime(2026, 10, 1);
+      await prestiti.decidiMaxi(id, DecisioneMaxi.rifinanzia);
+      expect(await prestiti.osservaAvvisiMaxi().first, isEmpty);
+      adesso = DateTime(2027, 1, 1);
+      expect(await pian.registraScadute(), 2);
+      final s = (await prestiti.stati()).single;
+      expect(s.rate.last.pagata, isTrue); // pagata dal nuovo prestito
+      expect(s.debitoResiduo, 0);
+      expect(s.daPagare, 0);
+    });
+  });
 }

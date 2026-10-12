@@ -5,13 +5,15 @@ import 'package:flutter/material.dart';
 import '../../core/sessione.dart';
 import '../carte/carte_pagina.dart';
 import '../categorie/categorie_pagina.dart';
+import '../prestiti/avviso_maxi.dart';
 import '../prestiti/prestiti_pagina.dart';
 import '../costo_vita/costo_vita_pagina.dart';
 import '../home/home_pagina.dart';
 import '../obiettivi/obiettivi_pagina.dart';
 import 'icone.dart';
 
-/// Pulsante "blocca" presente in ogni sezione: lucchetto aperto = archivio aperto.
+/// Pulsante "blocca" presente in ogni sezione: lucchetto aperto = archivio
+/// aperto. Accanto, la campanella delle decisioni in sospeso (maxi rate).
 class PulsanteBlocca extends StatelessWidget {
   const PulsanteBlocca({super.key, required this.sessione});
 
@@ -19,13 +21,19 @@ class PulsanteBlocca extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      tooltip: 'Archivio aperto: tocca per bloccarlo',
-      icon: const LucchettoAperto(),
-      onPressed: () {
-        ScaffoldMessenger.of(context).clearSnackBars();
-        sessione.blocca();
-      },
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        CampanellaMaxi(sessione: sessione),
+        IconButton(
+          tooltip: 'Archivio aperto: tocca per bloccarlo',
+          icon: const LucchettoAperto(),
+          onPressed: () {
+            ScaffoldMessenger.of(context).clearSnackBars();
+            sessione.blocca();
+          },
+        ),
+      ],
     );
   }
 }
@@ -57,6 +65,14 @@ class _GuscioState extends State<Guscio> {
       const Duration(minutes: 15),
       (_) => _registra(),
     );
+    // All'apertura: le decisioni da prendere (es. maxi rata in arrivo).
+    WidgetsBinding.instance.addPostFrameCallback((_) => _avvisi());
+  }
+
+  Future<void> _avvisi() async {
+    if (mounted && widget.sessione.fase == FaseSessione.sbloccata) {
+      await controllaAvvisiMaxi(context, widget.sessione);
+    }
   }
 
   @override
@@ -70,6 +86,8 @@ class _GuscioState extends State<Guscio> {
       return;
     }
     final n = await widget.sessione.pianificatore.registraScadute();
+    // Se l'app resta aperta per giorni, le richieste rimandate tornano.
+    await _avvisi();
     if (n > 0 && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

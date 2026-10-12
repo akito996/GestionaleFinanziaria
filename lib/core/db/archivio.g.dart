@@ -6897,6 +6897,28 @@ class $PrestitiTable extends Prestiti with TableInfo<$PrestitiTable, Prestito> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _decisioneMaxiMeta = const VerificationMeta(
+    'decisioneMaxi',
+  );
+  @override
+  late final GeneratedColumn<String> decisioneMaxi = GeneratedColumn<String>(
+    'decisione_maxi',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _maxiRimandataIlMeta = const VerificationMeta(
+    'maxiRimandataIl',
+  );
+  @override
+  late final GeneratedColumn<String> maxiRimandataIl = GeneratedColumn<String>(
+    'maxi_rimandata_il',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _tanPuntiBaseMeta = const VerificationMeta(
     'tanPuntiBase',
   );
@@ -7026,6 +7048,8 @@ class $PrestitiTable extends Prestiti with TableInfo<$PrestitiTable, Prestito> {
     importoRataMinimo,
     maxiRataMinimo,
     speseRataMinimo,
+    decisioneMaxi,
+    maxiRimandataIl,
     tanPuntiBase,
     taegPuntiBase,
     primaRata,
@@ -7140,6 +7164,24 @@ class $PrestitiTable extends Prestiti with TableInfo<$PrestitiTable, Prestito> {
         speseRataMinimo.isAcceptableOrUnknown(
           data['spese_rata_minimo']!,
           _speseRataMinimoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('decisione_maxi')) {
+      context.handle(
+        _decisioneMaxiMeta,
+        decisioneMaxi.isAcceptableOrUnknown(
+          data['decisione_maxi']!,
+          _decisioneMaxiMeta,
+        ),
+      );
+    }
+    if (data.containsKey('maxi_rimandata_il')) {
+      context.handle(
+        _maxiRimandataIlMeta,
+        maxiRimandataIl.isAcceptableOrUnknown(
+          data['maxi_rimandata_il']!,
+          _maxiRimandataIlMeta,
         ),
       );
     }
@@ -7264,6 +7306,14 @@ class $PrestitiTable extends Prestiti with TableInfo<$PrestitiTable, Prestito> {
         DriftSqlType.int,
         data['${effectivePrefix}spese_rata_minimo'],
       ),
+      decisioneMaxi: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}decisione_maxi'],
+      ),
+      maxiRimandataIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}maxi_rimandata_il'],
+      ),
       tanPuntiBase: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}tan_punti_base'],
@@ -7333,6 +7383,12 @@ class Prestito extends DataClass implements Insertable<Prestito> {
   /// ammortamento resta sulla sola rata. `null` = nessuna.
   final int? speseRataMinimo;
 
+  /// Cosa fare della maxi rata (vedi [DecisioneMaxi]); `null` = da decidere.
+  final String? decisioneMaxi;
+
+  /// AAAA-MM-GG dell'ultima volta che l'utente ha rimandato la decisione.
+  final String? maxiRimandataIl;
+
   /// Tassi in punti base (1% = 100), facoltativi.
   final int? tanPuntiBase;
   final int? taegPuntiBase;
@@ -7359,6 +7415,8 @@ class Prestito extends DataClass implements Insertable<Prestito> {
     required this.importoRataMinimo,
     this.maxiRataMinimo,
     this.speseRataMinimo,
+    this.decisioneMaxi,
+    this.maxiRimandataIl,
     this.tanPuntiBase,
     this.taegPuntiBase,
     required this.primaRata,
@@ -7386,6 +7444,12 @@ class Prestito extends DataClass implements Insertable<Prestito> {
     }
     if (!nullToAbsent || speseRataMinimo != null) {
       map['spese_rata_minimo'] = Variable<int>(speseRataMinimo);
+    }
+    if (!nullToAbsent || decisioneMaxi != null) {
+      map['decisione_maxi'] = Variable<String>(decisioneMaxi);
+    }
+    if (!nullToAbsent || maxiRimandataIl != null) {
+      map['maxi_rimandata_il'] = Variable<String>(maxiRimandataIl);
     }
     if (!nullToAbsent || tanPuntiBase != null) {
       map['tan_punti_base'] = Variable<int>(tanPuntiBase);
@@ -7424,6 +7488,12 @@ class Prestito extends DataClass implements Insertable<Prestito> {
       speseRataMinimo: speseRataMinimo == null && nullToAbsent
           ? const Value.absent()
           : Value(speseRataMinimo),
+      decisioneMaxi: decisioneMaxi == null && nullToAbsent
+          ? const Value.absent()
+          : Value(decisioneMaxi),
+      maxiRimandataIl: maxiRimandataIl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maxiRimandataIl),
       tanPuntiBase: tanPuntiBase == null && nullToAbsent
           ? const Value.absent()
           : Value(tanPuntiBase),
@@ -7461,6 +7531,8 @@ class Prestito extends DataClass implements Insertable<Prestito> {
       importoRataMinimo: serializer.fromJson<int>(json['importoRataMinimo']),
       maxiRataMinimo: serializer.fromJson<int?>(json['maxiRataMinimo']),
       speseRataMinimo: serializer.fromJson<int?>(json['speseRataMinimo']),
+      decisioneMaxi: serializer.fromJson<String?>(json['decisioneMaxi']),
+      maxiRimandataIl: serializer.fromJson<String?>(json['maxiRimandataIl']),
       tanPuntiBase: serializer.fromJson<int?>(json['tanPuntiBase']),
       taegPuntiBase: serializer.fromJson<int?>(json['taegPuntiBase']),
       primaRata: serializer.fromJson<String>(json['primaRata']),
@@ -7487,6 +7559,8 @@ class Prestito extends DataClass implements Insertable<Prestito> {
       'importoRataMinimo': serializer.toJson<int>(importoRataMinimo),
       'maxiRataMinimo': serializer.toJson<int?>(maxiRataMinimo),
       'speseRataMinimo': serializer.toJson<int?>(speseRataMinimo),
+      'decisioneMaxi': serializer.toJson<String?>(decisioneMaxi),
+      'maxiRimandataIl': serializer.toJson<String?>(maxiRimandataIl),
       'tanPuntiBase': serializer.toJson<int?>(tanPuntiBase),
       'taegPuntiBase': serializer.toJson<int?>(taegPuntiBase),
       'primaRata': serializer.toJson<String>(primaRata),
@@ -7511,6 +7585,8 @@ class Prestito extends DataClass implements Insertable<Prestito> {
     int? importoRataMinimo,
     Value<int?> maxiRataMinimo = const Value.absent(),
     Value<int?> speseRataMinimo = const Value.absent(),
+    Value<String?> decisioneMaxi = const Value.absent(),
+    Value<String?> maxiRimandataIl = const Value.absent(),
     Value<int?> tanPuntiBase = const Value.absent(),
     Value<int?> taegPuntiBase = const Value.absent(),
     String? primaRata,
@@ -7536,6 +7612,12 @@ class Prestito extends DataClass implements Insertable<Prestito> {
     speseRataMinimo: speseRataMinimo.present
         ? speseRataMinimo.value
         : this.speseRataMinimo,
+    decisioneMaxi: decisioneMaxi.present
+        ? decisioneMaxi.value
+        : this.decisioneMaxi,
+    maxiRimandataIl: maxiRimandataIl.present
+        ? maxiRimandataIl.value
+        : this.maxiRimandataIl,
     tanPuntiBase: tanPuntiBase.present ? tanPuntiBase.value : this.tanPuntiBase,
     taegPuntiBase: taegPuntiBase.present
         ? taegPuntiBase.value
@@ -7577,6 +7659,12 @@ class Prestito extends DataClass implements Insertable<Prestito> {
       speseRataMinimo: data.speseRataMinimo.present
           ? data.speseRataMinimo.value
           : this.speseRataMinimo,
+      decisioneMaxi: data.decisioneMaxi.present
+          ? data.decisioneMaxi.value
+          : this.decisioneMaxi,
+      maxiRimandataIl: data.maxiRimandataIl.present
+          ? data.maxiRimandataIl.value
+          : this.maxiRimandataIl,
       tanPuntiBase: data.tanPuntiBase.present
           ? data.tanPuntiBase.value
           : this.tanPuntiBase,
@@ -7613,6 +7701,8 @@ class Prestito extends DataClass implements Insertable<Prestito> {
           ..write('importoRataMinimo: $importoRataMinimo, ')
           ..write('maxiRataMinimo: $maxiRataMinimo, ')
           ..write('speseRataMinimo: $speseRataMinimo, ')
+          ..write('decisioneMaxi: $decisioneMaxi, ')
+          ..write('maxiRimandataIl: $maxiRimandataIl, ')
           ..write('tanPuntiBase: $tanPuntiBase, ')
           ..write('taegPuntiBase: $taegPuntiBase, ')
           ..write('primaRata: $primaRata, ')
@@ -7627,7 +7717,7 @@ class Prestito extends DataClass implements Insertable<Prestito> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     aggiornatoIl,
     eliminato,
@@ -7639,6 +7729,8 @@ class Prestito extends DataClass implements Insertable<Prestito> {
     importoRataMinimo,
     maxiRataMinimo,
     speseRataMinimo,
+    decisioneMaxi,
+    maxiRimandataIl,
     tanPuntiBase,
     taegPuntiBase,
     primaRata,
@@ -7648,7 +7740,7 @@ class Prestito extends DataClass implements Insertable<Prestito> {
     valuta,
     note,
     archiviato,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -7664,6 +7756,8 @@ class Prestito extends DataClass implements Insertable<Prestito> {
           other.importoRataMinimo == this.importoRataMinimo &&
           other.maxiRataMinimo == this.maxiRataMinimo &&
           other.speseRataMinimo == this.speseRataMinimo &&
+          other.decisioneMaxi == this.decisioneMaxi &&
+          other.maxiRimandataIl == this.maxiRimandataIl &&
           other.tanPuntiBase == this.tanPuntiBase &&
           other.taegPuntiBase == this.taegPuntiBase &&
           other.primaRata == this.primaRata &&
@@ -7687,6 +7781,8 @@ class PrestitiCompanion extends UpdateCompanion<Prestito> {
   final Value<int> importoRataMinimo;
   final Value<int?> maxiRataMinimo;
   final Value<int?> speseRataMinimo;
+  final Value<String?> decisioneMaxi;
+  final Value<String?> maxiRimandataIl;
   final Value<int?> tanPuntiBase;
   final Value<int?> taegPuntiBase;
   final Value<String> primaRata;
@@ -7709,6 +7805,8 @@ class PrestitiCompanion extends UpdateCompanion<Prestito> {
     this.importoRataMinimo = const Value.absent(),
     this.maxiRataMinimo = const Value.absent(),
     this.speseRataMinimo = const Value.absent(),
+    this.decisioneMaxi = const Value.absent(),
+    this.maxiRimandataIl = const Value.absent(),
     this.tanPuntiBase = const Value.absent(),
     this.taegPuntiBase = const Value.absent(),
     this.primaRata = const Value.absent(),
@@ -7732,6 +7830,8 @@ class PrestitiCompanion extends UpdateCompanion<Prestito> {
     required int importoRataMinimo,
     this.maxiRataMinimo = const Value.absent(),
     this.speseRataMinimo = const Value.absent(),
+    this.decisioneMaxi = const Value.absent(),
+    this.maxiRimandataIl = const Value.absent(),
     this.tanPuntiBase = const Value.absent(),
     this.taegPuntiBase = const Value.absent(),
     required String primaRata,
@@ -7762,6 +7862,8 @@ class PrestitiCompanion extends UpdateCompanion<Prestito> {
     Expression<int>? importoRataMinimo,
     Expression<int>? maxiRataMinimo,
     Expression<int>? speseRataMinimo,
+    Expression<String>? decisioneMaxi,
+    Expression<String>? maxiRimandataIl,
     Expression<int>? tanPuntiBase,
     Expression<int>? taegPuntiBase,
     Expression<String>? primaRata,
@@ -7785,6 +7887,8 @@ class PrestitiCompanion extends UpdateCompanion<Prestito> {
       if (importoRataMinimo != null) 'importo_rata_minimo': importoRataMinimo,
       if (maxiRataMinimo != null) 'maxi_rata_minimo': maxiRataMinimo,
       if (speseRataMinimo != null) 'spese_rata_minimo': speseRataMinimo,
+      if (decisioneMaxi != null) 'decisione_maxi': decisioneMaxi,
+      if (maxiRimandataIl != null) 'maxi_rimandata_il': maxiRimandataIl,
       if (tanPuntiBase != null) 'tan_punti_base': tanPuntiBase,
       if (taegPuntiBase != null) 'taeg_punti_base': taegPuntiBase,
       if (primaRata != null) 'prima_rata': primaRata,
@@ -7810,6 +7914,8 @@ class PrestitiCompanion extends UpdateCompanion<Prestito> {
     Value<int>? importoRataMinimo,
     Value<int?>? maxiRataMinimo,
     Value<int?>? speseRataMinimo,
+    Value<String?>? decisioneMaxi,
+    Value<String?>? maxiRimandataIl,
     Value<int?>? tanPuntiBase,
     Value<int?>? taegPuntiBase,
     Value<String>? primaRata,
@@ -7833,6 +7939,8 @@ class PrestitiCompanion extends UpdateCompanion<Prestito> {
       importoRataMinimo: importoRataMinimo ?? this.importoRataMinimo,
       maxiRataMinimo: maxiRataMinimo ?? this.maxiRataMinimo,
       speseRataMinimo: speseRataMinimo ?? this.speseRataMinimo,
+      decisioneMaxi: decisioneMaxi ?? this.decisioneMaxi,
+      maxiRimandataIl: maxiRimandataIl ?? this.maxiRimandataIl,
       tanPuntiBase: tanPuntiBase ?? this.tanPuntiBase,
       taegPuntiBase: taegPuntiBase ?? this.taegPuntiBase,
       primaRata: primaRata ?? this.primaRata,
@@ -7882,6 +7990,12 @@ class PrestitiCompanion extends UpdateCompanion<Prestito> {
     if (speseRataMinimo.present) {
       map['spese_rata_minimo'] = Variable<int>(speseRataMinimo.value);
     }
+    if (decisioneMaxi.present) {
+      map['decisione_maxi'] = Variable<String>(decisioneMaxi.value);
+    }
+    if (maxiRimandataIl.present) {
+      map['maxi_rimandata_il'] = Variable<String>(maxiRimandataIl.value);
+    }
     if (tanPuntiBase.present) {
       map['tan_punti_base'] = Variable<int>(tanPuntiBase.value);
     }
@@ -7929,6 +8043,8 @@ class PrestitiCompanion extends UpdateCompanion<Prestito> {
           ..write('importoRataMinimo: $importoRataMinimo, ')
           ..write('maxiRataMinimo: $maxiRataMinimo, ')
           ..write('speseRataMinimo: $speseRataMinimo, ')
+          ..write('decisioneMaxi: $decisioneMaxi, ')
+          ..write('maxiRimandataIl: $maxiRimandataIl, ')
           ..write('tanPuntiBase: $tanPuntiBase, ')
           ..write('taegPuntiBase: $taegPuntiBase, ')
           ..write('primaRata: $primaRata, ')
@@ -17130,6 +17246,8 @@ typedef $$PrestitiTableCreateCompanionBuilder = PrestitiCompanion Function({
   required int importoRataMinimo,
   Value<int?> maxiRataMinimo,
   Value<int?> speseRataMinimo,
+  Value<String?> decisioneMaxi,
+  Value<String?> maxiRimandataIl,
   Value<int?> tanPuntiBase,
   Value<int?> taegPuntiBase,
   required String primaRata,
@@ -17153,6 +17271,8 @@ typedef $$PrestitiTableUpdateCompanionBuilder = PrestitiCompanion Function({
   Value<int> importoRataMinimo,
   Value<int?> maxiRataMinimo,
   Value<int?> speseRataMinimo,
+  Value<String?> decisioneMaxi,
+  Value<String?> maxiRimandataIl,
   Value<int?> tanPuntiBase,
   Value<int?> taegPuntiBase,
   Value<String> primaRata,
@@ -17265,6 +17385,16 @@ class $$PrestitiTableFilterComposer
 
   ColumnFilters<int> get speseRataMinimo => $composableBuilder(
     column: $table.speseRataMinimo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get decisioneMaxi => $composableBuilder(
+    column: $table.decisioneMaxi,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get maxiRimandataIl => $composableBuilder(
+    column: $table.maxiRimandataIl,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -17414,6 +17544,16 @@ class $$PrestitiTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get decisioneMaxi => $composableBuilder(
+    column: $table.decisioneMaxi,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get maxiRimandataIl => $composableBuilder(
+    column: $table.maxiRimandataIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get tanPuntiBase => $composableBuilder(
     column: $table.tanPuntiBase,
     builder: (column) => ColumnOrderings(column),
@@ -17552,6 +17692,16 @@ class $$PrestitiTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get decisioneMaxi => $composableBuilder(
+    column: $table.decisioneMaxi,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get maxiRimandataIl => $composableBuilder(
+    column: $table.maxiRimandataIl,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get tanPuntiBase => $composableBuilder(
     column: $table.tanPuntiBase,
     builder: (column) => column,
@@ -17665,6 +17815,8 @@ class $$PrestitiTableTableManager
                 Value<int> importoRataMinimo = const Value.absent(),
                 Value<int?> maxiRataMinimo = const Value.absent(),
                 Value<int?> speseRataMinimo = const Value.absent(),
+                Value<String?> decisioneMaxi = const Value.absent(),
+                Value<String?> maxiRimandataIl = const Value.absent(),
                 Value<int?> tanPuntiBase = const Value.absent(),
                 Value<int?> taegPuntiBase = const Value.absent(),
                 Value<String> primaRata = const Value.absent(),
@@ -17687,6 +17839,8 @@ class $$PrestitiTableTableManager
                 importoRataMinimo: importoRataMinimo,
                 maxiRataMinimo: maxiRataMinimo,
                 speseRataMinimo: speseRataMinimo,
+                decisioneMaxi: decisioneMaxi,
+                maxiRimandataIl: maxiRimandataIl,
                 tanPuntiBase: tanPuntiBase,
                 taegPuntiBase: taegPuntiBase,
                 primaRata: primaRata,
@@ -17711,6 +17865,8 @@ class $$PrestitiTableTableManager
                 required int importoRataMinimo,
                 Value<int?> maxiRataMinimo = const Value.absent(),
                 Value<int?> speseRataMinimo = const Value.absent(),
+                Value<String?> decisioneMaxi = const Value.absent(),
+                Value<String?> maxiRimandataIl = const Value.absent(),
                 Value<int?> tanPuntiBase = const Value.absent(),
                 Value<int?> taegPuntiBase = const Value.absent(),
                 required String primaRata,
@@ -17733,6 +17889,8 @@ class $$PrestitiTableTableManager
                 importoRataMinimo: importoRataMinimo,
                 maxiRataMinimo: maxiRataMinimo,
                 speseRataMinimo: speseRataMinimo,
+                decisioneMaxi: decisioneMaxi,
+                maxiRimandataIl: maxiRimandataIl,
                 tanPuntiBase: tanPuntiBase,
                 taegPuntiBase: taegPuntiBase,
                 primaRata: primaRata,

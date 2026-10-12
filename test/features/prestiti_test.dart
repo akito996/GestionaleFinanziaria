@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gestionale_finanziaria/app.dart';
 import 'package:gestionale_finanziaria/core/crypto/derivazione.dart';
 import 'package:gestionale_finanziaria/core/db/deposito_locale.dart';
+import 'package:gestionale_finanziaria/core/db/prestiti.dart';
+import 'package:gestionale_finanziaria/core/db/tabelle.dart';
 import 'package:gestionale_finanziaria/core/sessione.dart';
 import 'package:sodium/sodium_sumo.dart';
 
@@ -99,6 +101,8 @@ void main() {
     await tocca(tester, nelDialogo(find.text('Leggi')));
 
     await attendi(tester, find.text('Ho trovato 7 dati nel contratto'));
+    // Totale addebitato per rata: 232,94 € + 1,50 € di spese.
+    expect(nelDialogo(find.text('234,44 €')), findsOneWidget);
     await tester.enterText(
       nelDialogo(find.widgetWithText(TextFormField, 'Nome')),
       'Prestito auto',
@@ -125,4 +129,67 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(milliseconds: 100));
   });
+
+  testWidgets(
+    "maxi rata: richiesta all'apertura, rimando, campanella, scelta",
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1200, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (_) async => null,
+      );
+      final oggi = DateTime.now();
+      await tester.runAsync(() async {
+        await sessione.avvia();
+        await sessione.preparaNuovoArchivio('Password-Lunga-1');
+        await sessione.confermaNuovoArchivio();
+        // 4 rate da questo mese: la maxi rata è fra 3 mesi (entro i 6).
+        await sessione.prestiti.crea(
+          DatiPrestito(
+            nome: 'Auto',
+            tipo: TipoPrestito.prestito,
+            capitale: 1500000,
+            numeroRate: 4,
+            importoRata: 30000,
+            maxiRata: 1400000,
+            speseRata: 350,
+            primaRata: DateTime(oggi.year, oggi.month, 15),
+          ),
+        );
+      });
+      sessione.avviso = null;
+      await tester.pumpWidget(GestionaleApp(sessione: sessione));
+
+      // All'apertura: la domanda. "Ricordamelo più tardi" la rimanda.
+      await attendi(tester, find.text('Maxi rata in arrivo'));
+      expect(find.textContaining('14.003,50 €'), findsOneWidget);
+      await tocca(tester, find.textContaining('Ricordamelo più tardi'));
+      final campanella = find.byIcon(Icons.notifications_active).hitTestable();
+      await attendi(tester, campanella);
+
+      // Nel costo della vita: la rata del mese tra le spese fisse.
+      await tocca(tester, find.text('Costo della vita').last);
+      await attendi(tester, find.text('Prestiti e rate'));
+      expect(find.textContaining('Rata 1 di 4'), findsOneWidget);
+      expect(find.text('303,50 €'), findsWidgets);
+
+      // Dalla campanella si decide: poi la campanella sparisce.
+      await tocca(tester, campanella);
+      await attendi(tester, find.text("Pago tutto in un'unica soluzione"));
+      await tocca(tester, find.text("Pago tutto in un'unica soluzione"));
+      for (var i = 0; i < 200 && campanella.evaluate().isNotEmpty; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(campanella, findsNothing);
+
+      sessione.blocca().ignore();
+      await attendi(tester, find.text('Archivio bloccato'));
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(milliseconds: 100));
+    },
+  );
 }

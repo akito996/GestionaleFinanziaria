@@ -3,6 +3,7 @@ import 'package:gestionale_finanziaria/core/db/archivio.dart';
 import 'package:gestionale_finanziaria/core/db/contabilita.dart';
 import 'package:gestionale_finanziaria/core/db/costo_vita.dart';
 import 'package:gestionale_finanziaria/core/db/pianificatore.dart';
+import 'package:gestionale_finanziaria/core/db/prestiti.dart';
 import 'package:gestionale_finanziaria/core/db/tabelle.dart';
 import 'package:gestionale_finanziaria/core/ricorrenza.dart';
 
@@ -422,4 +423,46 @@ void main() {
       },
     );
   });
+
+  test(
+    "le rate dei prestiti contano tra le fisse fino all'estinzione",
+    () async {
+      final prestiti = PrestitiServizio(
+        db,
+        c.orologio,
+        pian,
+        adesso: () => adesso,
+      );
+      final id = await prestiti.crea(
+        DatiPrestito(
+          nome: 'Auto',
+          tipo: TipoPrestito.prestito,
+          capitale: 1200000,
+          numeroRate: 3,
+          importoRata: 300000,
+          maxiRata: 600000,
+          speseRata: 350,
+          primaRata: DateTime(2026, 10, 15),
+        ),
+      );
+      final mesi = await cv.riepiloghi([
+        ottobre,
+        novembre,
+        DateTime(2026, 12),
+        DateTime(2027, 1),
+      ]);
+      expect(mesi[0].vuoto, isFalse); // anche senza altre voci
+      expect(mesi[0].rate.single.importo, 300350); // rata + spese
+      expect(mesi[0].rate.single.numero, 1);
+      expect(mesi[0].fisse, 300350);
+      expect(mesi[1].totalePrevisto, 300350);
+      expect(mesi[2].rate.single.maxi, isTrue);
+      expect(mesi[2].fisse, 600350);
+      expect(mesi[3].rate, isEmpty); // estinto
+
+      // Maxi rata rifinanziata: nel mese della scadenza non esce dal conto.
+      await prestiti.decidiMaxi(id, DecisioneMaxi.rifinanzia);
+      expect((await cv.riepiloghi([DateTime(2026, 12)])).single.rate, isEmpty);
+    },
+  );
 }

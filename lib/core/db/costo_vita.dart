@@ -8,6 +8,7 @@ import 'id.dart';
 import 'orologio.dart';
 import 'osservazione.dart';
 import 'pianificatore.dart';
+import 'prestiti.dart';
 import 'tabelle.dart';
 
 /// Da quando vale un nuovo importo predefinito (scelta dell'utente).
@@ -63,14 +64,47 @@ class VoceDelMese {
       Frequenza.daCodice(addebito!.frequenza) != Frequenza.mensile;
 }
 
+/// Rata di un prestito che cade nel mese: conta tra le spese fisse del costo
+/// della vita fino all'estinzione.
+class RataDelMese {
+  const RataDelMese({
+    required this.prestito,
+    required this.importo,
+    required this.date,
+    required this.numero,
+  });
+
+  final Prestito prestito;
+
+  /// Quanto esce dal conto: rata (o maxi rata) + spese di incasso.
+  final int importo;
+  final List<DateTime> date;
+
+  /// Numero della (prima) rata del mese, da 1 a [Prestito.numeroRate].
+  final int numero;
+
+  bool get maxi =>
+      prestito.maxiRataMinimo != null && numero == prestito.numeroRate;
+}
+
 class RiepilogoMese {
-  const RiepilogoMese(this.mese, this.voci);
+  const RiepilogoMese(this.mese, this.voci, {this.rate = const []});
 
   /// Primo giorno del mese.
   final DateTime mese;
   final List<VoceDelMese> voci;
 
-  int get fisse => _somma(voci.where((v) => v.fissa).map((v) => v.previsto));
+  /// Rate dei prestiti del mese (comprese nelle [fisse]).
+  final List<RataDelMese> rate;
+
+  /// Nessuna voce e nessun prestito: c'è ancora tutto da configurare.
+  bool get vuoto => voci.isEmpty && rate.isEmpty;
+
+  int get ratePrestiti => _somma(rate.map((r) => r.importo));
+
+  /// Spese fisse del mese, comprese le rate dei prestiti.
+  int get fisse =>
+      _somma(voci.where((v) => v.fissa).map((v) => v.previsto)) + ratePrestiti;
 
   int get variabiliPreviste =>
       _somma(voci.where((v) => !v.fissa).map((v) => v.previsto));
@@ -419,6 +453,12 @@ class CostoVita {
       for (final v in variazioni) '${v.voceId}|${v.mese}': v.importoMinimo,
     };
 
+    final prestiti =
+        await (_db.select(_db.prestiti)..where(
+              (p) => p.eliminato.equals(false) & p.archiviato.equals(false),
+            ))
+            .get();
+
     final oggi = _adesso();
     final risultato = <RiepilogoMese>[];
     for (final m in mesi) {
@@ -499,12 +539,49 @@ class CostoVita {
           ),
         );
       }
-      risultato.add(RiepilogoMese(mese, righe));
+      risultato.add(
+        RiepilogoMese(mese, righe, rate: _rateDelMese(prestiti, mese)),
+      );
     }
     return risultato;
   }
 
   // ------------------------------------------------------------- interni
+
+  /// Rate dei prestiti che cadono nel mese, fino all'estinzione.
+  static List<RataDelMese> _rateDelMese(
+    List<Prestito> prestiti,
+    DateTime mese,
+  ) {
+    final risultato = <RataDelMese>[];
+    for (final p in prestiti) {
+      final regola = Ricorrenza(
+        inizio: Contabilita.daGiorno(p.primaRata),
+        frequenza: Frequenza.daCodice(p.frequenza),
+        occorrenze: p.numeroRate,
+      );
+      final date = regola.nelMese(mese);
+      if (date.isEmpty) {
+        continue;
+      }
+      final importo = date
+          .map((d) => PrestitiServizio.importoRataAl(p, d))
+          .fold<int>(0, (a, b) => a + b);
+      if (importo <= 0) {
+        continue; // es. maxi rata rifinanziata: dal conto non esce
+      }
+      risultato.add(
+        RataDelMese(
+          prestito: p,
+          importo: importo,
+          date: date,
+          numero: regola.tra(regola.inizio, date.first).length,
+        ),
+      );
+    }
+    risultato.sort((a, b) => a.date.first.compareTo(b.date.first));
+    return risultato;
+  }
 
   Stream<void> _osserva() => _db
       .customSelect(
@@ -516,6 +593,7 @@ class CostoVita {
           _db.movimenti,
           _db.categorie,
           _db.pianificazioni,
+          _db.prestiti,
         },
       )
       .watch();

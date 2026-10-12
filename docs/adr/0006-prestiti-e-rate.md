@@ -38,6 +38,19 @@ Prova con un documento reale dell'utente (documento di trasparenza di una finanz
   - "Ancora da pagare" comprende le spese delle rate future.
   - Le spese una tantum (es. imposta di bollo sulla prima rata) si correggono a mano sul singolo movimento.
 
+## Aggiornamento del 12/10/2026 – totale rata, costo della vita, decisione sulla maxi rata
+- **Totale della rata** nel modulo: rata + spese (e l'ultima: maxi rata + spese), aggiornato mentre si scrive.
+- **Costo della vita**: le rate dei prestiti attivi (non archiviati) contano tra le spese fisse del mese in cui cadono, fino all'ultima rata (importo = rata o maxi rata + spese). La pagina mostra la sezione "Prestiti e rate"; i riepiloghi indicano "di cui rate".
+- **Decisione sulla maxi rata** (colonne `decisione_maxi`, `maxi_rimandata_il`, schema v10):
+  - da 6 mesi prima della scadenza l'app chiede: "Apro un altro prestito" (rifinanzio), "Pago tutto in un'unica soluzione", oppure "Ricordamelo più tardi";
+  - la domanda compare all'apertura dell'app (e ogni 15 minuti se resta aperta) quando è il momento;
+  - cadenza dopo un rimando: ogni 15 giorni (2 volte al mese); negli ultimi 2 mesi ogni settimana; nell'ultimo mese ogni 3 giorni (un intervallo non scavalca mai l'inizio della fascia successiva);
+  - finché non si decide, una campanella con il numero di decisioni resta accanto al lucchetto in ogni sezione;
+  - "Rifinanzio": la maxi rata non esce dal conto (non si registra e non conta nel costo della vita), alla scadenza risulta pagata; si apre il modulo di un nuovo prestito già impostato (capitale = maxi rata, prima rata il mese dopo);
+  - "Pago tutto": nessun altro avviso, la maxi rata esce dal conto alla scadenza;
+  - la scelta si può cambiare dal dettaglio del prestito ("Cambia").
+- 🔜 Con la build Android: notifica di sistema oltre all'avviso nell'app.
+
 ## Conseguenze
 - ✅ Nessun contratto lascia il dispositivo; funziona offline.
 - ⚠️ Le scansioni (PDF immagine) non hanno testo: si compila a mano (OCR on-device previsto in Fase 3).

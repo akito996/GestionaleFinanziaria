@@ -239,7 +239,7 @@ class _HomePaginaState extends State<HomePagina> {
                   ),
                   if (storico == null)
                     const LinearProgressIndicator()
-                  else if (storico.every((m) => m.voci.isEmpty))
+                  else if (storico.every((m) => m.vuoto))
                     const Padding(
                       padding: EdgeInsets.only(top: 8),
                       child: Text(
@@ -253,7 +253,8 @@ class _HomePaginaState extends State<HomePagina> {
                       style: testo.headlineMedium,
                     ),
                     Text(
-                      'Fisse ${Importo.formatta(mese.fisse, 'EUR')} · '
+                      'Fisse ${Importo.formatta(mese.fisse, 'EUR')}'
+                      '${mese.ratePrestiti > 0 ? ' (di cui rate ${Importo.formatta(mese.ratePrestiti, 'EUR')})' : ''} · '
                       'variabili previste '
                       '${Importo.formatta(mese.variabiliPreviste, 'EUR')} · '
                       'spese finora ${Importo.formatta(mese.variabiliReali, 'EUR')}',

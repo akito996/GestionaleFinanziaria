@@ -9,6 +9,8 @@ import '../../core/sessione.dart';
 import '../comuni/navigazione.dart';
 import '../grafici/grafici.dart';
 import '../grafici/grafici_avanzati.dart';
+import '../movimenti/riga_movimento.dart';
+import '../prestiti/prestiti_pagina.dart';
 import 'grafico_costo_vita.dart';
 import 'voce_modulo.dart';
 
@@ -110,7 +112,7 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
             return const Center(child: CircularProgressIndicator());
           }
           final mese = storico.last;
-          final senzaVoci = storico.every((m) => m.voci.isEmpty);
+          final senzaVoci = storico.every((m) => m.vuoto);
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
             children: [
@@ -202,6 +204,10 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
                   suggerite: _fisseSuggerite,
                   onSuggerita: _suggerita,
                 ),
+                if (mese.rate.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _ElencoRate(rate: mese.rate, sessione: widget.sessione),
+                ],
                 const SizedBox(height: 16),
                 _ElencoVoci(
                   titolo: 'Spese variabili',
@@ -305,6 +311,15 @@ class _Riepilogo extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             voce('Spese fisse', mese.fisse, colori.fisse),
+            if (mese.ratePrestiti > 0)
+              Padding(
+                padding: const EdgeInsets.only(left: 18),
+                child: Text(
+                  'di cui rate dei prestiti '
+                  '${Importo.formatta(mese.ratePrestiti, 'EUR')}',
+                  style: testo.bodySmall,
+                ),
+              ),
             voce(
               'Variabili previste',
               mese.variabiliPreviste,
@@ -314,6 +329,83 @@ class _Riepilogo extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Rate dei prestiti del mese: contano tra le spese fisse fino
+/// all'estinzione. Si modificano dalla sezione Prestiti.
+class _ElencoRate extends StatelessWidget {
+  const _ElencoRate({required this.rate, required this.sessione});
+
+  final List<RataDelMese> rate;
+  final Sessione sessione;
+
+  @override
+  Widget build(BuildContext context) {
+    final testo = Theme.of(context).textTheme;
+    final totale = rate.fold<int>(0, (t, r) => t + r.importo);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text('Prestiti e rate', style: testo.titleMedium),
+              ),
+              Text(Importo.formatta(totale, 'EUR'), style: testo.titleMedium),
+            ],
+          ),
+        ),
+        Card(
+          child: Column(
+            children: [
+              for (final r in rate)
+                ListTile(
+                  leading: Icon(
+                    r.maxi ? Icons.flag_outlined : Icons.request_quote_outlined,
+                  ),
+                  title: Text(r.prestito.nome),
+                  subtitle: Text(
+                    [
+                      r.maxi
+                          ? 'Maxi rata finale'
+                          : 'Rata ${r.numero} di ${r.prestito.numeroRate}',
+                      'addebito il ${dataLeggibile(context, r.date.first)}',
+                      if ((r.prestito.speseRataMinimo ?? 0) > 0)
+                        'con ${Importo.formatta(r.prestito.speseRataMinimo!, 'EUR')} di spese',
+                    ].join(' · '),
+                  ),
+                  trailing: Text(
+                    Importo.formatta(r.importo, 'EUR'),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => PrestitoPagina(
+                        sessione: sessione,
+                        prestitoId: r.prestito.id,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
+          child: Text(
+            "Contano tra le spese fisse fino all'ultima rata. Si modificano "
+            'nella sezione Prestiti.',
+            style: testo.bodySmall,
+          ),
+        ),
+      ],
     );
   }
 }

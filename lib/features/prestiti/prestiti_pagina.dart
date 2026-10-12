@@ -6,6 +6,7 @@ import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import '../comuni/navigazione.dart';
 import '../movimenti/riga_movimento.dart';
+import 'avviso_maxi.dart';
 import 'prestito_modulo.dart';
 
 String etichettaTipoPrestito(String tipo) => switch (tipo) {
@@ -299,17 +300,46 @@ class PrestitoPagina extends StatelessWidget {
                       if (p.tanPuntiBase != null)
                         _Dato(
                           'TAN',
-                          '${(p.tanPuntiBase! / 100).toStringAsFixed(2)} %',
+                          '${(p.tanPuntiBase! / 100).toStringAsFixed(2).replaceAll('.', ',')} %',
                         ),
                       if (p.taegPuntiBase != null)
                         _Dato(
                           'TAEG',
-                          '${(p.taegPuntiBase! / 100).toStringAsFixed(2)} %',
+                          '${(p.taegPuntiBase! / 100).toStringAsFixed(2).replaceAll('.', ',')} %',
                         ),
                     ],
                   ),
                 ),
               ),
+              if (PrestitiServizio.avvisoMaxi(s, DateTime.now())
+                  case final maxi?)
+                Card(
+                  child: ListTile(
+                    leading: Icon(switch (p.decisioneMaxi) {
+                      DecisioneMaxi.rifinanzia => Icons.autorenew,
+                      DecisioneMaxi.estingui => Icons.payments_outlined,
+                      _ => Icons.help_outline,
+                    }),
+                    title: Text(switch (p.decisioneMaxi) {
+                      DecisioneMaxi.rifinanzia =>
+                        'Maxi rata: la rifinanzi con un altro prestito',
+                      DecisioneMaxi.estingui =>
+                        "Maxi rata: la paghi in un'unica soluzione",
+                      _ => 'Maxi rata: decisione da prendere',
+                    }),
+                    subtitle: Text(
+                      'Scadenza ${dataLeggibile(context, maxi.scadenza)} · '
+                      '${euro(maxi.importo)}',
+                    ),
+                    trailing: TextButton(
+                      onPressed: () =>
+                          chiediDecisioneMaxi(context, sessione, maxi),
+                      child: Text(
+                        p.decisioneMaxi == null ? 'Decidi' : 'Cambia',
+                      ),
+                    ),
+                  ),
+                ),
               const SizedBox(height: 16),
               Text('Piano delle rate', style: testo.titleMedium),
               const SizedBox(height: 8),

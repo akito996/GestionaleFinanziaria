@@ -103,12 +103,14 @@ Future<void> apriModuloPrestito(
   Sessione sessione, {
   ProposteContratto? proposte,
   PrestitoConStato? esistente,
+  String? introduzione,
 }) => showDialog<void>(
   context: context,
   builder: (_) => _ModuloPrestito(
     sessione: sessione,
     proposte: proposte,
     esistente: esistente,
+    introduzione: introduzione,
   ),
 );
 
@@ -124,11 +126,15 @@ class _ModuloPrestito extends StatefulWidget {
     required this.sessione,
     this.proposte,
     this.esistente,
+    this.introduzione,
   });
 
   final Sessione sessione;
   final ProposteContratto? proposte;
   final PrestitoConStato? esistente;
+
+  /// Testo in cima al modulo al posto dei "dati trovati nel contratto".
+  final String? introduzione;
 
   @override
   State<_ModuloPrestito> createState() => _ModuloPrestitoState();
@@ -185,7 +191,7 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
       _categoriaScelta = true;
     } else if (p != null) {
       _tipo = p.mutuo ? TipoPrestito.mutuo : TipoPrestito.prestito;
-      _nome.text = p.mutuo ? 'Mutuo' : '';
+      _nome.text = p.nome ?? (p.mutuo ? 'Mutuo' : '');
       _finanziatore.text = p.finanziatore ?? '';
       if (p.capitale != null) {
         _capitale.text = Importo.perModifica(p.capitale!);
@@ -210,7 +216,18 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
       }
     }
     _carica();
+    // Il totale addebitato segue rata, maxi rata e spese mentre si scrive.
+    for (final c in [_rata, _maxi, _spese]) {
+      c.addListener(_aggiornaTotale);
+    }
   }
+
+  void _aggiornaTotale() => setState(() {});
+
+  /// Rata + spese di incasso, formattato ("—" se la rata non è scritta).
+  String _totale(int? rata) => rata == null
+      ? '—'
+      : Importo.formatta(rata + (Importo.leggi(_spese.text) ?? 0), 'EUR');
 
   static String _percentuale(int? puntiBase) => puntiBase == null
       ? ''
@@ -336,7 +353,15 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (p != null)
+                if (widget.introduzione case final testo?)
+                  Card(
+                    color: schema.secondaryContainer,
+                    child: ListTile(
+                      leading: const Icon(Icons.autorenew),
+                      title: Text(testo),
+                    ),
+                  )
+                else if (p != null)
                   Card(
                     color: p.campiTrovati > 0
                         ? schema.secondaryContainer
@@ -524,27 +549,65 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
-                  controller: _spese,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _spese,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'Spese per rata (facoltative)',
+                          hintText: 'Es. 3,50',
+                          suffixText: '€',
+                        ),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return null;
+                          }
+                          final x = Importo.leggi(v);
+                          return x == null || x < 0
+                              ? 'Scrivi un importo'
+                              : null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: _conMaxi
+                              ? "Totale rata (tranne l'ultima)"
+                              : 'Totale addebitato per rata',
+                          border: InputBorder.none,
+                          filled: true,
+                        ),
+                        child: Text(
+                          _totale(Importo.leggi(_rata.text)),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontFeatures: [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    [
+                      'Le spese di incasso si addebitano insieme alla rata: il '
+                          'movimento registrato è rata + spese, come '
+                          "sull'estratto conto.",
+                      if (_conMaxi)
+                        'Ultima rata (maxi rata + spese): '
+                            '${_totale(Importo.leggi(_maxi.text))}.',
+                    ].join(' '),
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
-                  decoration: const InputDecoration(
-                    labelText: 'Spese per ogni rata (facoltativo)',
-                    hintText: 'Es. 3,50',
-                    suffixText: '€',
-                    helperText:
-                        'Spese di incasso addebitate con la rata: il movimento '
-                        'registrato sarà rata + spese, come sull\'estratto conto.',
-                    helperMaxLines: 2,
-                  ),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) {
-                      return null;
-                    }
-                    final x = Importo.leggi(v);
-                    return x == null || x < 0 ? 'Scrivi un importo' : null;
-                  },
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<Frequenza>(
