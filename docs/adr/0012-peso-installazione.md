@@ -32,6 +32,16 @@ Componenti principali (Windows):
   - **PDFium scaricato al primo uso.** La lettura dei PDF richiederebbe internet, mentre oggi l'app funziona tutta offline. Su Android, dalla versione 10, il caricamento di codice scaricato è limitato e rischia di non funzionare su alcuni dispositivi. Gli antivirus possono segnalare le librerie scaricate a parte. Non rispetta la condizione "senza bug e senza perdere qualità".
   - **Una sola libreria per i file** (`file_picker` al posto di `file_selector` anche su Windows): risparmio di circa 0,2 MB, contro il rischio di cambiare le finestre di salvataggio.
 
+## Risultato (CI, commit `5a40a0c`)
+| | Prima | Dopo |
+|---|---|---|
+| Windows, da scaricare | 18,9 MB | 18,6 MB (con le librerie Visual C++, ~1 MB) |
+| Windows, installata | 44,7 MB | 43,9 MB (con le librerie Visual C++) |
+| APK arm64-v8a | 33,4 MB | 31,8 MB |
+| APK armeabi-v7a | – | 26,9 MB |
+
+Simboli a parte: Windows 1,5 MB, Android 2,9 MB.
+
 ## Conseguenze
 - ✅ Il peso è misurato a ogni build: un aumento inatteso si vede subito.
 - ✅ Download e spazio occupato più bassi senza togliere funzioni.
