@@ -101,7 +101,23 @@ jobs:
           echo "::error title=Test sull'app vera::${motivo}"
       - name: Build
         # Il commit compare nella firma della versione (in basso a sinistra).
-        run: flutter build windows --release --dart-define=GF_COMMIT=${{ github.sha }}
+        # --split-debug-info: i simboli di debug vanno in un file a parte
+        # (artifact "simboli"), l'app installata è più leggera.
+        run: >-
+          flutter build windows --release
+          --split-debug-info=build/simboli/windows
+          --dart-define=GF_COMMIT=${{ github.sha }}
+      # Librerie Visual C++ accanto all'app: parte anche sui PC appena
+      # installati, senza il pacchetto "Visual C++ Redistributable".
+      # Distribuzione locale consentita dalla licenza (file elencati in redist).
+      - name: Librerie Visual C++
+        run: |
+          vs="$(cygpath -u "$("/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe" -latest -property installationPath)")"
+          crt="$(ls -d "$vs"/VC/Redist/MSVC/*/x64/Microsoft.VC14*.CRT | sort -V | tail -1)"
+          echo "Da: $crt"
+          cp "$crt"/msvcp140.dll "$crt"/msvcp140_1.dll "$crt"/msvcp140_2.dll \
+            "$crt"/vcruntime140.dll "$crt"/vcruntime140_1.dll \
+            build/windows/x64/runner/Release/
       - name: Peso della build
         run: python tool/dimensioni.py build/windows/x64/runner/Release
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -110,6 +126,13 @@ jobs:
           path: build/windows/x64/runner/Release/
           if-no-files-found: error
           retention-days: 14
+      # Per leggere gli errori ("flutter symbolize"): restano più a lungo.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: simboli-windows-${{ github.sha }}
+          path: build/simboli/windows/
+          if-no-files-found: error
+          retention-days: 90
 
   # App Android da installare su telefono e tablet (Actions -> esecuzione ->
   # Artifacts): variante "ufficiale" (dati veri) e "prova" (installabile accanto).
@@ -157,25 +180,33 @@ jobs:
             echo "keyAlias=$KEY_ALIAS"
             echo "storeFile=upload-keystore.jks"
           } > android/key.properties
-      - name: Build APK (ufficiale e prova, telefoni e tablet a 64 bit)
+      # Un APK per tipo di processore: arm64-v8a (quasi tutti i telefoni e
+      # tablet) e armeabi-v7a (dispositivi vecchi a 32 bit). Simboli di debug
+      # in un file a parte (artifact "simboli").
+      - name: Build APK (ufficiale e prova, per tipo di processore)
         run: |
           set -o pipefail
           for variante in ufficiale prova; do
             flutter build apk --release --flavor "$variante" \
-              --target-platform android-arm64 \
+              --split-per-abi --target-platform android-arm,android-arm64 \
+              --split-debug-info=build/simboli/android \
               --dart-define=GF_COMMIT=${{ github.sha }} \
               2>&1 | tee -a "$RUNNER_TEMP/build-android.log"
           done
       - name: Peso delle build
-        run: python3 tool/dimensioni.py build/app/outputs/flutter-apk/*.apk
+        run: python3 tool/dimensioni.py build/app/outputs/flutter-apk/*-release.apk
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: GestionaleFinanziaria-android-${{ github.sha }}
-          path: |
-            build/app/outputs/flutter-apk/app-ufficiale-release.apk
-            build/app/outputs/flutter-apk/app-prova-release.apk
+          path: build/app/outputs/flutter-apk/*-release.apk
           if-no-files-found: error
           retention-days: 14
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: simboli-android-${{ github.sha }}
+          path: build/simboli/android/
+          if-no-files-found: error
+          retention-days: 90
       - name: Motivo dell'errore (build)
         if: failure()
         run: |
@@ -239,7 +270,7 @@ jobs:
         if: failure()
         run: |
           log="$(cat "$RUNNER_TEMP/integration-android.log" 2>/dev/null)"
-          motivo="$( (echo "$log" | grep -E 'SCHERMO:|FINESTRA:|PULSANTE:|Warning: A call to tap'; echo "$log" | grep -v -E '^\s*$' | grep -E -A25 'EXCEPTION CAUGHT|Expected:|\[E\]|Error|FAILURE|What went wrong') | head -70)"
+          motivo="$( (echo "$log" | grep -E 'SCHERMO:|FINESTRA:|PULSANTE:|APPUNTI|Warning: A call to tap'; echo "$log" | grep -v -E '^\s*$' | grep -E -A25 'EXCEPTION CAUGHT|Expected:|\[E\]|Error|FAILURE|What went wrong') | head -70)"
           motivo="${motivo//'%'/'%25'}"
           motivo="${motivo//$'\n'/'%0A'}"
           motivo="${motivo//$'\r'/}"
