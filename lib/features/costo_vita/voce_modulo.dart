@@ -10,12 +10,14 @@ import '../comuni/campi.dart';
 import '../comuni/errori.dart';
 import '../comuni/navigazione.dart';
 import 'sezione_addebito.dart';
+import 'testi_voci.dart';
 
 /// Nuova voce del costo della vita (fissa o variabile), con nome suggerito.
 Future<void> apriNuovaVoce(
   BuildContext context,
   Sessione sessione, {
   required String tipo,
+  String natura = NaturaVoce.spesa,
   String? nomeSuggerito,
   String? categoriaSuggerita,
 }) => showDialog<void>(
@@ -23,6 +25,7 @@ Future<void> apriNuovaVoce(
   builder: (_) => _NuovaVoce(
     sessione: sessione,
     tipo: tipo,
+    natura: natura,
     nomeSuggerito: nomeSuggerito,
     categoriaSuggerita: categoriaSuggerita,
   ),
@@ -32,12 +35,14 @@ class _NuovaVoce extends StatefulWidget {
   const _NuovaVoce({
     required this.sessione,
     required this.tipo,
+    required this.natura,
     this.nomeSuggerito,
     this.categoriaSuggerita,
   });
 
   final Sessione sessione;
   final String tipo;
+  final String natura;
   final String? nomeSuggerito;
   final String? categoriaSuggerita;
 
@@ -55,6 +60,8 @@ class _NuovaVoceState extends State<_NuovaVoce> {
   bool _salvataggio = false;
 
   bool get _fissa => _tipo == TipoVoce.fissa;
+
+  TestiVoci get _t => TestiVoci.per(widget.natura);
 
   @override
   void initState() {
@@ -86,6 +93,7 @@ class _NuovaVoceState extends State<_NuovaVoce> {
         importo: Importo.leggi(_importo.text)!,
         categoriaId: _categoria,
         ripartita: _addebito.ripartitaEffettiva,
+        natura: widget.natura,
       );
       if (_addebito.attivo) {
         await cv.impostaAddebito(
@@ -110,7 +118,7 @@ class _NuovaVoceState extends State<_NuovaVoce> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(_fissa ? 'Nuova spesa fissa' : 'Nuova spesa variabile'),
+      title: Text(_fissa ? _t.nuovaFissa : _t.nuovaVariabile),
       content: SizedBox(
         width: 420,
         child: Form(
@@ -125,13 +133,7 @@ class _NuovaVoceState extends State<_NuovaVoce> {
                   onChanged: (t) => setState(() => _tipo = t),
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  _fissa
-                      ? 'Una spesa che si ripete uguale ogni mese.'
-                      : 'Una spesa che cambia ogni mese: indica quanto prevedi di '
-                            'spendere. Con una categoria l\'app confronta la stima '
-                            'con quello che spendi davvero.',
-                ),
+                Text(_fissa ? _t.descrizioneFissa : _t.descrizioneVariabile),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _nome,
@@ -149,7 +151,7 @@ class _NuovaVoceState extends State<_NuovaVoce> {
                   textInputAction: TextInputAction.done,
                   onInvio: _salva,
                   etichetta: _addebito.nonMensile
-                      ? (_fissa ? 'Importo per addebito' : 'Stima per addebito')
+                      ? '${_fissa ? 'Importo' : 'Stima'} ${_t.perData}'
                       : (_fissa ? 'Importo al mese' : 'Stima al mese'),
                 ),
                 const SizedBox(height: 16),
@@ -159,11 +161,12 @@ class _NuovaVoceState extends State<_NuovaVoce> {
                   onChanged: (v) => setState(() => _categoria = v),
                   etichetta: _fissa
                       ? 'Categoria (facoltativa)'
-                      : 'Categoria delle spese reali',
+                      : _t.categoriaReali,
                 ),
                 const SizedBox(height: 8),
                 SezioneAddebito(
                   sessione: widget.sessione,
+                  testi: _t,
                   valore: _addebito,
                   importo: Importo.leggi(_importo.text),
                   onChanged: () => setState(() {}),
@@ -202,10 +205,7 @@ Future<bool> eliminaVoceConConferma(
     builder: (context) => AlertDialog(
       icon: const Icon(Icons.delete_outline),
       title: Text('Eliminare "${voce.nome}"?'),
-      content: const Text(
-        'Sparisce dal costo della vita, anche dai mesi passati, e gli addebiti '
-        'automatici si fermano. I movimenti già registrati restano.',
-      ),
+      content: Text(TestiVoci.per(voce.natura).eliminata),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
@@ -276,6 +276,8 @@ class _ModificaVoceState extends State<_ModificaVoce> {
   );
   late String? _categoria = widget.voce.voce.categoriaId;
   late String _tipo = widget.voce.voce.tipo;
+  TestiVoci get _t => TestiVoci.per(widget.voce.voce.natura);
+
   late final _addebito = ImpostazioneAddebito.da(
     widget.voce.addebito,
     ripartita: widget.voce.voce.ripartita,
@@ -395,7 +397,7 @@ class _ModificaVoceState extends State<_ModificaVoce> {
                 Text(
                   'Importo predefinito: '
                   '${Importo.formatta(v.importoUnitario, 'EUR')} '
-                  '${_addebito.nonMensile ? 'per addebito' : 'al mese'}',
+                  '${_addebito.nonMensile ? _t.perData : 'al mese'}',
                   style: TextStyle(color: schema.onSurfaceVariant),
                 ),
                 if (v.variato)
@@ -472,6 +474,7 @@ class _ModificaVoceState extends State<_ModificaVoce> {
                 const SizedBox(height: 8),
                 SezioneAddebito(
                   sessione: widget.sessione,
+                  testi: _t,
                   valore: _addebito,
                   importo: Importo.leggi(_importo.text),
                   onChanged: () => setState(() {}),

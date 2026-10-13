@@ -465,4 +465,74 @@ void main() {
       expect((await cv.riepiloghi([DateTime(2026, 12)])).single.rate, isEmpty);
     },
   );
+
+  test(
+    'entrate previste: separate dal costo della vita, accredito automatico',
+    () async {
+      final tipo = (await c.tipi(AmbitoTipo.portafoglio))
+          .firstWhere((t) => t.nome == 'Conto corrente');
+      final conto = await c.creaPortafoglio(
+        nome: 'Conto',
+        tipoId: tipo.id,
+        valuta: 'EUR',
+      );
+      await cv.creaVoce(nome: 'Affitto', tipo: TipoVoce.fissa, importo: 80000);
+      final stipendio = await cv.creaVoce(
+        nome: 'Stipendio',
+        tipo: TipoVoce.fissa,
+        importo: 210000,
+        natura: NaturaVoce.entrata,
+      );
+      final extra = await cv.creaVoce(
+        nome: 'Lavori extra',
+        tipo: TipoVoce.variabile,
+        importo: 30000,
+        categoriaId: await categoria('Altre entrate'),
+        natura: NaturaVoce.entrata,
+      );
+
+      final spese = (await cv.riepiloghi([ottobre])).single;
+      final entrate = (await cv.riepiloghi([
+        ottobre,
+      ], natura: NaturaVoce.entrata)).single;
+      expect(spese.voci.map((v) => v.voce.nome), ['Affitto']);
+      expect(entrate.voci.map((v) => v.voce.nome), [
+        'Stipendio',
+        'Lavori extra',
+      ]);
+      expect(entrate.totalePrevisto, 240000);
+
+      // "Ricevuto davvero": le entrate della categoria, non le uscite.
+      final tipi = {
+        for (final t in await c.tipi(AmbitoTipo.movimento)) t.nome: t.id,
+      };
+      for (final (t, importo) in [('Entrata', 12000), ('Spesa', 5000)]) {
+        await c.registraMovimento(
+          tipoId: tipi[t]!,
+          portafoglioId: conto,
+          categoriaId: await categoria('Altre entrate'),
+          importo: importo,
+          valuta: 'EUR',
+          data: DateTime(2026, 10, 3),
+        );
+      }
+      final ricevuto = (await cv.riepiloghi([
+        ottobre,
+      ], natura: NaturaVoce.entrata)).single;
+      expect(ricevuto.voci.firstWhere((v) => v.voce.id == extra).reale, 12000);
+
+      // Accredito automatico dello stipendio: si registra come entrata.
+      await cv.impostaAddebito(
+        stipendio,
+        ricorrenza: Ricorrenza(inizio: DateTime(2026, 10, 10)),
+        portafoglioId: conto,
+      );
+      expect(await pian.registraScadute(), 1);
+      final mov = (await c.osservaMovimenti().first).firstWhere(
+        (m) => m.movimento.descrizione == 'Stipendio',
+      );
+      expect(mov.tipo.effetto, EffettoSaldo.entrata);
+      expect(mov.movimento.importoMinimo, 210000);
+    },
+  );
 }

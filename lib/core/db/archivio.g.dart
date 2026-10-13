@@ -4799,6 +4799,16 @@ class $VociCostoTable extends VociCosto
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _naturaMeta = const VerificationMeta('natura');
+  @override
+  late final GeneratedColumn<String> natura = GeneratedColumn<String>(
+    'natura',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(NaturaVoce.spesa),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4811,6 +4821,7 @@ class $VociCostoTable extends VociCosto
     archiviata,
     ordine,
     ripartita,
+    natura,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4895,6 +4906,12 @@ class $VociCostoTable extends VociCosto
         ripartita.isAcceptableOrUnknown(data['ripartita']!, _ripartitaMeta),
       );
     }
+    if (data.containsKey('natura')) {
+      context.handle(
+        _naturaMeta,
+        natura.isAcceptableOrUnknown(data['natura']!, _naturaMeta),
+      );
+    }
     return context;
   }
 
@@ -4944,6 +4961,10 @@ class $VociCostoTable extends VociCosto
         DriftSqlType.bool,
         data['${effectivePrefix}ripartita'],
       )!,
+      natura: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}natura'],
+      )!,
     );
   }
 
@@ -4973,6 +4994,9 @@ class VoceCosto extends DataClass implements Insertable<VoceCosto> {
   /// spesa si suddivide nei mesi (1.200 €/anno → 100 € al mese), `false` = pesa
   /// solo nel mese del pagamento.
   final bool ripartita;
+
+  /// Vedi [NaturaVoce]: spesa (costo della vita) o entrata (entrate previste).
+  final String natura;
   const VoceCosto({
     required this.id,
     required this.aggiornatoIl,
@@ -4984,6 +5008,7 @@ class VoceCosto extends DataClass implements Insertable<VoceCosto> {
     required this.archiviata,
     required this.ordine,
     required this.ripartita,
+    required this.natura,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5000,6 +5025,7 @@ class VoceCosto extends DataClass implements Insertable<VoceCosto> {
     map['archiviata'] = Variable<bool>(archiviata);
     map['ordine'] = Variable<int>(ordine);
     map['ripartita'] = Variable<bool>(ripartita);
+    map['natura'] = Variable<String>(natura);
     return map;
   }
 
@@ -5017,6 +5043,7 @@ class VoceCosto extends DataClass implements Insertable<VoceCosto> {
       archiviata: Value(archiviata),
       ordine: Value(ordine),
       ripartita: Value(ripartita),
+      natura: Value(natura),
     );
   }
 
@@ -5036,6 +5063,7 @@ class VoceCosto extends DataClass implements Insertable<VoceCosto> {
       archiviata: serializer.fromJson<bool>(json['archiviata']),
       ordine: serializer.fromJson<int>(json['ordine']),
       ripartita: serializer.fromJson<bool>(json['ripartita']),
+      natura: serializer.fromJson<String>(json['natura']),
     );
   }
   @override
@@ -5052,6 +5080,7 @@ class VoceCosto extends DataClass implements Insertable<VoceCosto> {
       'archiviata': serializer.toJson<bool>(archiviata),
       'ordine': serializer.toJson<int>(ordine),
       'ripartita': serializer.toJson<bool>(ripartita),
+      'natura': serializer.toJson<String>(natura),
     };
   }
 
@@ -5066,6 +5095,7 @@ class VoceCosto extends DataClass implements Insertable<VoceCosto> {
     bool? archiviata,
     int? ordine,
     bool? ripartita,
+    String? natura,
   }) => VoceCosto(
     id: id ?? this.id,
     aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
@@ -5077,6 +5107,7 @@ class VoceCosto extends DataClass implements Insertable<VoceCosto> {
     archiviata: archiviata ?? this.archiviata,
     ordine: ordine ?? this.ordine,
     ripartita: ripartita ?? this.ripartita,
+    natura: natura ?? this.natura,
   );
   VoceCosto copyWithCompanion(VociCostoCompanion data) {
     return VoceCosto(
@@ -5096,6 +5127,7 @@ class VoceCosto extends DataClass implements Insertable<VoceCosto> {
           : this.archiviata,
       ordine: data.ordine.present ? data.ordine.value : this.ordine,
       ripartita: data.ripartita.present ? data.ripartita.value : this.ripartita,
+      natura: data.natura.present ? data.natura.value : this.natura,
     );
   }
 
@@ -5111,7 +5143,8 @@ class VoceCosto extends DataClass implements Insertable<VoceCosto> {
           ..write('valuta: $valuta, ')
           ..write('archiviata: $archiviata, ')
           ..write('ordine: $ordine, ')
-          ..write('ripartita: $ripartita')
+          ..write('ripartita: $ripartita, ')
+          ..write('natura: $natura')
           ..write(')'))
         .toString();
   }
@@ -5128,6 +5161,7 @@ class VoceCosto extends DataClass implements Insertable<VoceCosto> {
     archiviata,
     ordine,
     ripartita,
+    natura,
   );
   @override
   bool operator ==(Object other) =>
@@ -5142,7 +5176,8 @@ class VoceCosto extends DataClass implements Insertable<VoceCosto> {
           other.valuta == this.valuta &&
           other.archiviata == this.archiviata &&
           other.ordine == this.ordine &&
-          other.ripartita == this.ripartita);
+          other.ripartita == this.ripartita &&
+          other.natura == this.natura);
 }
 
 class VociCostoCompanion extends UpdateCompanion<VoceCosto> {
@@ -5156,6 +5191,7 @@ class VociCostoCompanion extends UpdateCompanion<VoceCosto> {
   final Value<bool> archiviata;
   final Value<int> ordine;
   final Value<bool> ripartita;
+  final Value<String> natura;
   final Value<int> rowid;
   const VociCostoCompanion({
     this.id = const Value.absent(),
@@ -5168,6 +5204,7 @@ class VociCostoCompanion extends UpdateCompanion<VoceCosto> {
     this.archiviata = const Value.absent(),
     this.ordine = const Value.absent(),
     this.ripartita = const Value.absent(),
+    this.natura = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VociCostoCompanion.insert({
@@ -5181,6 +5218,7 @@ class VociCostoCompanion extends UpdateCompanion<VoceCosto> {
     this.archiviata = const Value.absent(),
     this.ordine = const Value.absent(),
     this.ripartita = const Value.absent(),
+    this.natura = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        aggiornatoIl = Value(aggiornatoIl),
@@ -5197,6 +5235,7 @@ class VociCostoCompanion extends UpdateCompanion<VoceCosto> {
     Expression<bool>? archiviata,
     Expression<int>? ordine,
     Expression<bool>? ripartita,
+    Expression<String>? natura,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -5210,6 +5249,7 @@ class VociCostoCompanion extends UpdateCompanion<VoceCosto> {
       if (archiviata != null) 'archiviata': archiviata,
       if (ordine != null) 'ordine': ordine,
       if (ripartita != null) 'ripartita': ripartita,
+      if (natura != null) 'natura': natura,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5225,6 +5265,7 @@ class VociCostoCompanion extends UpdateCompanion<VoceCosto> {
     Value<bool>? archiviata,
     Value<int>? ordine,
     Value<bool>? ripartita,
+    Value<String>? natura,
     Value<int>? rowid,
   }) {
     return VociCostoCompanion(
@@ -5238,6 +5279,7 @@ class VociCostoCompanion extends UpdateCompanion<VoceCosto> {
       archiviata: archiviata ?? this.archiviata,
       ordine: ordine ?? this.ordine,
       ripartita: ripartita ?? this.ripartita,
+      natura: natura ?? this.natura,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5275,6 +5317,9 @@ class VociCostoCompanion extends UpdateCompanion<VoceCosto> {
     if (ripartita.present) {
       map['ripartita'] = Variable<bool>(ripartita.value);
     }
+    if (natura.present) {
+      map['natura'] = Variable<String>(natura.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -5294,6 +5339,7 @@ class VociCostoCompanion extends UpdateCompanion<VoceCosto> {
           ..write('archiviata: $archiviata, ')
           ..write('ordine: $ordine, ')
           ..write('ripartita: $ripartita, ')
+          ..write('natura: $natura, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -9781,6 +9827,436 @@ class VersamentiCompanion extends UpdateCompanion<Versamento> {
   }
 }
 
+class $ReportTable extends Report with TableInfo<$ReportTable, ReportSalvato> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ReportTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _aggiornatoIlMeta = const VerificationMeta(
+    'aggiornatoIl',
+  );
+  @override
+  late final GeneratedColumn<String> aggiornatoIl = GeneratedColumn<String>(
+    'aggiornato_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eliminatoMeta = const VerificationMeta(
+    'eliminato',
+  );
+  @override
+  late final GeneratedColumn<bool> eliminato = GeneratedColumn<bool>(
+    'eliminato',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("eliminato" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _periodicitaMeta = const VerificationMeta(
+    'periodicita',
+  );
+  @override
+  late final GeneratedColumn<String> periodicita = GeneratedColumn<String>(
+    'periodicita',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _periodoMeta = const VerificationMeta(
+    'periodo',
+  );
+  @override
+  late final GeneratedColumn<String> periodo = GeneratedColumn<String>(
+    'periodo',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 4,
+      maxTextLength: 7,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contenutoMeta = const VerificationMeta(
+    'contenuto',
+  );
+  @override
+  late final GeneratedColumn<String> contenuto = GeneratedColumn<String>(
+    'contenuto',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    aggiornatoIl,
+    eliminato,
+    periodicita,
+    periodo,
+    contenuto,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'report';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ReportSalvato> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('aggiornato_il')) {
+      context.handle(
+        _aggiornatoIlMeta,
+        aggiornatoIl.isAcceptableOrUnknown(
+          data['aggiornato_il']!,
+          _aggiornatoIlMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_aggiornatoIlMeta);
+    }
+    if (data.containsKey('eliminato')) {
+      context.handle(
+        _eliminatoMeta,
+        eliminato.isAcceptableOrUnknown(data['eliminato']!, _eliminatoMeta),
+      );
+    }
+    if (data.containsKey('periodicita')) {
+      context.handle(
+        _periodicitaMeta,
+        periodicita.isAcceptableOrUnknown(
+          data['periodicita']!,
+          _periodicitaMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_periodicitaMeta);
+    }
+    if (data.containsKey('periodo')) {
+      context.handle(
+        _periodoMeta,
+        periodo.isAcceptableOrUnknown(data['periodo']!, _periodoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_periodoMeta);
+    }
+    if (data.containsKey('contenuto')) {
+      context.handle(
+        _contenutoMeta,
+        contenuto.isAcceptableOrUnknown(data['contenuto']!, _contenutoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contenutoMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ReportSalvato map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ReportSalvato(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      aggiornatoIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}aggiornato_il'],
+      )!,
+      eliminato: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}eliminato'],
+      )!,
+      periodicita: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}periodicita'],
+      )!,
+      periodo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}periodo'],
+      )!,
+      contenuto: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}contenuto'],
+      )!,
+    );
+  }
+
+  @override
+  $ReportTable createAlias(String alias) {
+    return $ReportTable(attachedDatabase, alias);
+  }
+}
+
+class ReportSalvato extends DataClass implements Insertable<ReportSalvato> {
+  final String id;
+  final String aggiornatoIl;
+  final bool eliminato;
+
+  /// Vedi [PeriodicitaReport].
+  final String periodicita;
+
+  /// "2026-10" (mensile) o "2026" (annuale).
+  final String periodo;
+
+  /// Dati del report (JSON, con la versione del formato).
+  final String contenuto;
+  const ReportSalvato({
+    required this.id,
+    required this.aggiornatoIl,
+    required this.eliminato,
+    required this.periodicita,
+    required this.periodo,
+    required this.contenuto,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['aggiornato_il'] = Variable<String>(aggiornatoIl);
+    map['eliminato'] = Variable<bool>(eliminato);
+    map['periodicita'] = Variable<String>(periodicita);
+    map['periodo'] = Variable<String>(periodo);
+    map['contenuto'] = Variable<String>(contenuto);
+    return map;
+  }
+
+  ReportCompanion toCompanion(bool nullToAbsent) {
+    return ReportCompanion(
+      id: Value(id),
+      aggiornatoIl: Value(aggiornatoIl),
+      eliminato: Value(eliminato),
+      periodicita: Value(periodicita),
+      periodo: Value(periodo),
+      contenuto: Value(contenuto),
+    );
+  }
+
+  factory ReportSalvato.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ReportSalvato(
+      id: serializer.fromJson<String>(json['id']),
+      aggiornatoIl: serializer.fromJson<String>(json['aggiornatoIl']),
+      eliminato: serializer.fromJson<bool>(json['eliminato']),
+      periodicita: serializer.fromJson<String>(json['periodicita']),
+      periodo: serializer.fromJson<String>(json['periodo']),
+      contenuto: serializer.fromJson<String>(json['contenuto']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'aggiornatoIl': serializer.toJson<String>(aggiornatoIl),
+      'eliminato': serializer.toJson<bool>(eliminato),
+      'periodicita': serializer.toJson<String>(periodicita),
+      'periodo': serializer.toJson<String>(periodo),
+      'contenuto': serializer.toJson<String>(contenuto),
+    };
+  }
+
+  ReportSalvato copyWith({
+    String? id,
+    String? aggiornatoIl,
+    bool? eliminato,
+    String? periodicita,
+    String? periodo,
+    String? contenuto,
+  }) => ReportSalvato(
+    id: id ?? this.id,
+    aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+    eliminato: eliminato ?? this.eliminato,
+    periodicita: periodicita ?? this.periodicita,
+    periodo: periodo ?? this.periodo,
+    contenuto: contenuto ?? this.contenuto,
+  );
+  ReportSalvato copyWithCompanion(ReportCompanion data) {
+    return ReportSalvato(
+      id: data.id.present ? data.id.value : this.id,
+      aggiornatoIl: data.aggiornatoIl.present
+          ? data.aggiornatoIl.value
+          : this.aggiornatoIl,
+      eliminato: data.eliminato.present ? data.eliminato.value : this.eliminato,
+      periodicita: data.periodicita.present
+          ? data.periodicita.value
+          : this.periodicita,
+      periodo: data.periodo.present ? data.periodo.value : this.periodo,
+      contenuto: data.contenuto.present ? data.contenuto.value : this.contenuto,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReportSalvato(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('periodicita: $periodicita, ')
+          ..write('periodo: $periodo, ')
+          ..write('contenuto: $contenuto')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, aggiornatoIl, eliminato, periodicita, periodo, contenuto);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ReportSalvato &&
+          other.id == this.id &&
+          other.aggiornatoIl == this.aggiornatoIl &&
+          other.eliminato == this.eliminato &&
+          other.periodicita == this.periodicita &&
+          other.periodo == this.periodo &&
+          other.contenuto == this.contenuto);
+}
+
+class ReportCompanion extends UpdateCompanion<ReportSalvato> {
+  final Value<String> id;
+  final Value<String> aggiornatoIl;
+  final Value<bool> eliminato;
+  final Value<String> periodicita;
+  final Value<String> periodo;
+  final Value<String> contenuto;
+  final Value<int> rowid;
+  const ReportCompanion({
+    this.id = const Value.absent(),
+    this.aggiornatoIl = const Value.absent(),
+    this.eliminato = const Value.absent(),
+    this.periodicita = const Value.absent(),
+    this.periodo = const Value.absent(),
+    this.contenuto = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ReportCompanion.insert({
+    required String id,
+    required String aggiornatoIl,
+    this.eliminato = const Value.absent(),
+    required String periodicita,
+    required String periodo,
+    required String contenuto,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       aggiornatoIl = Value(aggiornatoIl),
+       periodicita = Value(periodicita),
+       periodo = Value(periodo),
+       contenuto = Value(contenuto);
+  static Insertable<ReportSalvato> custom({
+    Expression<String>? id,
+    Expression<String>? aggiornatoIl,
+    Expression<bool>? eliminato,
+    Expression<String>? periodicita,
+    Expression<String>? periodo,
+    Expression<String>? contenuto,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (aggiornatoIl != null) 'aggiornato_il': aggiornatoIl,
+      if (eliminato != null) 'eliminato': eliminato,
+      if (periodicita != null) 'periodicita': periodicita,
+      if (periodo != null) 'periodo': periodo,
+      if (contenuto != null) 'contenuto': contenuto,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ReportCompanion copyWith({
+    Value<String>? id,
+    Value<String>? aggiornatoIl,
+    Value<bool>? eliminato,
+    Value<String>? periodicita,
+    Value<String>? periodo,
+    Value<String>? contenuto,
+    Value<int>? rowid,
+  }) {
+    return ReportCompanion(
+      id: id ?? this.id,
+      aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+      eliminato: eliminato ?? this.eliminato,
+      periodicita: periodicita ?? this.periodicita,
+      periodo: periodo ?? this.periodo,
+      contenuto: contenuto ?? this.contenuto,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (aggiornatoIl.present) {
+      map['aggiornato_il'] = Variable<String>(aggiornatoIl.value);
+    }
+    if (eliminato.present) {
+      map['eliminato'] = Variable<bool>(eliminato.value);
+    }
+    if (periodicita.present) {
+      map['periodicita'] = Variable<String>(periodicita.value);
+    }
+    if (periodo.present) {
+      map['periodo'] = Variable<String>(periodo.value);
+    }
+    if (contenuto.present) {
+      map['contenuto'] = Variable<String>(contenuto.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReportCompanion(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('periodicita: $periodicita, ')
+          ..write('periodo: $periodo, ')
+          ..write('contenuto: $contenuto, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ImpostazioniTable extends Impostazioni
     with TableInfo<$ImpostazioniTable, Impostazione> {
   @override
@@ -10012,6 +10488,7 @@ abstract class _$Archivio extends GeneratedDatabase {
   late final $ObiettiviTable obiettivi = $ObiettiviTable(this);
   late final $PartecipantiTable partecipanti = $PartecipantiTable(this);
   late final $VersamentiTable versamenti = $VersamentiTable(this);
+  late final $ReportTable report = $ReportTable(this);
   late final $ImpostazioniTable impostazioni = $ImpostazioniTable(this);
   late final Index movimentiPianificatiUnici = Index(
     'movimenti_pianificati_unici',
@@ -10037,6 +10514,7 @@ abstract class _$Archivio extends GeneratedDatabase {
     obiettivi,
     partecipanti,
     versamenti,
+    report,
     impostazioni,
     movimentiPianificatiUnici,
   ];
@@ -15472,6 +15950,7 @@ typedef $$VociCostoTableCreateCompanionBuilder = VociCostoCompanion Function({
   Value<bool> archiviata,
   Value<int> ordine,
   Value<bool> ripartita,
+  Value<String> natura,
   Value<int> rowid,
 });
 typedef $$VociCostoTableUpdateCompanionBuilder = VociCostoCompanion Function({
@@ -15485,6 +15964,7 @@ typedef $$VociCostoTableUpdateCompanionBuilder = VociCostoCompanion Function({
   Value<bool> archiviata,
   Value<int> ordine,
   Value<bool> ripartita,
+  Value<String> natura,
   Value<int> rowid,
 });
 
@@ -15597,6 +16077,11 @@ class $$VociCostoTableFilterComposer
 
   ColumnFilters<bool> get ripartita => $composableBuilder(
     column: $table.ripartita,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get natura => $composableBuilder(
+    column: $table.natura,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -15728,6 +16213,11 @@ class $$VociCostoTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get natura => $composableBuilder(
+    column: $table.natura,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$CategorieTableOrderingComposer get categoriaId {
     final $$CategorieTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -15791,6 +16281,9 @@ class $$VociCostoTableAnnotationComposer
 
   GeneratedColumn<bool> get ripartita =>
       $composableBuilder(column: $table.ripartita, builder: (column) => column);
+
+  GeneratedColumn<String> get natura =>
+      $composableBuilder(column: $table.natura, builder: (column) => column);
 
   $$CategorieTableAnnotationComposer get categoriaId {
     final $$CategorieTableAnnotationComposer composer = $composerBuilder(
@@ -15908,6 +16401,7 @@ class $$VociCostoTableTableManager
                 Value<bool> archiviata = const Value.absent(),
                 Value<int> ordine = const Value.absent(),
                 Value<bool> ripartita = const Value.absent(),
+                Value<String> natura = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VociCostoCompanion(
                 id: id,
@@ -15920,6 +16414,7 @@ class $$VociCostoTableTableManager
                 archiviata: archiviata,
                 ordine: ordine,
                 ripartita: ripartita,
+                natura: natura,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -15934,6 +16429,7 @@ class $$VociCostoTableTableManager
                 Value<bool> archiviata = const Value.absent(),
                 Value<int> ordine = const Value.absent(),
                 Value<bool> ripartita = const Value.absent(),
+                Value<String> natura = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VociCostoCompanion.insert(
                 id: id,
@@ -15946,6 +16442,7 @@ class $$VociCostoTableTableManager
                 archiviata: archiviata,
                 ordine: ordine,
                 ripartita: ripartita,
+                natura: natura,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -19611,6 +20108,231 @@ typedef $$VersamentiTableProcessedTableManager =
         bool movimentoId,
       })
     >;
+typedef $$ReportTableCreateCompanionBuilder = ReportCompanion Function({
+  required String id,
+  required String aggiornatoIl,
+  Value<bool> eliminato,
+  required String periodicita,
+  required String periodo,
+  required String contenuto,
+  Value<int> rowid,
+});
+typedef $$ReportTableUpdateCompanionBuilder = ReportCompanion Function({
+  Value<String> id,
+  Value<String> aggiornatoIl,
+  Value<bool> eliminato,
+  Value<String> periodicita,
+  Value<String> periodo,
+  Value<String> contenuto,
+  Value<int> rowid,
+});
+
+class $$ReportTableFilterComposer extends Composer<_$Archivio, $ReportTable> {
+  $$ReportTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get periodicita => $composableBuilder(
+    column: $table.periodicita,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get periodo => $composableBuilder(
+    column: $table.periodo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contenuto => $composableBuilder(
+    column: $table.contenuto,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ReportTableOrderingComposer extends Composer<_$Archivio, $ReportTable> {
+  $$ReportTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get periodicita => $composableBuilder(
+    column: $table.periodicita,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get periodo => $composableBuilder(
+    column: $table.periodo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contenuto => $composableBuilder(
+    column: $table.contenuto,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ReportTableAnnotationComposer
+    extends Composer<_$Archivio, $ReportTable> {
+  $$ReportTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get eliminato =>
+      $composableBuilder(column: $table.eliminato, builder: (column) => column);
+
+  GeneratedColumn<String> get periodicita => $composableBuilder(
+    column: $table.periodicita,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get periodo =>
+      $composableBuilder(column: $table.periodo, builder: (column) => column);
+
+  GeneratedColumn<String> get contenuto =>
+      $composableBuilder(column: $table.contenuto, builder: (column) => column);
+}
+
+class $$ReportTableTableManager
+    extends
+        RootTableManager<
+          _$Archivio,
+          $ReportTable,
+          ReportSalvato,
+          $$ReportTableFilterComposer,
+          $$ReportTableOrderingComposer,
+          $$ReportTableAnnotationComposer,
+          $$ReportTableCreateCompanionBuilder,
+          $$ReportTableUpdateCompanionBuilder,
+          (
+            ReportSalvato,
+            BaseReferences<_$Archivio, $ReportTable, ReportSalvato>,
+          ),
+          ReportSalvato,
+          PrefetchHooks Function()
+        > {
+  $$ReportTableTableManager(_$Archivio db, $ReportTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ReportTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ReportTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ReportTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> aggiornatoIl = const Value.absent(),
+                Value<bool> eliminato = const Value.absent(),
+                Value<String> periodicita = const Value.absent(),
+                Value<String> periodo = const Value.absent(),
+                Value<String> contenuto = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ReportCompanion(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                periodicita: periodicita,
+                periodo: periodo,
+                contenuto: contenuto,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String aggiornatoIl,
+                Value<bool> eliminato = const Value.absent(),
+                required String periodicita,
+                required String periodo,
+                required String contenuto,
+                Value<int> rowid = const Value.absent(),
+              }) => ReportCompanion.insert(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                periodicita: periodicita,
+                periodo: periodo,
+                contenuto: contenuto,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ReportTable, ReportSalvato>(table),
+                  BaseReferences<_$Archivio, $ReportTable, ReportSalvato>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ReportTableProcessedTableManager =
+    ProcessedTableManager<
+      _$Archivio,
+      $ReportTable,
+      ReportSalvato,
+      $$ReportTableFilterComposer,
+      $$ReportTableOrderingComposer,
+      $$ReportTableAnnotationComposer,
+      $$ReportTableCreateCompanionBuilder,
+      $$ReportTableUpdateCompanionBuilder,
+      (ReportSalvato, BaseReferences<_$Archivio, $ReportTable, ReportSalvato>),
+      ReportSalvato,
+      PrefetchHooks Function()
+    >;
 typedef $$ImpostazioniTableCreateCompanionBuilder =
     ImpostazioniCompanion Function({
       required String chiave,
@@ -19797,6 +20519,8 @@ class $ArchivioManager {
       $$PartecipantiTableTableManager(_db, _db.partecipanti);
   $$VersamentiTableTableManager get versamenti =>
       $$VersamentiTableTableManager(_db, _db.versamenti);
+  $$ReportTableTableManager get report =>
+      $$ReportTableTableManager(_db, _db.report);
   $$ImpostazioniTableTableManager get impostazioni =>
       $$ImpostazioniTableTableManager(_db, _db.impostazioni);
 }

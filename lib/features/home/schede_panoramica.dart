@@ -9,6 +9,11 @@ import '../../core/sessione.dart';
 enum SchedaPanoramica {
   inArrivo('in_arrivo', 'In arrivo', 'Scadenze dei prossimi giorni'),
   costoVita('costo_vita', 'Costo della vita', 'Spese fisse e variabili'),
+  entratePreviste(
+    'entrate_previste',
+    'Entrate previste',
+    'Stipendio e altre entrate, e quanto ti resta',
+  ),
   entrateUscite('entrate_uscite', 'Entrate e uscite', 'Confronto e andamento'),
   spese('spese', 'Spese del mese', 'Per categoria'),
   flusso('flusso', 'Flusso del mese', 'Da inizio a fine mese'),

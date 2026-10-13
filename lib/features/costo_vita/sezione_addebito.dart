@@ -9,6 +9,7 @@ import '../../core/importo.dart';
 import '../../core/ricorrenza.dart';
 import '../../core/sessione.dart';
 import '../comuni/campi.dart';
+import 'testi_voci.dart';
 
 enum TipoFine { mai, data, occorrenze }
 
@@ -82,9 +83,13 @@ class SezioneAddebito extends StatefulWidget {
     required this.valore,
     required this.onChanged,
     this.importo,
+    this.testi = TestiVoci.costoVita,
   });
 
   final Sessione sessione;
+
+  /// Testi per spese (addebito) o entrate (accredito).
+  final TestiVoci testi;
   final ImpostazioneAddebito valore;
   final VoidCallback onChanged;
 
@@ -125,7 +130,8 @@ class _SezioneAddebitoState extends State<SezioneAddebito> {
     final ogni = v.frequenza.etichetta.toLowerCase();
     return v.ripartita
         ? '${Importo.formatta(importo, 'EUR')} $ogni → '
-              '${Importo.formatta(quota, 'EUR')} al mese nel costo della vita.'
+              '${Importo.formatta(quota, 'EUR')} al mese '
+              '${widget.testi.entrate ? 'nelle entrate previste' : 'nel costo della vita'}.'
         : 'Spenta: ${Importo.formatta(importo, 'EUR')} contano solo nel mese '
               'del pagamento.';
   }
@@ -141,12 +147,12 @@ class _SezioneAddebitoState extends State<SezioneAddebito> {
           contentPadding: EdgeInsets.zero,
           value: v.attivo,
           onChanged: (a) => _aggiorna(() => v.attivo = a),
-          title: const Text('Data di addebito'),
-          subtitle: const Text('Quando scalano i soldi dal conto'),
+          title: Text(widget.testi.data),
+          subtitle: Text(widget.testi.dataSpiegazione),
         ),
         if (v.attivo) ...[
           CampoData(
-            etichetta: 'Primo addebito',
+            etichetta: widget.testi.primaData,
             valore: v.inizio,
             primo: DateTime(2000),
             onChanged: (d) => _aggiorna(() => v.inizio = d),
@@ -168,7 +174,7 @@ class _SezioneAddebitoState extends State<SezioneAddebito> {
               controlAffinity: ListTileControlAffinity.leading,
               value: v.ripartita,
               onChanged: (r) => _aggiorna(() => v.ripartita = r ?? false),
-              title: const Text('Suddividi la spesa nei mesi'),
+              title: Text(widget.testi.suddividi),
               subtitle: Text(_spiegazioneRipartizione()),
             ),
           const SizedBox(height: 12),
@@ -200,7 +206,7 @@ class _SezioneAddebitoState extends State<SezioneAddebito> {
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: CampoData(
-                etichetta: 'Ultimo addebito entro',
+                etichetta: widget.testi.ultimaData,
                 valore: v.fine,
                 primo: v.inizio,
                 onChanged: (d) => _aggiorna(() => v.fine = d),
@@ -212,8 +218,8 @@ class _SezioneAddebitoState extends State<SezioneAddebito> {
               child: TextFormField(
                 controller: _occorrenze,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Dopo quanti addebiti finisce',
+                decoration: InputDecoration(
+                  labelText: widget.testi.quanteVolte,
                 ),
                 onChanged: (t) => _aggiorna(
                   () => v.occorrenze = int.tryParse(t) ?? v.occorrenze,
@@ -234,11 +240,9 @@ class _SezioneAddebitoState extends State<SezioneAddebito> {
                     ? v.portafoglioId
                     : null,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Da quale portafoglio',
-                  helperText:
-                      'Con un portafoglio la spesa si registra da sola nel giorno '
-                      'previsto (ti avviso 3 giorni prima).',
+                decoration: InputDecoration(
+                  labelText: widget.testi.portafoglio,
+                  helperText: widget.testi.portafoglioSpiegazione,
                   helperMaxLines: 2,
                 ),
                 items: [

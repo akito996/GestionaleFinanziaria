@@ -55,6 +55,7 @@ const categorieProposte = [
     Obiettivi,
     Partecipanti,
     Versamenti,
+    Report,
     Impostazioni,
   ],
 )
@@ -110,7 +111,7 @@ class Archivio extends _$Archivio {
   Archivio.conEsecutore(super.e);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -177,6 +178,13 @@ class Archivio extends _$Archivio {
       if (da < 10 && da >= 5) {
         await m.addColumn(prestiti, prestiti.decisioneMaxi);
         await m.addColumn(prestiti, prestiti.maxiRimandataIl);
+      }
+      // v11: entrate previste (natura delle voci) e report automatici.
+      if (da < 11) {
+        if (da >= 2) {
+          await m.addColumn(vociCosto, vociCosto.natura);
+        }
+        await m.createTable(report);
       }
     },
     beforeOpen: (_) async {

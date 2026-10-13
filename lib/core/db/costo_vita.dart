@@ -159,6 +159,8 @@ class CostoVita {
   /// Imposta (o toglie, con [ricorrenza] `null`) la data in cui scalano i soldi.
   /// Con un [portafoglioId] il movimento viene registrato da solo nel giorno
   /// previsto; senza, è solo un promemoria.
+  /// Per le entrate previste è la data di accredito: il movimento registrato
+  /// è un'entrata.
   Future<void> impostaAddebito(
     String voceId, {
     Ricorrenza? ricorrenza,
@@ -171,6 +173,7 @@ class CostoVita {
     final voce = await (_db.select(
       _db.vociCosto,
     )..where((v) => v.id.equals(voceId))).getSingle();
+    final entrata = voce.natura == NaturaVoce.entrata;
     String? valuta;
     if (portafoglioId != null) {
       valuta = (await (_db.select(
@@ -184,11 +187,23 @@ class CostoVita {
         ricorrenza: ricorrenza,
         portafoglioId: portafoglioId,
         categoriaId: voce.categoriaId,
+        tipoId: entrata ? await _tipoEntrata() : null,
         descrizione: voce.nome,
         valuta: valuta ?? voce.valuta,
       ),
     );
   }
+
+  Future<String> _tipoEntrata() async =>
+      (await (_db.select(_db.definizioniTipo)..where(
+                (t) =>
+                    t.ambito.equals(AmbitoTipo.movimento) &
+                    t.effetto.equals(EffettoSaldo.entrata) &
+                    t.diSistema.equals(true),
+              ))
+              .get())
+          .first
+          .id;
 
   /// Importo di un addebito di [voceId] nel giorno [data].
   Future<int?> importoAl(String voceId, DateTime data) async {
@@ -225,6 +240,7 @@ class CostoVita {
     String? categoriaId,
     String valuta = 'EUR',
     bool ripartita = false,
+    String natura = NaturaVoce.spesa,
   }) async {
     final id = nuovoId();
     final oggi = _adesso();
@@ -240,6 +256,7 @@ class CostoVita {
               categoriaId: Value(categoriaId),
               valuta: Value(valuta),
               ripartita: Value(ripartita),
+              natura: Value(natura),
               ordine: Value(await _prossimoOrdine()),
             ),
           );
@@ -394,25 +411,39 @@ class CostoVita {
   // ---------------------------------------------------------- riepiloghi
 
   /// Riepilogo di un mese, aggiornato quando cambiano voci, importi o movimenti.
-  Stream<RiepilogoMese> osservaMese(DateTime mese) =>
-      _osserva().ricalcola((_) async => (await riepiloghi([mese])).single);
+  Stream<RiepilogoMese> osservaMese(
+    DateTime mese, {
+    String natura = NaturaVoce.spesa,
+  }) => _osserva().ricalcola(
+    (_) async => (await riepiloghi([mese], natura: natura)).single,
+  );
 
   /// Gli ultimi [quanti] mesi fino a [finoA] incluso (per il grafico).
   Stream<List<RiepilogoMese>> osservaStorico({
     required DateTime finoA,
     int quanti = 6,
+    String natura = NaturaVoce.spesa,
   }) => _osserva().ricalcola(
     (_) => riepiloghi([
       for (var i = quanti - 1; i >= 0; i--)
         DateTime(finoA.year, finoA.month - i),
-    ]),
+    ], natura: natura),
   );
 
-  Future<List<RiepilogoMese>> riepiloghi(List<DateTime> mesi) async {
+  /// Riepiloghi dei [mesi]: costo della vita ([NaturaVoce.spesa], con le rate
+  /// dei prestiti) o entrate previste ([NaturaVoce.entrata]).
+  Future<List<RiepilogoMese>> riepiloghi(
+    List<DateTime> mesi, {
+    String natura = NaturaVoce.spesa,
+  }) async {
+    final entrate = natura == NaturaVoce.entrata;
     final voci =
         await (_db.select(_db.vociCosto)
               ..where(
-                (v) => v.eliminato.equals(false) & v.archiviata.equals(false),
+                (v) =>
+                    v.eliminato.equals(false) &
+                    v.archiviata.equals(false) &
+                    v.natura.equals(natura),
               )
               ..orderBy([
                 (v) => OrderingTerm(expression: v.ordine),
@@ -464,7 +495,10 @@ class CostoVita {
     for (final m in mesi) {
       final mese = DateTime(m.year, m.month);
       final riferimento = _giornoDiRiferimento(mese, oggi);
-      final spese = await _speseRealiPerCategoria(mese);
+      final spese = await _realiPerCategoria(
+        mese,
+        entrate ? EffettoSaldo.entrata : EffettoSaldo.uscita,
+      );
       final righe = <VoceDelMese>[];
       for (final voce in voci) {
         final storia = perVoce[voce.id] ?? const [];
@@ -540,7 +574,11 @@ class CostoVita {
         );
       }
       risultato.add(
-        RiepilogoMese(mese, righe, rate: _rateDelMese(prestiti, mese)),
+        RiepilogoMese(
+          mese,
+          righe,
+          rate: entrate ? const [] : _rateDelMese(prestiti, mese),
+        ),
       );
     }
     return risultato;
@@ -610,19 +648,23 @@ class CostoVita {
         ),
       );
 
-  /// Spese (uscite) del mese per categoria.
-  Future<Map<String, int>> _speseRealiPerCategoria(DateTime mese) async {
+  /// Uscite (o entrate, con [effetto]) del mese per categoria.
+  Future<Map<String, int>> _realiPerCategoria(
+    DateTime mese,
+    String effetto,
+  ) async {
     final righe = await _db
         .customSelect(
           '''
           SELECT m.categoria_id AS categoria, SUM(m.importo_minimo) AS totale
           FROM movimenti m JOIN definizioni_tipo t ON t.id = m.tipo_id
-          WHERE m.eliminato = 0 AND t.effetto = 'uscita'
+          WHERE m.eliminato = 0 AND t.effetto = ?
             AND m.categoria_id IS NOT NULL
             AND m.data BETWEEN ? AND ?
           GROUP BY m.categoria_id
           ''',
           variables: [
+            Variable.withString(effetto),
             Variable.withString(Contabilita.giorno(mese)),
             Variable.withString(Contabilita.giorno(_ultimoGiorno(mese))),
           ],

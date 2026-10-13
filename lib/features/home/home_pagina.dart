@@ -19,6 +19,7 @@ import '../movimenti/movimento_modulo.dart';
 import '../movimenti/riga_movimento.dart';
 import '../portafogli/portafoglio_modulo.dart';
 import '../portafogli/elenco_portafogli.dart';
+import 'entrate_previste.dart';
 import 'entrate_uscite.dart';
 import 'schede_panoramica.dart';
 
@@ -26,12 +27,20 @@ import 'schede_panoramica.dart';
 /// nell'ordine che preferisce, e "+ Movimento". Su Windows: Ctrl+N = nuovo
 /// movimento.
 class HomePagina extends StatefulWidget {
-  const HomePagina({super.key, required this.sessione, this.apriCostoVita});
+  const HomePagina({
+    super.key,
+    required this.sessione,
+    this.apriCostoVita,
+    this.apriEntrate,
+  });
 
   final Sessione sessione;
 
   /// Porta alla sezione Costo della vita (dalla scheda della Panoramica).
   final VoidCallback? apriCostoVita;
+
+  /// Porta alla sezione Entrate previste.
+  final VoidCallback? apriEntrate;
 
   @override
   State<HomePagina> createState() => _HomePaginaState();
@@ -458,6 +467,10 @@ class _HomePaginaState extends State<HomePagina> {
           child: switch (scheda) {
             SchedaPanoramica.inArrivo => SchedaInArrivo(sessione: _sessione),
             SchedaPanoramica.costoVita => schedaCostoVita,
+            SchedaPanoramica.entratePreviste => SchedaEntratePreviste(
+              sessione: _sessione,
+              onApri: widget.apriEntrate,
+            ),
             SchedaPanoramica.entrateUscite => SchedaEntrateUscite(
               sessione: _sessione,
             ),

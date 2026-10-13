@@ -137,6 +137,10 @@ class VociCosto extends Table with ColonneSincronizzate {
   /// spesa si suddivide nei mesi (1.200 €/anno → 100 € al mese), `false` = pesa
   /// solo nel mese del pagamento.
   BoolColumn get ripartita => boolean().withDefault(const Constant(false))();
+
+  /// Vedi [NaturaVoce]: spesa (costo della vita) o entrata (entrate previste).
+  TextColumn get natura =>
+      text().withDefault(const Constant(NaturaVoce.spesa))();
 }
 
 /// Importo predefinito mensile di una voce, con la data da cui vale.
@@ -361,6 +365,36 @@ abstract final class AmbitoTipo {
 }
 
 /// Valori ammessi per [VociCosto.tipo].
+/// Valori ammessi per [VociCosto.natura].
+abstract final class NaturaVoce {
+  /// Costo della vita.
+  static const spesa = 'spesa';
+
+  /// Entrate previste (stipendio, pensione...).
+  static const entrata = 'entrata';
+}
+
+/// Report automatico salvato: mensile o annuale (vedi [PeriodicitaReport]).
+/// Il contenuto è un JSON con i dati del periodo, così resta com'era anche se
+/// poi cambiano le voci.
+@DataClassName('ReportSalvato')
+class Report extends Table with ColonneSincronizzate {
+  /// Vedi [PeriodicitaReport].
+  TextColumn get periodicita => text()();
+
+  /// "2026-10" (mensile) o "2026" (annuale).
+  TextColumn get periodo => text().withLength(min: 4, max: 7)();
+
+  /// Dati del report (JSON, con la versione del formato).
+  TextColumn get contenuto => text()();
+}
+
+/// Valori ammessi per [Report.periodicita].
+abstract final class PeriodicitaReport {
+  static const mensile = 'mensile';
+  static const annuale = 'annuale';
+}
+
 abstract final class TipoVoce {
   static const fissa = 'fissa';
   static const variabile = 'variabile';

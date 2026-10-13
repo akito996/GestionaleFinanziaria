@@ -13,29 +13,8 @@ import '../grafici/grafici_avanzati.dart';
 import '../movimenti/riga_movimento.dart';
 import '../prestiti/prestiti_pagina.dart';
 import 'grafico_costo_vita.dart';
+import 'testi_voci.dart';
 import 'voce_modulo.dart';
-
-/// Suggerimenti a un tocco: (nome, categoria proposta).
-const _fisseSuggerite = [
-  ('Affitto o mutuo', 'Affitto o mutuo'),
-  ('Condominio', 'Condominio'),
-  ('Telefono e internet', 'Telefono e internet'),
-  ('Assicurazione auto', 'Assicurazioni'),
-  ('Abbonamenti streaming', 'Streaming'),
-  ('Palestra', 'Hobby'),
-];
-
-const _variabiliSuggerite = [
-  ('Luce', 'Bollette'),
-  ('Gas', 'Bollette'),
-  ('Acqua', 'Bollette'),
-  ('Spesa alimentare', 'Spesa'),
-  ('Ristoranti e bar', 'Ristoranti e bar'),
-  ('Carburante', 'Carburante'),
-  ('Farmacia', 'Farmacia'),
-  ('Svago', 'Svago'),
-  ('Abbigliamento', 'Abbigliamento'),
-];
 
 /// Abbreviazione del mese per l'asse del grafico ("ott").
 String meseBreve(BuildContext context, DateTime mese) {
@@ -56,11 +35,18 @@ String meseBreve(BuildContext context, DateTime mese) {
   return nomi[mese.month - 1];
 }
 
-/// Costo della vita: quanto costa vivere ogni mese, tra spese fisse e variabili.
+/// Costo della vita: quanto costa vivere ogni mese, tra spese fisse e
+/// variabili. Con [natura] = [NaturaVoce.entrata] è la sezione gemella
+/// "Entrate previste" (stipendio, pensione...).
 class CostoVitaPagina extends StatefulWidget {
-  const CostoVitaPagina({super.key, required this.sessione});
+  const CostoVitaPagina({
+    super.key,
+    required this.sessione,
+    this.natura = NaturaVoce.spesa,
+  });
 
   final Sessione sessione;
+  final String natura;
 
   @override
   State<CostoVitaPagina> createState() => _CostoVitaPaginaState();
@@ -68,6 +54,8 @@ class CostoVitaPagina extends StatefulWidget {
 
 class _CostoVitaPaginaState extends State<CostoVitaPagina> {
   late DateTime _mese;
+
+  TestiVoci get _t => TestiVoci.per(widget.natura);
 
   @override
   void initState() {
@@ -89,6 +77,7 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
         context,
         widget.sessione,
         tipo: tipo,
+        natura: widget.natura,
         nomeSuggerito: nome,
         categoriaSuggerita: id,
       );
@@ -100,13 +89,13 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
     final cv = widget.sessione.costoVita;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Costo della vita'),
+        title: Text(_t.sezione),
         actions: [PulsanteBlocca(sessione: widget.sessione)],
       ),
       body: StreamBuilder<List<RiepilogoMese>>(
         // La chiave fa ripartire il flusso quando cambi mese.
         key: ValueKey(_mese),
-        stream: cv.osservaStorico(finoA: _mese),
+        stream: cv.osservaStorico(finoA: _mese, natura: widget.natura),
         builder: (context, snapshot) {
           final storico = snapshot.data;
           if (storico == null) {
@@ -127,13 +116,16 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
                   _PrimaConfigurazione(
                     onSuggerita: _suggerita,
                     sessione: widget.sessione,
+                    testi: _t,
                   )
                 else ...[
-                  _Riepilogo(mese: mese),
+                  _Riepilogo(mese: mese, testi: _t),
                   const SizedBox(height: 16),
                   SchedaGrafico(
                     sessione: widget.sessione,
-                    chiave: 'costo_vita.storico',
+                    chiave: _t.entrate
+                        ? 'entrate.storico'
+                        : 'costo_vita.storico',
                     titolo: 'Ultimi 6 mesi',
                     tipi: const [
                       TipoGrafico.barreImpilate,
@@ -168,7 +160,7 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
                           SerieTempo('Previsto', [
                             for (final m in storico) m.totalePrevisto,
                           ]),
-                          SerieTempo('Speso davvero (fisse + variabili)', [
+                          SerieTempo(_t.realiDavvero, [
                             for (final m in storico) m.fisse + m.variabiliReali,
                           ]),
                         ],
@@ -195,17 +187,19 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
                       _ => GraficoCostoVita(
                         mesi: storico,
                         nomeMese: (m) => meseBreve(context, m),
+                        testoReale: _t.reale,
                       ),
                     },
                   ),
                   const SizedBox(height: 16),
                   _ElencoVoci(
-                    titolo: 'Spese fisse',
+                    titolo: _t.fisse,
                     voci: mese.voci.where((v) => v.fissa).toList(),
                     sessione: widget.sessione,
                     mese: _mese,
                     tipo: TipoVoce.fissa,
-                    suggerite: _fisseSuggerite,
+                    testi: _t,
+                    suggerite: _t.suggeriteFisse,
                     onSuggerita: _suggerita,
                   ),
                   if (mese.rate.isNotEmpty) ...[
@@ -214,12 +208,13 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
                   ],
                   const SizedBox(height: 16),
                   _ElencoVoci(
-                    titolo: 'Spese variabili',
+                    titolo: _t.variabili,
                     voci: mese.voci.where((v) => !v.fissa).toList(),
                     sessione: widget.sessione,
                     mese: _mese,
                     tipo: TipoVoce.variabile,
-                    suggerite: _variabiliSuggerite,
+                    testi: _t,
+                    suggerite: _t.suggeriteVariabili,
                     onSuggerita: _suggerita,
                   ),
                 ],
@@ -272,9 +267,10 @@ class _SceltaMese extends StatelessWidget {
 }
 
 class _Riepilogo extends StatelessWidget {
-  const _Riepilogo({required this.mese});
+  const _Riepilogo({required this.mese, required this.testi});
 
   final RiepilogoMese mese;
+  final TestiVoci testi;
 
   @override
   Widget build(BuildContext context) {
@@ -309,13 +305,13 @@ class _Riepilogo extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Costo previsto del mese', style: testo.labelLarge),
+            Text(testi.titoloMese, style: testo.labelLarge),
             Text(
               Importo.formatta(mese.totalePrevisto, 'EUR'),
               style: testo.headlineMedium,
             ),
             const SizedBox(height: 8),
-            voce('Spese fisse', mese.fisse, colori.fisse),
+            voce(testi.fisse, mese.fisse, colori.fisse),
             if (mese.ratePrestiti > 0)
               Padding(
                 padding: const EdgeInsets.only(left: 18),
@@ -330,7 +326,7 @@ class _Riepilogo extends StatelessWidget {
               mese.variabiliPreviste,
               colori.variabili,
             ),
-            voce('Variabili spese finora', mese.variabiliReali, colori.reali),
+            voce(testi.realiFinora, mese.variabiliReali, colori.reali),
           ],
         ),
       ),
@@ -422,6 +418,7 @@ class _ElencoVoci extends StatelessWidget {
     required this.sessione,
     required this.mese,
     required this.tipo,
+    required this.testi,
     required this.suggerite,
     required this.onSuggerita,
   });
@@ -431,6 +428,7 @@ class _ElencoVoci extends StatelessWidget {
   final Sessione sessione;
   final DateTime mese;
   final String tipo;
+  final TestiVoci testi;
   final List<(String, String)> suggerite;
   final Future<void> Function(String tipo, String nome, String categoria)
   onSuggerita;
@@ -457,7 +455,7 @@ class _ElencoVoci extends StatelessWidget {
               ),
             ),
             for (final v in voci)
-              _RigaVoce(voce: v, sessione: sessione, mese: mese),
+              _RigaVoce(voce: v, sessione: sessione, mese: mese, testi: testi),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
               child: Wrap(
@@ -467,8 +465,12 @@ class _ElencoVoci extends StatelessWidget {
                   ActionChip(
                     avatar: const Icon(Icons.add),
                     label: const Text('Aggiungi'),
-                    onPressed: () =>
-                        apriNuovaVoce(context, sessione, tipo: tipo),
+                    onPressed: () => apriNuovaVoce(
+                      context,
+                      sessione,
+                      tipo: tipo,
+                      natura: testi.natura,
+                    ),
                   ),
                   for (final (nome, categoria) in mancanti.take(6))
                     ActionChip(
@@ -491,11 +493,13 @@ class _RigaVoce extends StatelessWidget {
     required this.voce,
     required this.sessione,
     required this.mese,
+    required this.testi,
   });
 
   final VoceDelMese voce;
   final Sessione sessione;
   final DateTime mese;
+  final TestiVoci testi;
 
   @override
   Widget build(BuildContext context) {
@@ -527,7 +531,7 @@ class _RigaVoce extends StatelessWidget {
             ),
           if (reale != null) ...[
             const SizedBox(height: 4),
-            _Avanzamento(reale: reale, previsto: voce.previsto),
+            _Avanzamento(reale: reale, previsto: voce.previsto, testi: testi),
           ],
         ],
       ),
@@ -580,18 +584,25 @@ class _RigaVoce extends StatelessWidget {
   }
 }
 
-/// Spesa reale rispetto alla stima: barra + testo (mai solo colore).
+/// Reale rispetto alla stima: barra + testo (mai solo colore). Per le spese
+/// superare la stima è un avviso; per le entrate è una buona notizia.
 class _Avanzamento extends StatelessWidget {
-  const _Avanzamento({required this.reale, required this.previsto});
+  const _Avanzamento({
+    required this.reale,
+    required this.previsto,
+    required this.testi,
+  });
 
   final int reale;
   final int previsto;
+  final TestiVoci testi;
 
   @override
   Widget build(BuildContext context) {
     final schema = Theme.of(context).colorScheme;
     final colori = ColoriCostoVita.di(context);
     final oltre = previsto > 0 && reale > previsto;
+    final allarme = oltre && !testi.entrate;
     final quota = previsto == 0 ? 1.0 : (reale / previsto).clamp(0.0, 1.0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -601,20 +612,20 @@ class _Avanzamento extends StatelessWidget {
           child: LinearProgressIndicator(
             value: quota,
             minHeight: 6,
-            color: oltre ? schema.error : colori.reali,
+            color: allarme ? schema.error : colori.reali,
             backgroundColor: schema.surfaceContainerHighest,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           oltre
-              ? 'Speso ${Importo.formatta(reale, 'EUR')}: '
-                    '${Importo.formatta(reale - previsto, 'EUR')} oltre la stima'
-              : 'Speso ${Importo.formatta(reale, 'EUR')} · '
-                    'restano ${Importo.formatta(previsto - reale, 'EUR')}',
+              ? '${testi.reale} ${Importo.formatta(reale, 'EUR')}: '
+                    '${Importo.formatta(reale - previsto, 'EUR')} ${testi.oltre}'
+              : '${testi.reale} ${Importo.formatta(reale, 'EUR')} · '
+                    '${testi.manca} ${Importo.formatta(previsto - reale, 'EUR')}',
           style: TextStyle(
             fontSize: 12,
-            color: oltre ? schema.error : schema.onSurfaceVariant,
+            color: allarme ? schema.error : schema.onSurfaceVariant,
           ),
         ),
       ],
@@ -627,11 +638,13 @@ class _PrimaConfigurazione extends StatelessWidget {
   const _PrimaConfigurazione({
     required this.onSuggerita,
     required this.sessione,
+    required this.testi,
   });
 
   final Future<void> Function(String tipo, String nome, String categoria)
   onSuggerita;
   final Sessione sessione;
+  final TestiVoci testi;
 
   @override
   Widget build(BuildContext context) {
@@ -655,7 +668,12 @@ class _PrimaConfigurazione extends StatelessWidget {
                 ActionChip(
                   avatar: const Icon(Icons.add),
                   label: const Text('Altra'),
-                  onPressed: () => apriNuovaVoce(context, sessione, tipo: tipo),
+                  onPressed: () => apriNuovaVoce(
+                    context,
+                    sessione,
+                    tipo: tipo,
+                    natura: testi.natura,
+                  ),
                 ),
               ],
             ),
@@ -667,21 +685,20 @@ class _PrimaConfigurazione extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.receipt_long_outlined, size: 48),
+            Icon(
+              testi.entrate ? Icons.trending_up : Icons.receipt_long_outlined,
+              size: 48,
+            ),
             const SizedBox(height: 12),
-            Text(
-              'Quanto ti costa vivere ogni mese?',
-              style: testo.headlineSmall,
-            ),
+            Text(testi.primaTitolo, style: testo.headlineSmall),
             const SizedBox(height: 8),
-            const Text(
-              'Aggiungi le spese fisse (affitto, bollette, abbonamenti) e una stima '
-              'delle spese variabili (spesa, carburante, svago). Ogni mese l\'app '
-              'parte da questi importi: puoi cambiarli per un solo mese oppure da '
-              'domani o dal mese prossimo in poi.',
+            Text(testi.primaTesto),
+            gruppo(testi.fisse, TipoVoce.fissa, testi.suggeriteFisse),
+            gruppo(
+              testi.variabili,
+              TipoVoce.variabile,
+              testi.suggeriteVariabili,
             ),
-            gruppo('Spese fisse', TipoVoce.fissa, _fisseSuggerite),
-            gruppo('Spese variabili', TipoVoce.variabile, _variabiliSuggerite),
           ],
         ),
       ),

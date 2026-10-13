@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/db/tabelle.dart';
 import '../../core/sessione.dart';
 import '../carte/carte_pagina.dart';
 import '../categorie/categorie_pagina.dart';
@@ -105,6 +106,7 @@ class _GuscioState extends State<Guscio> {
   static const _voci = [
     (Icons.dashboard_outlined, Icons.dashboard, 'Panoramica'),
     (Icons.receipt_long_outlined, Icons.receipt_long, 'Costo della vita'),
+    (Icons.trending_up_outlined, Icons.trending_up, 'Entrate'),
     (Icons.credit_card_outlined, Icons.credit_card, 'Carte'),
     (Icons.request_quote_outlined, Icons.request_quote, 'Prestiti'),
     (Icons.savings_outlined, Icons.savings, 'Obiettivi'),
@@ -143,8 +145,13 @@ class _GuscioState extends State<Guscio> {
   @override
   Widget build(BuildContext context) {
     final pagine = [
-      HomePagina(sessione: widget.sessione, apriCostoVita: () => _vaiA(1)),
+      HomePagina(
+        sessione: widget.sessione,
+        apriCostoVita: () => _vaiA(1),
+        apriEntrate: () => _vaiA(2),
+      ),
       CostoVitaPagina(sessione: widget.sessione),
+      CostoVitaPagina(sessione: widget.sessione, natura: NaturaVoce.entrata),
       CartePagina(sessione: widget.sessione),
       PrestitiPagina(sessione: widget.sessione),
       ObiettiviPagina(sessione: widget.sessione),

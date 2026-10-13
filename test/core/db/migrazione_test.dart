@@ -3,11 +3,12 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gestionale_finanziaria/core/db/archivio.dart';
 import 'package:gestionale_finanziaria/core/db/id.dart';
+import 'package:gestionale_finanziaria/core/db/tabelle.dart';
 import 'package:sqlite3/sqlite3.dart' as sql;
 
 void main() {
   test(
-    'migrazione v1 → v10: dati conservati, nuove tabelle e categorie',
+    'migrazione v1 → v11: dati conservati, nuove tabelle e categorie',
     () async {
       // Lo schema delle tabelle già presenti in v1 non è cambiato: si crea un archivio
       // attuale e lo si riporta com'era in v1 (senza le aggiunte della v2).
@@ -36,6 +37,7 @@ void main() {
       grezzo
         ..execute('ALTER TABLE portafogli DROP COLUMN gruppo')
         ..execute('ALTER TABLE portafogli DROP COLUMN preferito')
+        ..execute('DROP TABLE report')
         ..execute('DROP TABLE versamenti')
         ..execute('DROP TABLE partecipanti')
         ..execute('DROP TABLE obiettivi')
@@ -78,12 +80,12 @@ void main() {
       expect(await db.select(db.obiettivi).get(), isEmpty);
       expect(portafogli.single.preferito, isFalse);
       expect(portafogli.single.gruppo, isNull);
-      expect(grezzo.userVersion, 10);
+      expect(grezzo.userVersion, 11);
     },
   );
 
   test(
-    'migrazione v7 → v10: spese ripartite, maxi rata e decisione, spese',
+    'migrazione v7 → v11: spese ripartite, maxi rata, entrate previste, report',
     () async {
       final grezzo = sql.sqlite3.openInMemory();
       final v8 = Archivio.conEsecutore(
@@ -102,6 +104,8 @@ void main() {
       await v8.close();
       grezzo
         ..execute('ALTER TABLE voci_costo DROP COLUMN ripartita')
+        ..execute('ALTER TABLE voci_costo DROP COLUMN natura')
+        ..execute('DROP TABLE report')
         ..execute('ALTER TABLE prestiti DROP COLUMN maxi_rata_minimo')
         ..execute('ALTER TABLE prestiti DROP COLUMN spese_rata_minimo')
         ..execute('ALTER TABLE prestiti DROP COLUMN decisione_maxi')
@@ -113,8 +117,10 @@ void main() {
       final voce = (await db.select(db.vociCosto).get()).single;
       expect(voce.nome, 'Assicurazione auto');
       expect(voce.ripartita, isFalse);
+      expect(voce.natura, NaturaVoce.spesa); // le voci esistenti sono spese
+      expect(await db.select(db.report).get(), isEmpty);
       expect(await db.select(db.prestiti).get(), isEmpty);
-      expect(grezzo.userVersion, 10);
+      expect(grezzo.userVersion, 11);
     },
   );
 }

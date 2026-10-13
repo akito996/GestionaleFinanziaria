@@ -35,9 +35,13 @@ class GraficoCostoVita extends StatelessWidget {
     required this.nomeMese,
     this.altezza = 220,
     this.compatto = false,
+    this.testoReale = 'Speso',
   });
 
   final List<RiepilogoMese> mesi;
+
+  /// "Speso" (costo della vita) o "Ricevuto" (entrate previste).
+  final String testoReale;
 
   /// Etichetta breve dell'asse (es. "ott").
   final String Function(DateTime mese) nomeMese;
@@ -220,7 +224,11 @@ class GraficoCostoVita extends StatelessWidget {
           children: [
             _Legenda(colore: colori.fisse, testo: 'Fisse'),
             _Legenda(colore: colori.variabili, testo: 'Variabili previste'),
-            _Legenda(colore: colori.reali, testo: 'Speso davvero', tondo: true),
+            _Legenda(
+              colore: colori.reali,
+              testo: '$testoReale davvero',
+              tondo: true,
+            ),
           ],
         ),
       ],

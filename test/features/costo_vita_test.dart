@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gestionale_finanziaria/app.dart';
 import 'package:gestionale_finanziaria/core/crypto/derivazione.dart';
 import 'package:gestionale_finanziaria/core/db/deposito_locale.dart';
+import 'package:gestionale_finanziaria/core/db/tabelle.dart';
 import 'package:gestionale_finanziaria/core/sessione.dart';
 import 'package:gestionale_finanziaria/features/costo_vita/grafico_costo_vita.dart';
 import 'package:sodium/sodium_sumo.dart';
@@ -181,4 +182,58 @@ void main() {
     await tocca(tester, find.byTooltip('Archivio aperto: tocca per bloccarlo'));
     await attendi(tester, find.text('Archivio bloccato'));
   });
+
+  testWidgets(
+    'entrate previste: sezione, suggerimento e margine in Panoramica',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1200, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (_) async => null,
+      );
+      await tester.runAsync(() async {
+        await sessione.avvia();
+        await sessione.preparaNuovoArchivio('Password-Lunga-1');
+        await sessione.confermaNuovoArchivio();
+        final c = sessione.contabilita;
+        final tipo = (await c.tipi(AmbitoTipo.portafoglio))
+            .firstWhere((t) => t.nome == 'Conto corrente');
+        await c.creaPortafoglio(nome: 'Conto', tipoId: tipo.id, valuta: 'EUR');
+        await sessione.costoVita.creaVoce(
+          nome: 'Affitto',
+          tipo: TipoVoce.fissa,
+          importo: 80000,
+        );
+      });
+      sessione.avviso = null;
+      await tester.pumpWidget(GestionaleApp(sessione: sessione));
+      await attendi(tester, find.text('Conto'));
+
+      await tocca(tester, find.text('Entrate').last);
+      await attendi(tester, find.text('Quanto entra ogni mese?'));
+      await tocca(tester, find.text('Stipendio'));
+      await attendi(tester, nelDialogo(find.text('Nuova entrata fissa')));
+      await tester.enterText(
+        nelDialogo(find.byType(TextFormField)).at(1),
+        '2100',
+      );
+      await tocca(tester, nelDialogo(find.text('Aggiungi')));
+      await attendi(tester, find.text('2.100,00 €'));
+      expect(find.text('Entrate fisse'), findsWidgets);
+
+      // Panoramica: entrate previste e margine (2.100 − 800 = +1.300).
+      await tocca(tester, find.text('Panoramica').last);
+      await attendi(tester, find.textContaining('Margine previsto'));
+      expect(find.textContaining('+1.300,00 €'), findsOneWidget);
+
+      await tocca(
+        tester,
+        find.byTooltip('Archivio aperto: tocca per bloccarlo'),
+      );
+      await attendi(tester, find.text('Archivio bloccato'));
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(milliseconds: 100));
+    },
+  );
 }
