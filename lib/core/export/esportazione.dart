@@ -668,6 +668,10 @@ abstract final class Esportazione {
   static String _mese(DateTime d) =>
       '${d.month.toString().padLeft(2, '0')}/${d.year}';
 
+  /// Testo adatto al PDF (vedi [_t]): usato anche dai report.
+  static String testoPdf(String testo, {required bool carattereCompleto}) =>
+      _t(testo, carattereCompleto: carattereCompleto);
+
   /// Con Roboto incorporato si tolgono solo le emoji; con Helvetica (latino
   /// occidentale) si sostituiscono anche i simboli fuori set, euro compreso.
   static String _t(String testo, {required bool carattereCompleto}) {

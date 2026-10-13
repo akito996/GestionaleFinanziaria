@@ -8,6 +8,7 @@ import '../carte/carte_pagina.dart';
 import '../categorie/categorie_pagina.dart';
 import '../prestiti/avviso_maxi.dart';
 import '../prestiti/prestiti_pagina.dart';
+import '../report/report_pagina.dart';
 import '../costo_vita/costo_vita_pagina.dart';
 import '../home/home_pagina.dart';
 import '../obiettivi/obiettivi_pagina.dart';
@@ -88,6 +89,8 @@ class _GuscioState extends State<Guscio> {
       return;
     }
     final n = await widget.sessione.pianificatore.registraScadute();
+    // A cavallo di fine mese: il report del mese appena concluso.
+    await widget.sessione.report.aggiorna();
     // Se l'app resta aperta per giorni, le richieste rimandate tornano.
     await _avvisi();
     if (n > 0 && mounted) {
@@ -110,6 +113,7 @@ class _GuscioState extends State<Guscio> {
     (Icons.credit_card_outlined, Icons.credit_card, 'Carte'),
     (Icons.request_quote_outlined, Icons.request_quote, 'Prestiti'),
     (Icons.savings_outlined, Icons.savings, 'Obiettivi'),
+    (Icons.assessment_outlined, Icons.assessment, 'Report'),
     (Icons.category_outlined, Icons.category, 'Categorie'),
   ];
 
@@ -155,6 +159,7 @@ class _GuscioState extends State<Guscio> {
       CartePagina(sessione: widget.sessione),
       PrestitiPagina(sessione: widget.sessione),
       ObiettiviPagina(sessione: widget.sessione),
+      ReportPagina(sessione: widget.sessione),
       CategoriePagina(sessione: widget.sessione),
     ];
     final corpo = IndexedStack(index: _sezione, children: pagine);

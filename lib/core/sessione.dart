@@ -13,6 +13,8 @@ import 'db/obiettivi.dart';
 import 'db/pianificatore.dart';
 import 'db/prestiti.dart';
 import 'db/statistiche.dart';
+import 'report/report_automatici.dart';
+import 'report/report_personalizzati.dart';
 
 enum FaseSessione { caricamento, primoAvvio, bloccata, sbloccata }
 
@@ -73,6 +75,21 @@ class Sessione extends ChangeNotifier {
 
   /// Dati per grafici ed export: disponibile solo nella fase [FaseSessione.sbloccata].
   StatisticheServizio get statistiche => _statistiche!;
+
+  ReportAutomatici? _report;
+
+  /// Report mensili e annuali: disponibile solo nella fase [FaseSessione.sbloccata].
+  ReportAutomatici get report => _report!;
+
+  /// Report creati dall'utente (sezione Report).
+  ReportPersonalizzati get reportPersonalizzati => ReportPersonalizzati(
+    _archivio!,
+    costoVita,
+    statistiche,
+    carte,
+    prestiti,
+    obiettivi,
+  );
 
   SecureKey? _dek;
 
@@ -190,6 +207,7 @@ class Sessione extends ChangeNotifier {
     _prestiti = null;
     _obiettivi = null;
     _statistiche = null;
+    _report = null;
     _archivio = null;
     _dek = null;
     await archivio?.close();
@@ -228,6 +246,12 @@ class Sessione extends ChangeNotifier {
       _obiettivi = ObiettiviServizio(archivio, _contabilita!.orologio);
       _statistiche = StatisticheServizio(archivio);
       _costoVita = CostoVita(archivio, _contabilita!.orologio, _pianificatore!);
+      _report = ReportAutomatici(
+        archivio,
+        _contabilita!.orologio,
+        _costoVita!,
+        _statistiche!,
+      );
     } catch (_) {
       await archivio.close();
       dek.dispose();
@@ -239,6 +263,13 @@ class Sessione extends ChangeNotifier {
     if (registrati > 0) {
       messaggio =
           '$messaggio · registrat${registrati == 1 ? 'o 1 pagamento programmato' : 'i $registrati pagamenti programmati'}';
+    }
+    // Report dei mesi e degli anni conclusi. Un errore qui non deve impedire
+    // di aprire l'archivio: si riproverà alla prossima apertura.
+    try {
+      await _report!.aggiorna();
+    } catch (e) {
+      debugPrint('Report automatici non aggiornati: $e');
     }
     _dek = dek;
     _idArchivio = idArchivio;

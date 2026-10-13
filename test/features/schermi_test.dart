@@ -247,7 +247,12 @@ void main() {
       await assestamento(tester);
       await chiudiDialogo(tester);
 
-      for (final sezione in ['Costo della vita', 'Carte', 'Prestiti']) {
+      for (final sezione in [
+        'Costo della vita',
+        'Entrate',
+        'Carte',
+        'Prestiti',
+      ]) {
         await vaiA(tester, sezione);
         await scorriTutto(tester);
       }
@@ -267,10 +272,17 @@ void main() {
       await tocca(tester, find.byType(BackButton));
       await assestamento(tester);
 
-      for (final sezione in ['Obiettivi', 'Categorie']) {
+      for (final sezione in ['Obiettivi', 'Categorie', 'Report']) {
         await vaiA(tester, sezione);
         await scorriTutto(tester);
       }
+      // Un report creato e mostrato a schermo.
+      await scorriInCima(tester);
+      await tocca(tester, find.text('Crea il report'));
+      await attendi(tester, find.text('Report del gestionale'));
+      await scorriTutto(tester);
+      await tocca(tester, find.byType(BackButton));
+      await assestamento(tester);
 
       sessione.blocca().ignore();
       await attendi(tester, find.text('Archivio bloccato'));
