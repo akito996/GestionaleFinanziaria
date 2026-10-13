@@ -153,11 +153,27 @@ jobs:
           version="$(sed -n 's/^  flutter: *//p' pubspec.yaml)"
           git clone --depth 1 --branch "$version" https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
-      - name: Prima configurazione di Flutter e licenze Android
+      - name: Prima configurazione di Flutter, licenze e NDK Android
         run: |
           flutter --disable-analytics
           flutter --version
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          sdk="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$sdk" --licenses > /dev/null || true
+          # NDK della versione chiesta da Flutter, con 3 tentativi: un download
+          # interrotto (archivio corrotto) non deve far fallire la build.
+          ndk="$(sed -n 's/.*val ndkVersion: String = "\(.*\)".*/\1/p' \
+            "$RUNNER_TEMP/flutter/packages/flutter_tools/gradle/src/main/kotlin/FlutterExtension.kt")"
+          if [ -z "$ndk" ]; then
+            echo "::warning title=Android::Versione NDK non trovata: la scarica Gradle durante la build."
+            exit 0
+          fi
+          echo "NDK $ndk"
+          for tentativo in 1 2 3; do
+            "$sdk" --install "ndk;$ndk" > /dev/null && break
+            echo "::warning title=Android::Download dell'NDK non riuscito (tentativo $tentativo di 3)."
+            [ "$tentativo" = 3 ] && exit 1
+            sleep 20
+          done
       - name: Dipendenze (bloccate da pubspec.lock)
         run: flutter pub get --enforce-lockfile
       # Chiave definitiva dai secret di GitHub (mai nel repository). Senza secret
@@ -244,10 +260,26 @@ jobs:
           version="$(sed -n 's/^  flutter: *//p' pubspec.yaml)"
           git clone --depth 1 --branch "$version" https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
-      - name: Prima configurazione di Flutter e licenze Android
+      - name: Prima configurazione di Flutter, licenze e NDK Android
         run: |
           flutter --disable-analytics
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          sdk="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$sdk" --licenses > /dev/null || true
+          # NDK della versione chiesta da Flutter, con 3 tentativi: un download
+          # interrotto (archivio corrotto) non deve far fallire la build.
+          ndk="$(sed -n 's/.*val ndkVersion: String = "\(.*\)".*/\1/p' \
+            "$RUNNER_TEMP/flutter/packages/flutter_tools/gradle/src/main/kotlin/FlutterExtension.kt")"
+          if [ -z "$ndk" ]; then
+            echo "::warning title=Android::Versione NDK non trovata: la scarica Gradle durante la build."
+            exit 0
+          fi
+          echo "NDK $ndk"
+          for tentativo in 1 2 3; do
+            "$sdk" --install "ndk;$ndk" > /dev/null && break
+            echo "::warning title=Android::Download dell'NDK non riuscito (tentativo $tentativo di 3)."
+            [ "$tentativo" = 3 ] && exit 1
+            sleep 20
+          done
       - name: Dipendenze (bloccate da pubspec.lock)
         run: flutter pub get --enforce-lockfile
       - name: Accelerazione KVM per l'emulatore
