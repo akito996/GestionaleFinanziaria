@@ -555,11 +555,26 @@ class Pianificatore {
     DateTime data,
     int importo,
   ) async {
+    final giorno = Contabilita.giorno(prevista);
+    // Già registrata (es. con un id di prima): resta quella.
+    final esistente =
+        await (_db.select(_db.movimenti)..where(
+              (m) =>
+                  m.pianificazioneId.equals(p.id) &
+                  m.dataPrevista.equals(giorno),
+            ))
+            .getSingleOrNull();
+    if (esistente != null) {
+      return esistente.id;
+    }
     final tipoId = p.tipoId ?? await _tipoSpesa();
-    final id = nuovoId();
+    // Id fisso per scadenza: due dispositivi che registrano la stessa
+    // scadenza scrivono la stessa riga, e la sincronizzazione le unisce.
+    // Se c'era (conferma annullata), torna in vita.
+    final id = 'scadenza:${p.id}:$giorno';
     await _db
         .into(_db.movimenti)
-        .insert(
+        .insertOnConflictUpdate(
           MovimentiCompanion.insert(
             id: id,
             aggiornatoIl: _orologio.adesso(),
@@ -572,9 +587,9 @@ class Pianificatore {
             data: Contabilita.giorno(data),
             descrizione: Value(p.descrizione),
             pianificazioneId: Value(p.id),
-            dataPrevista: Value(Contabilita.giorno(prevista)),
+            dataPrevista: Value(giorno),
+            eliminato: const Value(false),
           ),
-          mode: InsertMode.insertOrIgnore,
         );
     return id;
   }

@@ -10,6 +10,7 @@ import '../comuni/campo_secret_key.dart';
 import '../comuni/errori.dart';
 import '../comuni/nuova_password.dart';
 import '../comuni/salva_file.dart';
+import '../sync/archivio_remoto.dart';
 
 /// Primo avvio: spiegazione → password → Secret Key (salva file o copia) → verifica.
 /// L'archivio viene creato solo alla fine, dopo la verifica.
@@ -22,7 +23,7 @@ class PrimoAvvioPagina extends StatefulWidget {
   State<PrimoAvvioPagina> createState() => _PrimoAvvioPaginaState();
 }
 
-enum _Passo { introduzione, password, secretKey, verifica }
+enum _Passo { introduzione, password, secretKey, verifica, collega }
 
 class _PrimoAvvioPaginaState extends State<PrimoAvvioPagina> {
   final _formPassword = GlobalKey<FormState>();
@@ -169,6 +170,10 @@ class _PrimoAvvioPaginaState extends State<PrimoAvvioPagina> {
       _Passo.password => _sceltaPassword(context),
       _Passo.secretKey => _mostraSecretKey(context),
       _Passo.verifica => _verificaSecretKey(context),
+      _Passo.collega => CollegaDispositivo(
+        sessione: widget.sessione,
+        onIndietro: () => setState(() => _passo = _Passo.introduzione),
+      ),
     };
   }
 
@@ -212,6 +217,15 @@ class _PrimoAvvioPaginaState extends State<PrimoAvvioPagina> {
           onPressed: () => setState(() => _passo = _Passo.password),
           child: const Text('Inizia'),
         ),
+        // Secondo dispositivo: l'archivio arriva da Google Drive.
+        if (widget.sessione.accessoGoogle.disponibile) ...[
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () => setState(() => _passo = _Passo.collega),
+            icon: const Icon(Icons.devices_outlined),
+            label: const Text('Ho già un archivio su un altro dispositivo'),
+          ),
+        ],
       ],
     );
   }

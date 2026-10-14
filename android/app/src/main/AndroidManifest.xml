@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Solo per la sincronizzazione cifrata con Google Drive (ADR-001). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="${nomeApp}"
         android:name="${applicationName}"

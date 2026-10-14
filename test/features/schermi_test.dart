@@ -10,7 +10,10 @@ import 'package:gestionale_finanziaria/core/db/prestiti.dart';
 import 'package:gestionale_finanziaria/core/db/tabelle.dart';
 import 'package:gestionale_finanziaria/core/ricorrenza.dart';
 import 'package:gestionale_finanziaria/core/sessione.dart';
+import 'package:gestionale_finanziaria/core/sync/accesso_google.dart';
+import 'package:gestionale_finanziaria/core/sync/backend_memoria.dart';
 import 'package:gestionale_finanziaria/features/notifiche/campanella.dart';
+import 'package:http/http.dart' as http;
 import 'package:sodium/sodium_sumo.dart';
 
 /// Layout su telefono e tablet, in verticale e in orizzontale: tutte le
@@ -34,6 +37,8 @@ void main() {
         ops: ParametriArgon2.opsMinimo,
         mem: ParametriArgon2.memMinima,
       ),
+      accessoGoogle: _AccessoFinto(),
+      creaBackend: (_) => BackendInMemoria(),
     );
   });
 
@@ -303,6 +308,20 @@ void main() {
       await assestamento(tester);
       await chiudiDialogo(tester);
 
+      // Sincronizzazione (spenta: pulsante per accenderla).
+      await tocca(
+        tester,
+        find.byTooltip('Sincronizzazione spenta').hitTestable().first,
+      );
+      await attendi(
+        tester,
+        find.text('PC, telefono e tablet sempre allineati'),
+      );
+      await scorriTutto(tester);
+      expect(find.text('Accendi con Google Drive'), findsOneWidget);
+      await tocca(tester, find.byType(BackButton));
+      await assestamento(tester);
+
       // Movimenti, anche con le date a scelta.
       await vaiA(tester, 'Movimenti');
       await tocca(tester, find.text('Scegli le date'));
@@ -352,4 +371,19 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     });
   }
+}
+
+/// Google finto: la pagina della sincronizzazione si vede come sul telefono.
+class _AccessoFinto implements AccessoGoogle {
+  @override
+  bool get disponibile => true;
+
+  @override
+  Future<http.Client?> client({required bool interattivo}) async => null;
+
+  @override
+  Future<void> invalida() async {}
+
+  @override
+  Future<void> esci() async {}
 }

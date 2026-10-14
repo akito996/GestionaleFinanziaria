@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:sodium/sodium_sumo.dart';
 
@@ -14,8 +16,14 @@ import 'db/obiettivi.dart';
 import 'db/pianificatore.dart';
 import 'db/prestiti.dart';
 import 'db/statistiche.dart';
+import 'db/orologio.dart';
 import 'report/report_automatici.dart';
 import 'report/report_personalizzati.dart';
+import 'sync/accesso_google.dart';
+import 'sync/drive.dart';
+import 'sync/sincronizzatore.dart';
+import 'sync/sincronizzazione.dart';
+import 'sync/sync_backend.dart';
 
 enum FaseSessione { caricamento, primoAvvio, bloccata, sbloccata }
 
@@ -28,7 +36,26 @@ class Sessione extends ChangeNotifier {
     required this.sodium,
     required this.deposito,
     this.costoArgon2 = costoArgon2Predefinito,
-  });
+    AccessoGoogle? accessoGoogle,
+    CreaBackend? creaBackend,
+  }) : _accessoIniettato = accessoGoogle,
+       _creaBackend = creaBackend ?? DriveBackend.new;
+
+  final AccessoGoogle? _accessoIniettato;
+  final CreaBackend _creaBackend;
+
+  /// Credenziali di Google (Windows): nell'archivio cifrato quando è aperto.
+  late final _credenzialiGoogle = _CredenzialiNellArchivio(this);
+
+  /// Accesso a Google Drive per la sincronizzazione (ADR-015).
+  late final AccessoGoogle accessoGoogle =
+      _accessoIniettato ?? AccessoGoogle.perPiattaforma(_credenzialiGoogle);
+
+  Sincronizzazione? _sync;
+
+  /// Sincronizzazione con Google Drive: disponibile solo nella fase
+  /// [FaseSessione.sbloccata].
+  Sincronizzazione get sync => _sync!;
 
   final SodiumSumo sodium;
   final DepositoLocale deposito;
@@ -216,6 +243,8 @@ class Sessione extends ChangeNotifier {
     _obiettivi = null;
     _statistiche = null;
     _report = null;
+    _sync?.chiudi();
+    _sync = null;
     _archivio = null;
     _dek = null;
     await archivio?.close();
@@ -230,7 +259,119 @@ class Sessione extends ChangeNotifier {
     super.dispose();
   }
 
-  Future<void> _apri(SecureKey dek, String idArchivio, String messaggio) async {
+  // ------------------------------------------------- archivio da Google Drive
+
+  /// Lo spazio su Google Drive, con il consenso dell'utente (`null` se
+  /// annullato). Serve per collegare un dispositivo nuovo.
+  Future<SyncBackend?> spazioRemoto() async {
+    final client = await accessoGoogle.client(interattivo: true);
+    return client == null ? null : _creaBackend(client);
+  }
+
+  /// Apre qui l'archivio che c'è su Drive, con la sua password. L'eventuale
+  /// archivio di questo dispositivo viene messo da parte (non cancellato).
+  /// Lancia `PasswordErrataException` se la password non è giusta.
+  Future<void> apriArchivioRemoto(SyncBackend remoto, String password) async {
+    final keyring = await _keyringRemoto(remoto);
+    final dek = await OperazioniChiavi.apriConPassword(
+      sodium,
+      keyring,
+      password,
+    );
+    await _usaRemoto(
+      remoto,
+      keyring,
+      dek,
+      'Archivio scaricato da Google Drive',
+    );
+  }
+
+  /// Come [apriArchivioRemoto], con la Secret Key e una password nuova (che
+  /// arriva anche agli altri dispositivi).
+  Future<void> apriArchivioRemotoConSecretKey(
+    SyncBackend remoto,
+    String testoSecretKey,
+    String nuovaPassword,
+  ) async {
+    final recuperato = await OperazioniChiavi.recupera(
+      sodium,
+      await _keyringRemoto(remoto),
+      testoSecretKey,
+      nuovaPassword,
+      costo: costoArgon2,
+    );
+    await _usaRemoto(
+      remoto,
+      recuperato.keyring,
+      recuperato.dek,
+      'Archivio scaricato da Google Drive · nuova password impostata',
+    );
+  }
+
+  Future<Uint8List> _keyringRemoto(SyncBackend remoto) async {
+    final keyring = await Sincronizzatore.keyringRemoto(remoto);
+    if (keyring == null) {
+      throw const NessunArchivioRemoto();
+    }
+    return keyring;
+  }
+
+  Future<void> _usaRemoto(
+    SyncBackend remoto,
+    Uint8List keyring,
+    SecureKey dek,
+    String messaggio,
+  ) async {
+    // Il consenso di Google resta valido anche con l'archivio nuovo.
+    final credenziali = await _credenzialiGoogle.leggi();
+    if (_fase == FaseSessione.sbloccata) {
+      await blocca();
+    }
+    await _credenzialiGoogle.scrivi(credenziali);
+    await deposito.metteDaParteArchivio();
+    await deposito.scriviKeyring(keyring);
+    final id = Keyring.deserializza(keyring).idArchivio;
+    await _apri(
+      dek,
+      id,
+      messaggio,
+      prima: (archivio, orologio) async {
+        // Accesa prima di scaricare: se si interrompe, riprende da sola.
+        await archivio
+            .into(archivio.impostazioni)
+            .insertOnConflictUpdate(
+              ImpostazioniCompanion.insert(
+                chiave: 'sincronizzazione.attiva',
+                valore: '1',
+              ),
+            );
+        final sincronizzatore = Sincronizzatore(
+          db: archivio,
+          orologio: orologio,
+          sodium: sodium,
+          dek: dek,
+          idArchivio: id,
+          backend: remoto,
+          leggiKeyring: deposito.leggiKeyring,
+          scriviKeyring: deposito.scriviKeyring,
+        );
+        try {
+          await sincronizzatore.scaricaTutto();
+        } finally {
+          sincronizzatore.chiudi();
+        }
+      },
+    );
+  }
+
+  /// [prima]: lavoro sull'archivio appena aperto, prima di scadenze e report
+  /// (es. scaricare i dati da Drive).
+  Future<void> _apri(
+    SecureKey dek,
+    String idArchivio,
+    String messaggio, {
+    Future<void> Function(Archivio archivio, OrologioLogico orologio)? prima,
+  }) async {
     final Archivio archivio;
     try {
       archivio = Archivio.apri(deposito.fileArchivio, sodium, dek);
@@ -266,12 +407,29 @@ class Sessione extends ChangeNotifier {
         _costoVita!,
         _statistiche!,
       );
+      if (prima != null) {
+        await prima(archivio, _contabilita!.orologio);
+      }
     } catch (_) {
       await archivio.close();
       dek.dispose();
       rethrow;
     }
     _archivio = archivio;
+    await _credenzialiGoogle.salvaInSospeso(archivio);
+    final sync = Sincronizzazione(
+      db: archivio,
+      orologio: _contabilita!.orologio,
+      sodium: sodium,
+      dek: dek,
+      idArchivio: idArchivio,
+      accesso: accessoGoogle,
+      leggiKeyring: deposito.leggiKeyring,
+      scriviKeyring: deposito.scriviKeyring,
+      creaBackend: _creaBackend,
+    );
+    _sync = sync;
+    await sync.carica();
     // Scadenze arrivate mentre l'app era chiusa: si registrano subito.
     final registrati = await _pianificatore!.registraScadute();
     if (registrati > 0) {
@@ -289,10 +447,75 @@ class Sessione extends ChangeNotifier {
     _idArchivio = idArchivio;
     avviso = messaggio;
     _cambia(FaseSessione.sbloccata);
+    // Le novità degli altri dispositivi, appena aperto (senza aspettare).
+    unawaited(sync.sincronizza());
   }
 
   void _cambia(FaseSessione fase) {
     _fase = fase;
     notifyListeners();
   }
+}
+
+/// Su Google Drive non c'è ancora un archivio da scaricare.
+class NessunArchivioRemoto implements Exception {
+  const NessunArchivioRemoto();
+
+  @override
+  String toString() =>
+      'Su Google Drive non c\'è ancora un archivio: crealo sull\'altro '
+      'dispositivo e accendi lì la sincronizzazione.';
+}
+
+/// Le credenziali di Google (Windows) nell'archivio cifrato, solo su questo
+/// dispositivo. Ad archivio chiuso restano in memoria e si salvano appena si
+/// apre.
+class _CredenzialiNellArchivio implements CredenzialiGoogle {
+  _CredenzialiNellArchivio(this._sessione);
+
+  static const _chiave = 'google.credenziali';
+
+  final Sessione _sessione;
+  String? _inSospeso;
+  bool _daSalvare = false;
+
+  @override
+  Future<String?> leggi() async {
+    final db = _sessione._archivio;
+    if (db == null || _daSalvare) {
+      return _inSospeso;
+    }
+    return (await (db.select(
+      db.impostazioni,
+    )..where((i) => i.chiave.equals(_chiave))).getSingleOrNull())?.valore;
+  }
+
+  @override
+  Future<void> scrivi(String? json) async {
+    final db = _sessione._archivio;
+    if (db == null) {
+      _inSospeso = json;
+      _daSalvare = true;
+      return;
+    }
+    await _salva(db, json);
+  }
+
+  Future<void> salvaInSospeso(Archivio db) async {
+    if (_daSalvare) {
+      _daSalvare = false;
+      await _salva(db, _inSospeso);
+      _inSospeso = null;
+    }
+  }
+
+  static Future<void> _salva(Archivio db, String? json) => json == null
+      ? (db.delete(
+          db.impostazioni,
+        )..where((i) => i.chiave.equals(_chiave))).go()
+      : db
+            .into(db.impostazioni)
+            .insertOnConflictUpdate(
+              ImpostazioniCompanion.insert(chiave: _chiave, valore: json),
+            );
 }

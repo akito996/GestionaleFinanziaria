@@ -103,10 +103,16 @@ jobs:
         # Il commit compare nella firma della versione (in basso a sinistra).
         # --split-debug-info: i simboli di debug vanno in un file a parte
         # (artifact "simboli"), l'app installata è più leggera.
-        run: >-
-          flutter build windows --release
-          --split-debug-info=build/simboli/windows
-          --dart-define=GF_COMMIT=${{ github.sha }}
+        # Segreto del client Google "App desktop" (sincronizzazione con Drive):
+        # solo dai secret di GitHub, mai nel repository. Senza, la build
+        # funziona ma la sincronizzazione su Windows non è disponibile.
+        env:
+          GOOGLE_CLIENT_SECRET_WINDOWS: ${{ secrets.GOOGLE_CLIENT_SECRET_WINDOWS }}
+        run: |
+          if [ -z "$GOOGLE_CLIENT_SECRET_WINDOWS" ]; then
+            echo "::warning title=Google Drive::Secret GOOGLE_CLIENT_SECRET_WINDOWS non configurato: nella build Windows la sincronizzazione non è disponibile."
+          fi
+          flutter build windows --release --split-debug-info=build/simboli/windows --dart-define=GF_COMMIT=${{ github.sha }} --dart-define=GOOGLE_CLIENT_SECRET_WINDOWS="$GOOGLE_CLIENT_SECRET_WINDOWS"
       # Librerie Visual C++ accanto all'app: parte anche sui PC appena
       # installati, senza il pacchetto "Visual C++ Redistributable".
       # Distribuzione locale consentita dalla licenza (file elencati in redist).

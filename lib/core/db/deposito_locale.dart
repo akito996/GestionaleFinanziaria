@@ -42,5 +42,16 @@ class DepositoLocale {
     return fileArchivio.rename('${fileArchivio.path}.orfano-$istante');
   }
 
+  /// Prima di scaricare un archivio da Google Drive al posto di questo: database
+  /// e keyring vengono rinominati e messi da parte, mai cancellati.
+  Future<void> metteDaParteArchivio() async {
+    final istante = DateTime.now().toUtc().millisecondsSinceEpoch;
+    for (final file in [fileArchivio, fileKeyring]) {
+      if (file.existsSync()) {
+        await file.rename('${file.path}.sostituito-$istante');
+      }
+    }
+  }
+
   static String _unisci(String a, String b) => '$a${Platform.pathSeparator}$b';
 }

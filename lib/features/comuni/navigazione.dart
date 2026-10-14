@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/db/tabelle.dart';
 import '../../core/sessione.dart';
+import '../../core/sync/sincronizzazione.dart';
 import '../carte/carte_pagina.dart';
 import '../categorie/categorie_pagina.dart';
 import '../prestiti/avviso_maxi.dart';
@@ -13,6 +14,7 @@ import '../costo_vita/costo_vita_pagina.dart';
 import '../home/home_pagina.dart';
 import '../movimenti/movimenti_pagina.dart';
 import '../notifiche/campanella.dart';
+import '../sync/sync_pagina.dart';
 import '../obiettivi/obiettivi_pagina.dart';
 import 'icone.dart';
 import 'layout.dart';
@@ -25,6 +27,7 @@ class PulsanteBlocca extends StatelessWidget {
     super.key,
     required this.sessione,
     this.campanella = true,
+    this.sincronizzazione = true,
   });
 
   final Sessione sessione;
@@ -32,11 +35,15 @@ class PulsanteBlocca extends StatelessWidget {
   /// `false` nella pagina delle notifiche (ci sei già).
   final bool campanella;
 
+  /// `false` nella pagina della sincronizzazione (ci sei già).
+  final bool sincronizzazione;
+
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (sincronizzazione) IconaSync(sessione: sessione),
         if (campanella) CampanellaNotifiche(sessione: sessione),
         IconButton(
           tooltip: 'Archivio aperto: tocca per bloccarlo',
@@ -69,6 +76,8 @@ class Guscio extends StatefulWidget {
 class _GuscioState extends State<Guscio> {
   int _sezione = 0;
   Timer? _controllo;
+  Timer? _sincronia;
+  AppLifecycleListener? _ciclo;
 
   @override
   void initState() {
@@ -80,6 +89,22 @@ class _GuscioState extends State<Guscio> {
     );
     // All'apertura: le decisioni da prendere (es. maxi rata in arrivo).
     WidgetsBinding.instance.addPostFrameCallback((_) => _avvisi());
+    // Sincronizzazione con gli altri dispositivi: ogni 5 minuti, quando l'app
+    // va in secondo piano (invia le ultime modifiche) e quando torna.
+    _sincronia = Timer.periodic(
+      Sincronizzazione.intervallo,
+      (_) => _sincronizza(),
+    );
+    _ciclo = AppLifecycleListener(
+      onPause: _sincronizza,
+      onResume: _sincronizza,
+    );
+  }
+
+  void _sincronizza() {
+    if (widget.sessione.fase == FaseSessione.sbloccata) {
+      widget.sessione.sync.sincronizza().ignore();
+    }
   }
 
   Future<void> _avvisi() async {
@@ -91,6 +116,8 @@ class _GuscioState extends State<Guscio> {
   @override
   void dispose() {
     _controllo?.cancel();
+    _sincronia?.cancel();
+    _ciclo?.dispose();
     super.dispose();
   }
 

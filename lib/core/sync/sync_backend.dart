@@ -1,57 +1,43 @@
 import 'dart:typed_data';
 
-/// Pacchetto di modifiche cifrato, così come sta sul backend remoto.
-/// Il backend non vede mai dati in chiaro: [datiCifrati] è già un blob versionato.
-class PacchettoRemoto {
-  const PacchettoRemoto({
-    required this.dispositivoId,
-    required this.sequenza,
-    required this.datiCifrati,
+/// Un file nello spazio remoto (es. un pacchetto di modifiche cifrato).
+class FileRemoto {
+  const FileRemoto({
+    required this.id,
+    required this.nome,
+    this.proprieta = const {},
   });
 
-  /// Dispositivo che l'ha scritto (ogni dispositivo scrive solo i propri pacchetti).
-  final String dispositivoId;
+  final String id;
+  final String nome;
 
-  /// Numero progressivo per dispositivo (anti-replay, insieme all'AAD).
-  final int sequenza;
-
-  final Uint8List datiCifrati;
-}
-
-/// Novità arrivate dal backend dopo un certo punto.
-class Novita {
-  const Novita({required this.pacchetti, required this.cursore});
-
-  final List<PacchettoRemoto> pacchetti;
-
-  /// Da passare alla chiamata successiva di [SyncBackend.novitaDopo].
-  final String cursore;
+  /// Piccole etichette in chiaro (tipo, dispositivo, sequenza): mai dati.
+  final Map<String, String> proprieta;
 }
 
 /// Dove finiscono i dati cifrati da sincronizzare (ADR-001).
 ///
-/// Oggi: Google Drive, cartella `appDataFolder`. Domani, senza riscrivere l'app:
-/// Cloudflare Workers + D1 (Scenario 7) o altro. L'interfaccia tratta solo byte cifrati.
+/// Oggi: Google Drive, cartella nascosta `appDataFolder`. Domani, senza
+/// riscrivere l'app: Cloudflare Workers + D1 (Scenario 7) o altro.
+/// L'interfaccia tratta solo file di byte già cifrati: il formato e la logica
+/// della sincronizzazione sono in `Sincronizzatore`.
 abstract interface class SyncBackend {
-  /// Collega l'account dell'utente (consenso OAuth sul dispositivo).
-  Future<void> collega();
+  /// Tutti i file dell'app nello spazio remoto.
+  Future<List<FileRemoto>> elenca();
 
-  Future<void> scollega();
+  Future<Uint8List> scarica(String id);
 
-  /// `keyring.bin`: chiave dei dati avvolta da password e Secret Key. `null` se non esiste.
-  Future<Uint8List?> leggiKeyring();
+  Future<FileRemoto> crea(
+    String nome,
+    Uint8List dati, {
+    Map<String, String> proprieta = const {},
+  });
 
-  Future<void> scriviKeyring(Uint8List datiCifrati);
+  /// Sostituisce il contenuto (es. il keyring dopo un cambio password).
+  Future<void> aggiorna(String id, Uint8List dati);
 
-  /// Scrive un pacchetto di modifiche di questo dispositivo.
-  Future<void> scriviPacchetto(PacchettoRemoto pacchetto);
+  /// Cambia nome (es. per mettere da parte un archivio senza cancellarlo).
+  Future<void> rinomina(String id, String nome);
 
-  /// Pacchetti nuovi dopo [cursore] (`null` = dall'inizio), di tutti i dispositivi.
-  Future<Novita> novitaDopo(String? cursore);
-
-  /// Snapshot completo cifrato, per compattare la storia dei pacchetti.
-  Future<void> scriviSnapshot(DateTime data, Uint8List datiCifrati);
-
-  /// Ultimo snapshot disponibile, `null` se non ce ne sono.
-  Future<Uint8List?> leggiUltimoSnapshot();
+  Future<void> elimina(String id);
 }
