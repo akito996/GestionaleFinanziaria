@@ -211,6 +211,17 @@ jobs:
           done
       - name: Peso delle build
         run: python3 tool/dimensioni.py build/app/outputs/flutter-apk/*-release.apk
+      # Impronte del certificato di firma (pubbliche: sono dentro ogni APK).
+      # Servono per i client OAuth "Android" in Google Cloud (accesso a Drive).
+      - name: Impronte della firma
+        run: |
+          strumenti="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+          for variante in ufficiale prova; do
+            apk="build/app/outputs/flutter-apk/app-arm64-v8a-$variante-release.apk"
+            sha1="$("$strumenti/apksigner" verify --print-certs "$apk" | grep -m1 'SHA-1 digest' | awk '{print $NF}')"
+            leggibile="$(echo "$sha1" | tr 'a-f' 'A-F' | sed 's/../&:/g; s/:$//')"
+            echo "::notice title=Impronta SHA-1 ($variante)::$leggibile"
+          done
       # Il file da installare per provare (telefoni e tablet a 64 bit), con un
       # nome chiaro. Lo zip con tutti gli APK resta per i casi particolari.
       - name: APK da installare
