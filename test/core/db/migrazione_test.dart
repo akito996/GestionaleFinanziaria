@@ -8,7 +8,7 @@ import 'package:sqlite3/sqlite3.dart' as sql;
 
 void main() {
   test(
-    'migrazione v1 → v11: dati conservati, nuove tabelle e categorie',
+    'migrazione v1 → v12: dati conservati, nuove tabelle e categorie',
     () async {
       // Lo schema delle tabelle già presenti in v1 non è cambiato: si crea un archivio
       // attuale e lo si riporta com'era in v1 (senza le aggiunte della v2).
@@ -80,12 +80,12 @@ void main() {
       expect(await db.select(db.obiettivi).get(), isEmpty);
       expect(portafogli.single.preferito, isFalse);
       expect(portafogli.single.gruppo, isNull);
-      expect(grezzo.userVersion, 11);
+      expect(grezzo.userVersion, 12);
     },
   );
 
   test(
-    'migrazione v7 → v11: spese ripartite, maxi rata, entrate previste, report',
+    'migrazione v7 → v12: spese ripartite, maxi rata, entrate previste, report',
     () async {
       final grezzo = sql.sqlite3.openInMemory();
       final v8 = Archivio.conEsecutore(
@@ -110,6 +110,9 @@ void main() {
         ..execute('ALTER TABLE prestiti DROP COLUMN spese_rata_minimo')
         ..execute('ALTER TABLE prestiti DROP COLUMN decisione_maxi')
         ..execute('ALTER TABLE prestiti DROP COLUMN maxi_rimandata_il')
+        ..execute('ALTER TABLE pianificazioni DROP COLUMN richiede_conferma')
+        ..execute('DROP TABLE occorrenze')
+        ..execute('DROP TABLE notifiche_lette')
         ..userVersion = 7;
 
       final db = Archivio.conEsecutore(NativeDatabase.opened(grezzo));
@@ -120,7 +123,57 @@ void main() {
       expect(voce.natura, NaturaVoce.spesa); // le voci esistenti sono spese
       expect(await db.select(db.report).get(), isEmpty);
       expect(await db.select(db.prestiti).get(), isEmpty);
-      expect(grezzo.userVersion, 11);
+      expect(grezzo.userVersion, 12);
     },
   );
+  test('migrazione v11 → v12: le entrate previste chiedono conferma', () async {
+    final grezzo = sql.sqlite3.openInMemory();
+    final v11 = Archivio.conEsecutore(
+      NativeDatabase.opened(grezzo, closeUnderlyingOnClose: false),
+    );
+    Future<void> voceConAddebito(String id, String natura) async {
+      await v11
+          .into(v11.vociCosto)
+          .insert(
+            VociCostoCompanion.insert(
+              id: id,
+              aggiornatoIl: '1',
+              nome: id,
+              tipo: 'fissa',
+              natura: Value(natura),
+            ),
+          );
+      await v11
+          .into(v11.pianificazioni)
+          .insert(
+            PianificazioniCompanion.insert(
+              id: 'p-$id',
+              aggiornatoIl: '1',
+              origine: OriginePianificazione.costoVita,
+              origineId: Value(id),
+              inizio: '2026-10-01',
+            ),
+          );
+    }
+
+    await voceConAddebito('stipendio', NaturaVoce.entrata);
+    await voceConAddebito('affitto', NaturaVoce.spesa);
+    await v11.close();
+    grezzo
+      ..execute('ALTER TABLE pianificazioni DROP COLUMN richiede_conferma')
+      ..execute('DROP TABLE occorrenze')
+      ..execute('DROP TABLE notifiche_lette')
+      ..userVersion = 11;
+
+    final db = Archivio.conEsecutore(NativeDatabase.opened(grezzo));
+    addTearDown(db.close);
+    final conferma = {
+      for (final p in await db.select(db.pianificazioni).get())
+        p.origineId: p.richiedeConferma,
+    };
+    expect(conferma, {'stipendio': true, 'affitto': false});
+    expect(await db.select(db.occorrenze).get(), isEmpty);
+    expect(await db.select(db.notificheLette).get(), isEmpty);
+    expect(grezzo.userVersion, 12);
+  });
 }

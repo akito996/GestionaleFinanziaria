@@ -24,11 +24,18 @@ class ImpostazioneAddebito {
     this.occorrenze = 12,
     this.portafoglioId,
     this.ripartita = false,
+    this.conferma = false,
   }) : inizio = inizio ?? DateUtils.dateOnly(DateTime.now());
 
-  factory ImpostazioneAddebito.da(Pianificazione? p, {bool ripartita = false}) {
+  /// Dal pagamento programmato salvato; senza, [conferma] è la scelta
+  /// predefinita (entrate: chiedi conferma; spese: da sola).
+  factory ImpostazioneAddebito.da(
+    Pianificazione? p, {
+    bool ripartita = false,
+    bool conferma = false,
+  }) {
     if (p == null) {
-      return ImpostazioneAddebito(ripartita: ripartita);
+      return ImpostazioneAddebito(ripartita: ripartita, conferma: conferma);
     }
     final r = Pianificatore.ricorrenzaDi(p);
     return ImpostazioneAddebito(
@@ -44,6 +51,7 @@ class ImpostazioneAddebito {
       occorrenze: r.occorrenze ?? 12,
       portafoglioId: p.portafoglioId,
       ripartita: ripartita,
+      conferma: p.richiedeConferma,
     );
   }
 
@@ -57,6 +65,10 @@ class ImpostazioneAddebito {
 
   /// Solo per addebiti non mensili: suddividi la spesa nei mesi.
   bool ripartita;
+
+  /// Con un portafoglio: `true` = nel giorno previsto chiede conferma nelle
+  /// notifiche, `false` = si registra da solo.
+  bool conferma;
 
   /// La casella "Suddividi nei mesi" ha senso solo per addebiti non mensili.
   bool get nonMensile => attivo && frequenza != Frequenza.mensile;
@@ -263,6 +275,20 @@ class _SezioneAddebitoState extends State<SezioneAddebito> {
               );
             },
           ),
+          if (v.portafoglioId != null)
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: v.conferma,
+              onChanged: (c) => _aggiorna(() => v.conferma = c),
+              title: const Text('Chiedi conferma prima di registrare'),
+              subtitle: Text(
+                v.conferma
+                    ? 'Nel giorno previsto la trovi nelle notifiche: confermi, '
+                          'sposti o annulli. Finché non decidi non si registra.'
+                    : 'Si registra da sola nel giorno previsto. Ti arriva un '
+                          'avviso che sparisce quando lo leggi.',
+              ),
+            ),
           if (ricorrenza != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),

@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../importo.dart';
 import 'archivio.dart';
 import 'id.dart';
 import 'orologio.dart';
@@ -46,6 +47,59 @@ class MovimentoDettaglio {
       _ => 0,
     };
   }
+}
+
+/// Filtri della sezione Movimenti (tutti facoltativi).
+class FiltroMovimenti {
+  const FiltroMovimenti({
+    this.da,
+    this.a,
+    this.testo = '',
+    this.categorie,
+    this.portafoglioId,
+    this.effetto,
+  });
+
+  /// Periodo (giorni inclusi).
+  final DateTime? da;
+  final DateTime? a;
+
+  /// Cerca nella descrizione, nella categoria, nei portafogli e nell'importo
+  /// (es. "Lidl", "Spesa", "142,50").
+  final String testo;
+
+  /// Categorie ammesse (di solito una categoria con le sue sottocategorie);
+  /// `null` = tutte.
+  final Set<String>? categorie;
+
+  /// Movimenti che toccano questo portafoglio (anche come destinazione).
+  final String? portafoglioId;
+
+  /// Vedi [EffettoSaldo]; `null` = entrate, uscite e trasferimenti.
+  final String? effetto;
+}
+
+/// Risultato di una ricerca: i primi movimenti e i totali di tutti quelli
+/// trovati.
+class RisultatoMovimenti {
+  const RisultatoMovimenti({
+    required this.movimenti,
+    required this.totale,
+    required this.entrate,
+    required this.uscite,
+  });
+
+  /// I più recenti, al massimo quanti chiesti.
+  final List<MovimentoDettaglio> movimenti;
+
+  /// Quanti movimenti corrispondono ai filtri.
+  final int totale;
+
+  /// Somme di entrate e uscite trovate (i trasferimenti non contano).
+  final int entrate;
+  final int uscite;
+
+  bool get completo => movimenti.length >= totale;
 }
 
 /// Operazioni su portafogli e movimenti. Tutte le letture sono "osservabili":
@@ -300,6 +354,131 @@ class Contabilita {
           ),
       ],
     );
+  }
+
+  /// Movimenti che corrispondono a [filtro], dal più recente (al massimo
+  /// [limite]), con i totali di tutti quelli trovati.
+  Stream<RisultatoMovimenti> osservaMovimentiFiltrati(
+    FiltroMovimenti filtro, {
+    int limite = 300,
+  }) => _db
+      .customSelect(
+        'SELECT 1 AS osserva_movimenti_filtrati', // testo univoco: drift condivide le query uguali
+        readsFrom: {
+          _db.movimenti,
+          _db.definizioniTipo,
+          _db.portafogli,
+          _db.categorie,
+        },
+      )
+      .watch()
+      .ricalcola((_) => movimentiFiltrati(filtro, limite: limite));
+
+  Future<RisultatoMovimenti> movimentiFiltrati(
+    FiltroMovimenti filtro, {
+    int limite = 300,
+  }) async {
+    final destinazione = _db.alias(_db.portafogli, 'destinazione');
+    final condizione = _condizione(filtro, destinazione);
+    final query = _db.select(_db.movimenti).join(_conDettagli(destinazione))
+      ..where(condizione)
+      ..orderBy([
+        OrderingTerm.desc(_db.movimenti.data),
+        OrderingTerm.desc(_db.movimenti.aggiornatoIl),
+      ])
+      ..limit(limite);
+    final conteggio = _db.movimenti.id.count();
+    final entrate = _db.movimenti.importoMinimo.sum(
+      filter: _db.definizioniTipo.effetto.equals(EffettoSaldo.entrata),
+    );
+    final uscite = _db.movimenti.importoMinimo.sum(
+      filter: _db.definizioniTipo.effetto.equals(EffettoSaldo.uscita),
+    );
+    final totali =
+        await (_db.selectOnly(_db.movimenti).join(_conDettagli(destinazione))
+              ..addColumns([conteggio, entrate, uscite])
+              ..where(condizione))
+            .getSingle();
+    return RisultatoMovimenti(
+      movimenti: [
+        for (final r in await query.get())
+          MovimentoDettaglio(
+            r.readTable(_db.movimenti),
+            r.readTable(_db.definizioniTipo),
+            r.readTable(_db.portafogli),
+            r.readTableOrNull(destinazione),
+            r.readTableOrNull(_db.categorie),
+          ),
+      ],
+      totale: totali.read(conteggio) ?? 0,
+      entrate: totali.read(entrate) ?? 0,
+      uscite: totali.read(uscite) ?? 0,
+    );
+  }
+
+  List<Join<HasResultSet, dynamic>> _conDettagli(
+    $PortafogliTable destinazione,
+  ) => [
+    innerJoin(
+      _db.definizioniTipo,
+      _db.definizioniTipo.id.equalsExp(_db.movimenti.tipoId),
+    ),
+    innerJoin(
+      _db.portafogli,
+      _db.portafogli.id.equalsExp(_db.movimenti.portafoglioId),
+    ),
+    leftOuterJoin(
+      destinazione,
+      destinazione.id.equalsExp(_db.movimenti.portafoglioDestinazioneId),
+    ),
+    leftOuterJoin(
+      _db.categorie,
+      _db.categorie.id.equalsExp(_db.movimenti.categoriaId),
+    ),
+  ];
+
+  Expression<bool> _condizione(
+    FiltroMovimenti f,
+    $PortafogliTable destinazione,
+  ) {
+    final m = _db.movimenti;
+    var c = m.eliminato.equals(false);
+    if (f.da != null) {
+      c = c & m.data.isBiggerOrEqualValue(giorno(f.da!));
+    }
+    if (f.a != null) {
+      c = c & m.data.isSmallerOrEqualValue(giorno(f.a!));
+    }
+    if (f.categorie != null) {
+      c = c & m.categoriaId.isIn(f.categorie!);
+    }
+    if (f.portafoglioId case final String id) {
+      c =
+          c &
+          (m.portafoglioId.equals(id) | m.portafoglioDestinazioneId.equals(id));
+    }
+    if (f.effetto case final String effetto) {
+      c = c & _db.definizioniTipo.effetto.equals(effetto);
+    }
+    final testo = f.testo.trim();
+    if (testo.isNotEmpty) {
+      // "%" e "_" scritti dall'utente valgono come lettere, non come jolly.
+      final modello =
+          '%${testo.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_')}%';
+      Expression<bool> simile(Expression<String> colonna) =>
+          colonna.like(modello, escapeChar: r'\');
+      var cerca =
+          simile(m.descrizione) |
+          simile(_db.categorie.nome) |
+          simile(_db.portafogli.nome) |
+          simile(destinazione.nome);
+      final importo = Importo.leggi(testo);
+      if (importo != null && importo > 0) {
+        cerca = cerca | m.importoMinimo.equals(importo);
+      }
+      c = c & cerca;
+    }
+    return c;
   }
 
   /// Movimenti tra [da] e [a] (inclusi), dal più vecchio (per l'export).

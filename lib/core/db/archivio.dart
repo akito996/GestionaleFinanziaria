@@ -50,6 +50,8 @@ const categorieProposte = [
     ImportiVoce,
     VariazioniMese,
     Pianificazioni,
+    Occorrenze,
+    NotificheLette,
     CarteCredito,
     Prestiti,
     Obiettivi,
@@ -111,7 +113,7 @@ class Archivio extends _$Archivio {
   Archivio.conEsecutore(super.e);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -185,6 +187,21 @@ class Archivio extends _$Archivio {
           await m.addColumn(vociCosto, vociCosto.natura);
         }
         await m.createTable(report);
+      }
+      // v12: notifiche (scadenze da confermare, spostate, annullate, lette).
+      if (da < 12) {
+        if (da >= 3) {
+          await m.addColumn(pianificazioni, pianificazioni.richiedeConferma);
+        }
+        await m.createTable(occorrenze);
+        await m.createTable(notificheLette);
+        // Scelta predefinita: le entrate previste chiedono conferma (uno
+        // stipendio in ritardo non deve falsare il saldo), le spese no.
+        await customStatement(
+          'UPDATE pianificazioni SET richiede_conferma = 1 '
+          "WHERE origine = 'costo_vita' AND origine_id IN "
+          "(SELECT id FROM voci_costo WHERE natura = 'entrata')",
+        );
       }
     },
     beforeOpen: (_) async {

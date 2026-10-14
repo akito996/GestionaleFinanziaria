@@ -51,6 +51,16 @@ class ObiettivoConStato {
 
   bool get raggiunto => versato >= obiettivo.importoObiettivoMinimo;
 
+  /// Soldi del portafoglio dell'obiettivo ([Obiettivi.portafoglioId]) messi
+  /// da parte: finché l'obiettivo non è raggiunto si considera suo tutto il
+  /// versato; dopo, l'importo dell'obiettivo (il di più è libero).
+  int get riservato {
+    if (obiettivo.portafoglioId == null || versato <= 0) {
+      return 0;
+    }
+    return raggiunto ? obiettivo.importoObiettivoMinimo : versato;
+  }
+
   DateTime? get scadenza => obiettivo.scadenza == null
       ? null
       : Contabilita.daGiorno(obiettivo.scadenza!);

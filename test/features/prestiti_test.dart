@@ -9,6 +9,7 @@ import 'package:gestionale_finanziaria/core/db/deposito_locale.dart';
 import 'package:gestionale_finanziaria/core/db/prestiti.dart';
 import 'package:gestionale_finanziaria/core/db/tabelle.dart';
 import 'package:gestionale_finanziaria/core/sessione.dart';
+import 'package:gestionale_finanziaria/features/notifiche/campanella.dart';
 import 'package:sodium/sodium_sumo.dart';
 
 const _secci = '''
@@ -165,7 +166,13 @@ void main() {
       await attendi(tester, find.text('Maxi rata in arrivo'));
       expect(find.textContaining('14.003,50 €'), findsOneWidget);
       await tocca(tester, find.textContaining('Ricordamelo più tardi'));
-      final campanella = find.byIcon(Icons.notifications_active).hitTestable();
+      // La decisione resta nella campanella delle notifiche.
+      final campanella = find
+          .descendant(
+            of: find.byType(CampanellaNotifiche),
+            matching: find.byIcon(Icons.notifications_active_outlined),
+          )
+          .hitTestable();
       await attendi(tester, campanella);
 
       // Nel costo della vita: la rata del mese tra le spese fisse.
@@ -174,17 +181,24 @@ void main() {
       expect(find.textContaining('Rata 1 di 4'), findsOneWidget);
       expect(find.text('303,50 €'), findsWidgets);
 
-      // Dalla campanella si decide: poi la campanella sparisce.
+      // Dalla campanella si decide: poi la notifica sparisce.
       await tocca(tester, campanella);
+      final decisione = find.text('Maxi rata di "Auto": scegli cosa fare');
+      await attendi(tester, decisione);
+      await tocca(
+        tester,
+        find.byTooltip('Scegli: apri un altro prestito o paghi tutto'),
+      );
       await attendi(tester, find.text("Pago tutto in un'unica soluzione"));
       await tocca(tester, find.text("Pago tutto in un'unica soluzione"));
-      for (var i = 0; i < 200 && campanella.evaluate().isNotEmpty; i++) {
+      for (var i = 0; i < 200 && decisione.evaluate().isNotEmpty; i++) {
         await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 20)),
         );
         await tester.pump(const Duration(milliseconds: 50));
       }
-      expect(campanella, findsNothing);
+      expect(decisione, findsNothing);
+      await tocca(tester, find.byTooltip('Chiudi'));
 
       sessione.blocca().ignore();
       await attendi(tester, find.text('Archivio bloccato'));

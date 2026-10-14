@@ -56,7 +56,10 @@ class _NuovaVoceState extends State<_NuovaVoce> {
   final _importo = ControllerImporto();
   String? _categoria;
   late String _tipo = widget.tipo;
-  final _addebito = ImpostazioneAddebito();
+  // Entrate: chiedono conferma (uno stipendio in ritardo non falsa il saldo).
+  late final _addebito = ImpostazioneAddebito(
+    conferma: widget.natura == NaturaVoce.entrata,
+  );
   bool _salvataggio = false;
 
   bool get _fissa => _tipo == TipoVoce.fissa;
@@ -100,6 +103,7 @@ class _NuovaVoceState extends State<_NuovaVoce> {
           id,
           ricorrenza: _addebito.ricorrenza,
           portafoglioId: _addebito.portafoglioId,
+          richiedeConferma: _addebito.conferma,
         );
         // Se il primo addebito è oggi o già passato, si registra subito.
         await widget.sessione.pianificatore.registraScadute();
@@ -281,6 +285,7 @@ class _ModificaVoceState extends State<_ModificaVoce> {
   late final _addebito = ImpostazioneAddebito.da(
     widget.voce.addebito,
     ripartita: widget.voce.voce.ripartita,
+    conferma: widget.voce.voce.natura == NaturaVoce.entrata,
   );
 
   @override
@@ -339,6 +344,7 @@ class _ModificaVoceState extends State<_ModificaVoce> {
         v.voce.id,
         ricorrenza: _addebito.ricorrenza,
         portafoglioId: _addebito.portafoglioId,
+        richiedeConferma: _addebito.conferma,
       );
       if (importo != _importoMostrato) {
         switch (_ambito) {

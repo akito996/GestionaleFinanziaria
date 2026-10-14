@@ -178,4 +178,35 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 50));
     expect(valori.last, 1);
   });
+  test("soldi messi da parte nel portafoglio dell'obiettivo", () async {
+    final salvadanaio = await c.creaPortafoglio(
+      nome: 'Salvadanaio',
+      tipoId: tipo['Risparmi']!,
+      valuta: 'EUR',
+    );
+    final vacanza = await ob.crea(
+      nome: 'Vacanza',
+      tipo: TipoObiettivo.personale,
+      importoObiettivo: 100000,
+      portafoglioId: salvadanaio,
+    );
+    final senzaPortafoglio = await ob.crea(
+      nome: 'Regalo',
+      tipo: TipoObiettivo.personale,
+      importoObiettivo: 10000,
+    );
+    Future<Map<String, int>> riservati() async => {
+      for (final s in await ob.stati()) s.obiettivo.nome: s.riservato,
+    };
+    expect(await riservati(), {'Regalo': 0, 'Vacanza': 0});
+
+    // Non ancora raggiunto: tutto il versato è dell'obiettivo.
+    await ob.versa(vacanza, importo: 60000);
+    await ob.versa(senzaPortafoglio, importo: 5000);
+    expect(await riservati(), {'Regalo': 0, 'Vacanza': 60000});
+
+    // Raggiunto (e superato): l'importo dell'obiettivo, il di più è libero.
+    await ob.versa(vacanza, importo: 50000);
+    expect(await riservati(), {'Regalo': 0, 'Vacanza': 100000});
+  });
 }

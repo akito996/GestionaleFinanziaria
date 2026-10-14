@@ -795,7 +795,9 @@ class _ModuloObiettivoState extends State<_ModuloObiettivo> {
                     decoration: const InputDecoration(
                       labelText: 'Dove tieni questi soldi (facoltativo)',
                       helperText:
-                          'Es. un portafoglio "Risparmi" o "Salvadanaio"',
+                          'Es. "Risparmi" o "Salvadanaio". Nel portafoglio '
+                          'vedrai quanta parte dei soldi è per questo obiettivo.',
+                      helperMaxLines: 2,
                     ),
                     items: [
                       const DropdownMenuItem<String?>(child: Text('Nessuno')),

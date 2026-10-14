@@ -11,23 +11,32 @@ import '../prestiti/prestiti_pagina.dart';
 import '../report/report_pagina.dart';
 import '../costo_vita/costo_vita_pagina.dart';
 import '../home/home_pagina.dart';
+import '../movimenti/movimenti_pagina.dart';
+import '../notifiche/campanella.dart';
 import '../obiettivi/obiettivi_pagina.dart';
 import 'icone.dart';
 import 'layout.dart';
 
 /// Pulsante "blocca" presente in ogni sezione: lucchetto aperto = archivio
-/// aperto. Accanto, la campanella delle decisioni in sospeso (maxi rate).
+/// aperto. Accanto, la campanella delle notifiche.
 class PulsanteBlocca extends StatelessWidget {
-  const PulsanteBlocca({super.key, required this.sessione});
+  const PulsanteBlocca({
+    super.key,
+    required this.sessione,
+    this.campanella = true,
+  });
 
   final Sessione sessione;
+
+  /// `false` nella pagina delle notifiche (ci sei già).
+  final bool campanella;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        CampanellaMaxi(sessione: sessione),
+        if (campanella) CampanellaNotifiche(sessione: sessione),
         IconButton(
           tooltip: 'Archivio aperto: tocca per bloccarlo',
           icon: const LucchettoAperto(),
@@ -108,6 +117,7 @@ class _GuscioState extends State<Guscio> {
 
   static const _voci = [
     (Icons.dashboard_outlined, Icons.dashboard, 'Panoramica'),
+    (Icons.swap_vert_circle_outlined, Icons.swap_vert_circle, 'Movimenti'),
     (Icons.receipt_long_outlined, Icons.receipt_long, 'Costo della vita'),
     (Icons.trending_up_outlined, Icons.trending_up, 'Entrate'),
     (Icons.credit_card_outlined, Icons.credit_card, 'Carte'),
@@ -151,9 +161,11 @@ class _GuscioState extends State<Guscio> {
     final pagine = [
       HomePagina(
         sessione: widget.sessione,
-        apriCostoVita: () => _vaiA(1),
-        apriEntrate: () => _vaiA(2),
+        apriMovimenti: () => _vaiA(1),
+        apriCostoVita: () => _vaiA(2),
+        apriEntrate: () => _vaiA(3),
       ),
+      MovimentiPagina(sessione: widget.sessione),
       CostoVitaPagina(sessione: widget.sessione),
       CostoVitaPagina(sessione: widget.sessione, natura: NaturaVoce.entrata),
       CartePagina(sessione: widget.sessione),

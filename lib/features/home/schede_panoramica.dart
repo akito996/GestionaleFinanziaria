@@ -6,8 +6,10 @@ import '../../core/sessione.dart';
 /// portafogli restano sempre visibili e non sono in questo elenco.
 ///
 /// Il [codice] è salvato nelle preferenze: non cambiarlo per le schede esistenti.
+///
+/// Le scadenze "In arrivo" ora sono nella campanella delle notifiche: il
+/// codice `in_arrivo` salvato dalle versioni precedenti si ignora.
 enum SchedaPanoramica {
-  inArrivo('in_arrivo', 'In arrivo', 'Scadenze dei prossimi giorni'),
   costoVita('costo_vita', 'Costo della vita', 'Spese fisse e variabili'),
   entratePreviste(
     'entrate_previste',

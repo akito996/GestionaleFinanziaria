@@ -177,11 +177,19 @@ class _RigaPortafoglio extends StatelessWidget {
               ),
               title: Text(p.nome),
               subtitle: Text(voce.tipo.nome),
-              trailing: Text(
-                Importo.formatta(voce.saldo, p.valuta),
-                style: testo.titleMedium?.copyWith(
-                  color: voce.saldo < 0 ? schema.error : null,
-                  fontFeatures: const [FontFeature.tabularFigures()],
+              // Un saldo molto lungo si rimpicciolisce invece di schiacciare
+              // il nome (telefoni piccoli).
+              trailing: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 160),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    Importo.formatta(voce.saldo, p.valuta),
+                    style: testo.titleMedium?.copyWith(
+                      color: voce.saldo < 0 ? schema.error : null,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
                 ),
               ),
             ),

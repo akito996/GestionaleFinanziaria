@@ -161,10 +161,13 @@ class CostoVita {
   /// previsto; senza, è solo un promemoria.
   /// Per le entrate previste è la data di accredito: il movimento registrato
   /// è un'entrata.
+  /// Con [richiedeConferma] non si registra da solo: nel giorno previsto resta
+  /// nelle notifiche finché l'utente conferma, sposta o annulla.
   Future<void> impostaAddebito(
     String voceId, {
     Ricorrenza? ricorrenza,
     String? portafoglioId,
+    bool richiedeConferma = false,
   }) async {
     if (ricorrenza == null) {
       await _pianificatore.rimuovi(OriginePianificazione.costoVita, voceId);
@@ -190,6 +193,7 @@ class CostoVita {
         tipoId: entrata ? await _tipoEntrata() : null,
         descrizione: voce.nome,
         valuta: valuta ?? voce.valuta,
+        richiedeConferma: richiedeConferma,
       ),
     );
   }

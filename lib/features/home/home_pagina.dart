@@ -7,7 +7,6 @@ import '../../core/db/statistiche.dart';
 import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import '../comuni/icone.dart';
-import '../comuni/in_arrivo.dart';
 import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
 import '../costo_vita/costo_vita_pagina.dart';
@@ -30,11 +29,15 @@ class HomePagina extends StatefulWidget {
   const HomePagina({
     super.key,
     required this.sessione,
+    this.apriMovimenti,
     this.apriCostoVita,
     this.apriEntrate,
   });
 
   final Sessione sessione;
+
+  /// Porta alla sezione Movimenti (tutti, con i filtri).
+  final VoidCallback? apriMovimenti;
 
   /// Porta alla sezione Costo della vita (dalla scheda della Panoramica).
   final VoidCallback? apriCostoVita;
@@ -428,7 +431,16 @@ class _HomePaginaState extends State<HomePagina> {
     final schedaMovimenti = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _Intestazione(titolo: 'Ultimi movimenti'),
+        _Intestazione(
+          titolo: 'Ultimi movimenti',
+          azione: widget.apriMovimenti == null
+              ? null
+              : TextButton.icon(
+                  onPressed: widget.apriMovimenti,
+                  icon: const Icon(Icons.arrow_forward),
+                  label: const Text('Tutti i movimenti'),
+                ),
+        ),
         StreamBuilder<List<MovimentoDettaglio>>(
           stream: _movimenti,
           builder: (context, snapshot) {
@@ -465,7 +477,6 @@ class _HomePaginaState extends State<HomePagina> {
         KeyedSubtree(
           key: ValueKey(scheda),
           child: switch (scheda) {
-            SchedaPanoramica.inArrivo => SchedaInArrivo(sessione: _sessione),
             SchedaPanoramica.costoVita => schedaCostoVita,
             SchedaPanoramica.entratePreviste => SchedaEntratePreviste(
               sessione: _sessione,

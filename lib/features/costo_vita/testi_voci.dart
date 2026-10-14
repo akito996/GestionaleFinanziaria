@@ -144,8 +144,8 @@ class TestiVoci {
     perData: 'per addebito',
     portafoglio: 'Da quale portafoglio',
     portafoglioSpiegazione:
-        'Con un portafoglio la spesa si registra da sola nel giorno previsto '
-        '(ti avviso 3 giorni prima).',
+        'Con un portafoglio la spesa si registra nel giorno previsto (ti '
+        'avviso 3 giorni prima). Senza, è solo un promemoria.',
     suddividi: 'Suddividi la spesa nei mesi',
     reale: 'Speso',
     manca: 'restano',
@@ -198,8 +198,8 @@ class TestiVoci {
     perData: 'per accredito',
     portafoglio: 'Su quale portafoglio',
     portafoglioSpiegazione:
-        "Con un portafoglio l'entrata si registra da sola nel giorno previsto "
-        '(ti avviso 3 giorni prima).',
+        "Con un portafoglio l'entrata si registra nel giorno previsto. "
+        'Senza, è solo un promemoria.',
     suddividi: "Suddividi l'entrata nei mesi",
     reale: 'Ricevuto',
     manca: 'mancano',

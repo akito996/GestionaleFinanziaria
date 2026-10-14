@@ -8,7 +8,9 @@ import 'package:gestionale_finanziaria/core/crypto/derivazione.dart';
 import 'package:gestionale_finanziaria/core/db/deposito_locale.dart';
 import 'package:gestionale_finanziaria/core/db/prestiti.dart';
 import 'package:gestionale_finanziaria/core/db/tabelle.dart';
+import 'package:gestionale_finanziaria/core/ricorrenza.dart';
 import 'package:gestionale_finanziaria/core/sessione.dart';
+import 'package:gestionale_finanziaria/features/notifiche/campanella.dart';
 import 'package:sodium/sodium_sumo.dart';
 
 /// Layout su telefono e tablet, in verticale e in orizzontale: tutte le
@@ -71,8 +73,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
   }
 
-  /// Scorre fino in fondo la pagina visibile (così si costruisce tutto).
-  Future<void> scorriTutto(WidgetTester tester) async {
+  /// Scorre la pagina visibile di [passo] per 12 volte (in giù = negativo).
+  Future<void> scorri(WidgetTester tester, double passo) async {
     final scorrevoli = find.byType(Scrollable).hitTestable();
     if (scorrevoli.evaluate().isEmpty) {
       return;
@@ -86,23 +88,17 @@ void main() {
     for (var i = 0; i < 12; i++) {
       await tester.drag(
         find.byElementPredicate((e) => e == pagina),
-        const Offset(0, -500),
+        Offset(0, passo),
       );
       await assestamento(tester);
     }
   }
 
+  /// Scorre fino in fondo la pagina visibile (così si costruisce tutto).
+  Future<void> scorriTutto(WidgetTester tester) => scorri(tester, -500);
+
   /// Torna in cima alla pagina visibile.
-  Future<void> scorriInCima(WidgetTester tester) async {
-    for (var i = 0; i < 12; i++) {
-      final scorrevoli = find.byType(Scrollable).hitTestable();
-      if (scorrevoli.evaluate().isEmpty) {
-        return;
-      }
-      await tester.drag(scorrevoli.last, const Offset(0, 500));
-      await assestamento(tester);
-    }
-  }
+  Future<void> scorriInCima(WidgetTester tester) => scorri(tester, 500);
 
   Future<void> chiudiDialogo(WidgetTester tester) async {
     await tester.tapAt(const Offset(4, 4)); // fuori dal dialogo
@@ -190,12 +186,41 @@ void main() {
       );
     }
     for (final nome in ['Vacanza estiva in montagna con la famiglia', 'Auto']) {
-      await sessione.obiettivi.crea(
+      final obiettivo = await sessione.obiettivi.crea(
         nome: nome,
         tipo: TipoObiettivo.personale,
         importoObiettivo: 300000,
+        portafoglioId: conto,
+      );
+      await sessione.obiettivi.versa(obiettivo, importo: 120000, data: oggi);
+    }
+    // Notifiche: entrate da confermare oggi e un promemoria senza portafoglio.
+    for (final nome in [
+      'Lezione privata con un nome molto lungo da confermare',
+      'Stipendio',
+    ]) {
+      final voce = await sessione.costoVita.creaVoce(
+        nome: nome,
+        tipo: TipoVoce.fissa,
+        importo: 1234567,
+        natura: NaturaVoce.entrata,
+      );
+      await sessione.costoVita.impostaAddebito(
+        voce,
+        ricorrenza: Ricorrenza(inizio: oggi),
+        portafoglioId: conto,
+        richiedeConferma: true,
       );
     }
+    final promemoria = await sessione.costoVita.creaVoce(
+      nome: 'Rata cessione del quinto: promemoria',
+      tipo: TipoVoce.fissa,
+      importo: 28600,
+    );
+    await sessione.costoVita.impostaAddebito(
+      promemoria,
+      ricorrenza: Ricorrenza(inizio: oggi),
+    );
   }
 
   for (final (nome, schermo) in const [
@@ -229,6 +254,37 @@ void main() {
       // Panoramica, tutta.
       await attendi(tester, find.text('Portafogli'));
       await scorriTutto(tester);
+      await scorriInCima(tester);
+
+      // Il portafoglio con i soldi messi da parte per gli obiettivi.
+      await tocca(
+        tester,
+        find.text('Conto corrente principale di famiglia').hitTestable().first,
+      );
+      await attendi(tester, find.textContaining('Di questi soldi'));
+      await scorriTutto(tester);
+      await tocca(tester, find.byType(BackButton));
+      await assestamento(tester);
+
+      // Campanella: pannello e sezione Notifiche con la selezione.
+      await tocca(
+        tester,
+        find
+            .descendant(
+              of: find.byType(CampanellaNotifiche),
+              matching: find.byType(IconButton),
+            )
+            .hitTestable(),
+      );
+      await attendi(tester, find.text('Tutte le notifiche'));
+      await attendi(tester, find.text('Stipendio'));
+      await tocca(tester, find.text('Tutte le notifiche'));
+      await attendi(tester, find.text('Seleziona tutte'));
+      await tocca(tester, find.text('Seleziona tutte'));
+      await attendi(tester, find.textContaining('Conferma ('));
+      await scorriTutto(tester);
+      await tocca(tester, find.byType(BackButton));
+      await assestamento(tester);
 
       // Nuovo movimento, calendario, personalizzazione ed export.
       await tocca(tester, find.byTooltip('Nuovo movimento (Ctrl+N)'));
@@ -246,6 +302,12 @@ void main() {
       await tocca(tester, find.byTooltip('Esporta (PDF o Excel)'));
       await assestamento(tester);
       await chiudiDialogo(tester);
+
+      // Movimenti, anche con le date a scelta.
+      await vaiA(tester, 'Movimenti');
+      await tocca(tester, find.text('Scegli le date'));
+      await attendi(tester, find.text('Dal'));
+      await scorriTutto(tester);
 
       for (final sezione in [
         'Costo della vita',

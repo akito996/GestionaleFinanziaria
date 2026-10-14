@@ -198,4 +198,140 @@ void main() {
     expect(valori.toSet(), hasLength(1000));
     expect((await OrologioLogico.carica(db)).dispositivoId, o.dispositivoId);
   });
+  group('ricerca dei movimenti', () {
+    late String conto;
+    late String contanti;
+    late Map<String, String> categorie;
+
+    setUp(() async {
+      conto = await c.creaPortafoglio(
+        nome: 'ING CC',
+        tipoId: tipo['Conto corrente']!,
+        valuta: 'EUR',
+      );
+      contanti = await c.creaPortafoglio(
+        nome: 'Contanti',
+        tipoId: tipo['Contanti']!,
+        valuta: 'EUR',
+      );
+      categorie = {
+        for (final x in await c.osservaCategorie().first) x.nome: x.id,
+      };
+      Future<void> movimento(
+        String tipoNome,
+        String portafoglio,
+        int importo,
+        DateTime data,
+        String descrizione, {
+        String? categoria,
+        String? destinazione,
+      }) => c.registraMovimento(
+        tipoId: tipo[tipoNome]!,
+        portafoglioId: portafoglio,
+        destinazioneId: destinazione,
+        categoriaId: categoria == null ? null : categorie[categoria],
+        importo: importo,
+        valuta: 'EUR',
+        data: data,
+        descrizione: descrizione,
+      );
+      await movimento(
+        'Entrata',
+        conto,
+        180800,
+        DateTime(2026, 10, 10),
+        'Stipendio HD',
+      );
+      await movimento(
+        'Spesa',
+        contanti,
+        2000,
+        DateTime(2026, 10, 9),
+        'Spesa : Lidl',
+        categoria: 'Spesa',
+      );
+      await movimento(
+        'Spesa',
+        conto,
+        14250,
+        DateTime(2026, 9, 10),
+        'Rata Auto 100%',
+      );
+      await movimento(
+        'Trasferimento',
+        conto,
+        5000,
+        DateTime(2026, 10, 5),
+        'Prelievo',
+        destinazione: contanti,
+      );
+    });
+
+    Future<RisultatoMovimenti> cerca(FiltroMovimenti f) =>
+        c.movimentiFiltrati(f);
+
+    List<String> descrizioni(RisultatoMovimenti r) => [
+      for (final m in r.movimenti) m.movimento.descrizione,
+    ];
+
+    test('senza filtri: tutti, dal più recente, con i totali', () async {
+      final r = await cerca(const FiltroMovimenti());
+      expect(descrizioni(r), [
+        'Stipendio HD',
+        'Spesa : Lidl',
+        'Prelievo',
+        'Rata Auto 100%',
+      ]);
+      expect(r.totale, 4);
+      expect(r.entrate, 180800);
+      expect(r.uscite, 16250); // il trasferimento non conta
+      expect(r.completo, isTrue);
+    });
+
+    test('periodo, tipo e portafoglio', () async {
+      final ottobre = await cerca(
+        FiltroMovimenti(da: DateTime(2026, 10), a: DateTime(2026, 10, 31)),
+      );
+      expect(ottobre.totale, 3);
+      final uscite = await cerca(
+        const FiltroMovimenti(effetto: EffettoSaldo.uscita),
+      );
+      expect(descrizioni(uscite), ['Spesa : Lidl', 'Rata Auto 100%']);
+      // Il portafoglio conta anche come destinazione del trasferimento.
+      final soloContanti = await cerca(
+        FiltroMovimenti(portafoglioId: contanti),
+      );
+      expect(descrizioni(soloContanti), ['Spesa : Lidl', 'Prelievo']);
+    });
+
+    test('testo: descrizione, categoria, portafoglio o importo', () async {
+      expect(descrizioni(await cerca(const FiltroMovimenti(testo: 'lidl'))), [
+        'Spesa : Lidl',
+      ]);
+      expect(
+        (await cerca(const FiltroMovimenti(testo: 'ing cc'))).totale,
+        3, // stipendio, rata e trasferimento
+      );
+      expect(descrizioni(await cerca(const FiltroMovimenti(testo: '142,50'))), [
+        'Rata Auto 100%',
+      ]);
+      // "%" vale come lettera, non come jolly.
+      expect(descrizioni(await cerca(const FiltroMovimenti(testo: '100%'))), [
+        'Rata Auto 100%',
+      ]);
+      expect((await cerca(const FiltroMovimenti(testo: 'nulla'))).totale, 0);
+    });
+
+    test('categoria con le sottocategorie, e limite', () async {
+      final r = await cerca(FiltroMovimenti(categorie: {categorie['Spesa']!}));
+      expect(descrizioni(r), ['Spesa : Lidl']);
+      final pochi = await c.movimentiFiltrati(
+        const FiltroMovimenti(),
+        limite: 2,
+      );
+      expect(pochi.movimenti, hasLength(2));
+      expect(pochi.totale, 4);
+      expect(pochi.completo, isFalse);
+    });
+  });
 }

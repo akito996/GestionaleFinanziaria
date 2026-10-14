@@ -41,6 +41,10 @@ class _GestionaleAppState extends State<GestionaleApp> {
     }
   }
 
+  /// Ogni avviso in basso si può chiudere a mano con la "x" (accanto ad
+  /// "Annulla", se c'è).
+  static const _avvisi = SnackBarThemeData(showCloseIcon: true);
+
   @override
   Widget build(BuildContext context) {
     final sessione = widget.sessione;
@@ -51,11 +55,16 @@ class _GestionaleAppState extends State<GestionaleApp> {
       locale: const Locale('it', 'IT'),
       supportedLocales: const [Locale('it', 'IT')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: ThemeData(colorSchemeSeed: _colore, useMaterial3: true),
+      theme: ThemeData(
+        colorSchemeSeed: _colore,
+        useMaterial3: true,
+        snackBarTheme: _avvisi,
+      ),
       darkTheme: ThemeData(
         colorSchemeSeed: _colore,
         brightness: Brightness.dark,
         useMaterial3: true,
+        snackBarTheme: _avvisi,
       ),
       // La versione, come una firma, sopra tutte le schermate.
       builder: (context, child) => Stack(

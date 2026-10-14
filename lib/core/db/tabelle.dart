@@ -200,6 +200,48 @@ class Pianificazioni extends Table with ColonneSincronizzate {
   /// Quanti giorni prima avvisare.
   IntColumn get avvisoGiorni => integer().withDefault(const Constant(3))();
   BoolColumn get attiva => boolean().withDefault(const Constant(true))();
+
+  /// `true` = nel giorno previsto non si registra da sola: resta nelle
+  /// notifiche finché l'utente conferma, sposta o annulla.
+  BoolColumn get richiedeConferma =>
+      boolean().withDefault(const Constant(false))();
+}
+
+/// Scelta dell'utente su una singola scadenza di un pagamento programmato:
+/// spostata a un altro giorno, annullata o fatta (promemoria).
+///
+/// L'id è `<pianificazioneId>:<dataPrevista>`: due dispositivi che decidono
+/// sulla stessa scadenza aggiornano la stessa riga.
+@DataClassName('Occorrenza')
+class Occorrenze extends Table with ColonneSincronizzate {
+  TextColumn get pianificazioneId => text().references(Pianificazioni, #id)();
+
+  /// AAAA-MM-GG: il giorno della regola (resta lo stesso anche se spostata).
+  TextColumn get dataPrevista => text().withLength(min: 10, max: 10)();
+
+  /// Vedi [StatoOccorrenza]; `null` = nessuna scelta.
+  TextColumn get stato => text().nullable()();
+
+  /// AAAA-MM-GG: il nuovo giorno, se spostata.
+  TextColumn get nuovaData => text().nullable()();
+}
+
+/// Valori ammessi per [Occorrenze.stato].
+abstract final class StatoOccorrenza {
+  static const spostata = 'spostata';
+  static const annullata = 'annullata';
+
+  /// Promemoria senza portafoglio segnato come fatto.
+  static const fatta = 'fatta';
+}
+
+/// Notifiche lette: un avviso letto sparisce dalla campanella (resta
+/// nell'elenco completo). L'id è la chiave della notifica (es.
+/// `scadenza:<pianificazioneId>:<dataPrevista>`).
+@DataClassName('NotificaLetta')
+class NotificheLette extends Table with ColonneSincronizzate {
+  /// Data e ora locali della lettura (ISO 8601).
+  TextColumn get lettaIl => text()();
 }
 
 /// Carta di credito: le spese si registrano nel suo portafoglio (saldo negativo =
