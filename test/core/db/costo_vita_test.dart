@@ -255,6 +255,8 @@ void main() {
           affitto,
           ricorrenza: Ricorrenza(inizio: DateTime(2026, 10, 5)),
           portafoglioId: conto,
+          // "Conta dal" il primo addebito: anche il 5 ottobre (già passato).
+          contaDal: DateTime(2026, 10, 5),
         );
 
         expect(await pian.registraScadute(), 1); // 5 ottobre

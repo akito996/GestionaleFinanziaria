@@ -2210,6 +2210,17 @@ class $PianificazioniTable extends Pianificazioni
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _registraDalMeta = const VerificationMeta(
+    'registraDal',
+  );
+  @override
+  late final GeneratedColumn<String> registraDal = GeneratedColumn<String>(
+    'registra_dal',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2231,6 +2242,7 @@ class $PianificazioniTable extends Pianificazioni
     avvisoGiorni,
     attiva,
     richiedeConferma,
+    registraDal,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2387,6 +2399,15 @@ class $PianificazioniTable extends Pianificazioni
         ),
       );
     }
+    if (data.containsKey('registra_dal')) {
+      context.handle(
+        _registraDalMeta,
+        registraDal.isAcceptableOrUnknown(
+          data['registra_dal']!,
+          _registraDalMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2472,6 +2493,10 @@ class $PianificazioniTable extends Pianificazioni
         DriftSqlType.bool,
         data['${effectivePrefix}richiede_conferma'],
       )!,
+      registraDal: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}registra_dal'],
+      ),
     );
   }
 
@@ -2516,6 +2541,12 @@ class Pianificazione extends DataClass implements Insertable<Pianificazione> {
   /// `true` = nel giorno previsto non si registra da sola: resta nelle
   /// notifiche finché l'utente conferma, sposta o annulla.
   final bool richiedeConferma;
+
+  /// AAAA-MM-GG, "Conta dal": le scadenze prima di questo giorno erano già
+  /// avvenute quando è stata inserita (prestito o entrata già in corso): non
+  /// si registrano, non si notificano e non contano nel costo della vita.
+  /// `null` = tutte (archivi creati prima della v13).
+  final String? registraDal;
   const Pianificazione({
     required this.id,
     required this.aggiornatoIl,
@@ -2536,6 +2567,7 @@ class Pianificazione extends DataClass implements Insertable<Pianificazione> {
     required this.avvisoGiorni,
     required this.attiva,
     required this.richiedeConferma,
+    this.registraDal,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2575,6 +2607,9 @@ class Pianificazione extends DataClass implements Insertable<Pianificazione> {
     map['avviso_giorni'] = Variable<int>(avvisoGiorni);
     map['attiva'] = Variable<bool>(attiva);
     map['richiede_conferma'] = Variable<bool>(richiedeConferma);
+    if (!nullToAbsent || registraDal != null) {
+      map['registra_dal'] = Variable<String>(registraDal);
+    }
     return map;
   }
 
@@ -2613,6 +2648,9 @@ class Pianificazione extends DataClass implements Insertable<Pianificazione> {
       avvisoGiorni: Value(avvisoGiorni),
       attiva: Value(attiva),
       richiedeConferma: Value(richiedeConferma),
+      registraDal: registraDal == null && nullToAbsent
+          ? const Value.absent()
+          : Value(registraDal),
     );
   }
 
@@ -2641,6 +2679,7 @@ class Pianificazione extends DataClass implements Insertable<Pianificazione> {
       avvisoGiorni: serializer.fromJson<int>(json['avvisoGiorni']),
       attiva: serializer.fromJson<bool>(json['attiva']),
       richiedeConferma: serializer.fromJson<bool>(json['richiedeConferma']),
+      registraDal: serializer.fromJson<String?>(json['registraDal']),
     );
   }
   @override
@@ -2666,6 +2705,7 @@ class Pianificazione extends DataClass implements Insertable<Pianificazione> {
       'avvisoGiorni': serializer.toJson<int>(avvisoGiorni),
       'attiva': serializer.toJson<bool>(attiva),
       'richiedeConferma': serializer.toJson<bool>(richiedeConferma),
+      'registraDal': serializer.toJson<String?>(registraDal),
     };
   }
 
@@ -2689,6 +2729,7 @@ class Pianificazione extends DataClass implements Insertable<Pianificazione> {
     int? avvisoGiorni,
     bool? attiva,
     bool? richiedeConferma,
+    Value<String?> registraDal = const Value.absent(),
   }) => Pianificazione(
     id: id ?? this.id,
     aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
@@ -2715,6 +2756,7 @@ class Pianificazione extends DataClass implements Insertable<Pianificazione> {
     avvisoGiorni: avvisoGiorni ?? this.avvisoGiorni,
     attiva: attiva ?? this.attiva,
     richiedeConferma: richiedeConferma ?? this.richiedeConferma,
+    registraDal: registraDal.present ? registraDal.value : this.registraDal,
   );
   Pianificazione copyWithCompanion(PianificazioniCompanion data) {
     return Pianificazione(
@@ -2755,6 +2797,9 @@ class Pianificazione extends DataClass implements Insertable<Pianificazione> {
       richiedeConferma: data.richiedeConferma.present
           ? data.richiedeConferma.value
           : this.richiedeConferma,
+      registraDal: data.registraDal.present
+          ? data.registraDal.value
+          : this.registraDal,
     );
   }
 
@@ -2779,7 +2824,8 @@ class Pianificazione extends DataClass implements Insertable<Pianificazione> {
           ..write('occorrenze: $occorrenze, ')
           ..write('avvisoGiorni: $avvisoGiorni, ')
           ..write('attiva: $attiva, ')
-          ..write('richiedeConferma: $richiedeConferma')
+          ..write('richiedeConferma: $richiedeConferma, ')
+          ..write('registraDal: $registraDal')
           ..write(')'))
         .toString();
   }
@@ -2805,6 +2851,7 @@ class Pianificazione extends DataClass implements Insertable<Pianificazione> {
     avvisoGiorni,
     attiva,
     richiedeConferma,
+    registraDal,
   );
   @override
   bool operator ==(Object other) =>
@@ -2828,7 +2875,8 @@ class Pianificazione extends DataClass implements Insertable<Pianificazione> {
           other.occorrenze == this.occorrenze &&
           other.avvisoGiorni == this.avvisoGiorni &&
           other.attiva == this.attiva &&
-          other.richiedeConferma == this.richiedeConferma);
+          other.richiedeConferma == this.richiedeConferma &&
+          other.registraDal == this.registraDal);
 }
 
 class PianificazioniCompanion extends UpdateCompanion<Pianificazione> {
@@ -2851,6 +2899,7 @@ class PianificazioniCompanion extends UpdateCompanion<Pianificazione> {
   final Value<int> avvisoGiorni;
   final Value<bool> attiva;
   final Value<bool> richiedeConferma;
+  final Value<String?> registraDal;
   final Value<int> rowid;
   const PianificazioniCompanion({
     this.id = const Value.absent(),
@@ -2872,6 +2921,7 @@ class PianificazioniCompanion extends UpdateCompanion<Pianificazione> {
     this.avvisoGiorni = const Value.absent(),
     this.attiva = const Value.absent(),
     this.richiedeConferma = const Value.absent(),
+    this.registraDal = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PianificazioniCompanion.insert({
@@ -2894,6 +2944,7 @@ class PianificazioniCompanion extends UpdateCompanion<Pianificazione> {
     this.avvisoGiorni = const Value.absent(),
     this.attiva = const Value.absent(),
     this.richiedeConferma = const Value.absent(),
+    this.registraDal = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        aggiornatoIl = Value(aggiornatoIl),
@@ -2919,6 +2970,7 @@ class PianificazioniCompanion extends UpdateCompanion<Pianificazione> {
     Expression<int>? avvisoGiorni,
     Expression<bool>? attiva,
     Expression<bool>? richiedeConferma,
+    Expression<String>? registraDal,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2941,6 +2993,7 @@ class PianificazioniCompanion extends UpdateCompanion<Pianificazione> {
       if (avvisoGiorni != null) 'avviso_giorni': avvisoGiorni,
       if (attiva != null) 'attiva': attiva,
       if (richiedeConferma != null) 'richiede_conferma': richiedeConferma,
+      if (registraDal != null) 'registra_dal': registraDal,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2965,6 +3018,7 @@ class PianificazioniCompanion extends UpdateCompanion<Pianificazione> {
     Value<int>? avvisoGiorni,
     Value<bool>? attiva,
     Value<bool>? richiedeConferma,
+    Value<String?>? registraDal,
     Value<int>? rowid,
   }) {
     return PianificazioniCompanion(
@@ -2987,6 +3041,7 @@ class PianificazioniCompanion extends UpdateCompanion<Pianificazione> {
       avvisoGiorni: avvisoGiorni ?? this.avvisoGiorni,
       attiva: attiva ?? this.attiva,
       richiedeConferma: richiedeConferma ?? this.richiedeConferma,
+      registraDal: registraDal ?? this.registraDal,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3051,6 +3106,9 @@ class PianificazioniCompanion extends UpdateCompanion<Pianificazione> {
     if (richiedeConferma.present) {
       map['richiede_conferma'] = Variable<bool>(richiedeConferma.value);
     }
+    if (registraDal.present) {
+      map['registra_dal'] = Variable<String>(registraDal.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3079,6 +3137,7 @@ class PianificazioniCompanion extends UpdateCompanion<Pianificazione> {
           ..write('avvisoGiorni: $avvisoGiorni, ')
           ..write('attiva: $attiva, ')
           ..write('richiedeConferma: $richiedeConferma, ')
+          ..write('registraDal: $registraDal, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -14024,6 +14083,7 @@ typedef $$PianificazioniTableCreateCompanionBuilder =
       Value<int> avvisoGiorni,
       Value<bool> attiva,
       Value<bool> richiedeConferma,
+      Value<String?> registraDal,
       Value<int> rowid,
     });
 typedef $$PianificazioniTableUpdateCompanionBuilder =
@@ -14047,6 +14107,7 @@ typedef $$PianificazioniTableUpdateCompanionBuilder =
       Value<int> avvisoGiorni,
       Value<bool> attiva,
       Value<bool> richiedeConferma,
+      Value<String?> registraDal,
       Value<int> rowid,
     });
 
@@ -14242,6 +14303,11 @@ class $$PianificazioniTableFilterComposer
 
   ColumnFilters<bool> get richiedeConferma => $composableBuilder(
     column: $table.richiedeConferma,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get registraDal => $composableBuilder(
+    column: $table.registraDal,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -14472,6 +14538,11 @@ class $$PianificazioniTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get registraDal => $composableBuilder(
+    column: $table.registraDal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$PortafogliTableOrderingComposer get portafoglioId {
     final $$PortafogliTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -14628,6 +14699,11 @@ class $$PianificazioniTableAnnotationComposer
 
   GeneratedColumn<bool> get richiedeConferma => $composableBuilder(
     column: $table.richiedeConferma,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get registraDal => $composableBuilder(
+    column: $table.registraDal,
     builder: (column) => column,
   );
 
@@ -14828,6 +14904,7 @@ class $$PianificazioniTableTableManager
                 Value<int> avvisoGiorni = const Value.absent(),
                 Value<bool> attiva = const Value.absent(),
                 Value<bool> richiedeConferma = const Value.absent(),
+                Value<String?> registraDal = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PianificazioniCompanion(
                 id: id,
@@ -14849,6 +14926,7 @@ class $$PianificazioniTableTableManager
                 avvisoGiorni: avvisoGiorni,
                 attiva: attiva,
                 richiedeConferma: richiedeConferma,
+                registraDal: registraDal,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -14872,6 +14950,7 @@ class $$PianificazioniTableTableManager
                 Value<int> avvisoGiorni = const Value.absent(),
                 Value<bool> attiva = const Value.absent(),
                 Value<bool> richiedeConferma = const Value.absent(),
+                Value<String?> registraDal = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PianificazioniCompanion.insert(
                 id: id,
@@ -14893,6 +14972,7 @@ class $$PianificazioniTableTableManager
                 avvisoGiorni: avvisoGiorni,
                 attiva: attiva,
                 richiedeConferma: richiedeConferma,
+                registraDal: registraDal,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

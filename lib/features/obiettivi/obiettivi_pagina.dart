@@ -12,6 +12,7 @@ import '../comuni/errori.dart';
 import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
 import '../movimenti/riga_movimento.dart';
+import '../comuni/avvisi.dart';
 
 /// Obiettivi di risparmio personali e collette con altre persone.
 class ObiettiviPagina extends StatefulWidget {
@@ -216,7 +217,7 @@ class ObiettivoPagina extends StatelessWidget {
                   await Clipboard.setData(ClipboardData(text: s.riepilogo()));
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      avviso(
                         content: Text('Riepilogo copiato: incollalo dove vuoi'),
                       ),
                     );
@@ -241,7 +242,7 @@ class ObiettivoPagina extends StatelessWidget {
                   }
                   Navigator.of(context).pop();
                   messenger.showSnackBar(
-                    SnackBar(
+                    avviso(
                       content: Text('"${o.nome}" archiviato'),
                       action: SnackBarAction(
                         label: 'Annulla',
@@ -370,7 +371,7 @@ class ObiettivoPagina extends StatelessWidget {
                               await servizio.annullaVersamento(v.id);
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
+                                  avviso(
                                     content: const Text('Versamento annullato'),
                                     action: SnackBarAction(
                                       label: 'Ripristina',

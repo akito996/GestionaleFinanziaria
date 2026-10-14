@@ -4,12 +4,15 @@
 // Eseguire con: flutter test integration_test -d windows
 // (Android: flutter test integration_test --flavor prova -d <emulatore>)
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gestionale_finanziaria/app.dart';
 import 'package:gestionale_finanziaria/core/db/deposito_locale.dart';
+import 'package:gestionale_finanziaria/core/foto/lettura_foto.dart';
+import 'package:gestionale_finanziaria/core/foto/scontrino.dart';
 import 'package:gestionale_finanziaria/core/sessione.dart';
 import 'package:gestionale_finanziaria/features/sblocco/sblocco_pagina.dart';
 import 'package:integration_test/integration_test.dart';
@@ -205,4 +208,70 @@ void main() {
     await attendi(tester, find.text('Archivio bloccato'));
     deposito.cartella.deleteSync(recursive: true);
   });
+
+  // Solo Android: Tesseract e il modello italiano dentro l'APK, la foto letta
+  // sul telefono e lo "zoom" sui dati.
+  testWidgets('lettura di uno scontrino con Tesseract (Android)', (
+    tester,
+  ) async {
+    final png = await tester.runAsync<List<int>>(_scontrinoDiProva);
+    final file = File('${Directory.systemTemp.path}/scontrino_prova.png');
+    await file.writeAsBytes(png!);
+    const lettore = LettoreFotoAndroid();
+    final foto = await tester.runAsync(() => lettore.leggi(file.path));
+    debugPrint('FOTO: ${foto!.righe.map((r) => r.testo).join(' | ')}');
+    expect(foto.testo.toUpperCase(), contains('TOTALE'));
+    final s = await tester.runAsync(
+      () => LettoreScontrino.leggi(
+        lettore,
+        file.path,
+        oggi: DateTime(2026, 10, 14),
+      ),
+    );
+    debugPrint(
+      'SCONTRINO: ${s!.negozio?.valore} · ${s.data?.valore} · '
+      '${s.importo?.valore}',
+    );
+    expect(s.importo?.valore, 2340);
+    expect(s.data?.valore, DateTime(2026, 10, 14));
+    expect(s.importo?.immagine, isNotEmpty); // la zona ingrandita
+    await tester.runAsync(lettore.chiudi);
+    await file.delete();
+  }, skip: !Platform.isAndroid);
+}
+
+/// Uno scontrino disegnato (nero su bianco), come una foto ben fatta.
+Future<List<int>> _scontrinoDiProva() async {
+  const righe = [
+    'SUPERMERCATO ROSSI',
+    'DOCUMENTO COMMERCIALE',
+    'PANE 2,10',
+    'LATTE 1,29',
+    'TOTALE COMPLESSIVO 23,40',
+    'PAGAMENTO ELETTRONICO 23,40',
+    '14-10-2026 10:21',
+  ];
+  const larghezza = 900.0;
+  const alto = 70.0;
+  final registratore = ui.PictureRecorder();
+  final tela = Canvas(registratore)
+    ..drawRect(
+      Rect.fromLTWH(0, 0, larghezza, alto * righe.length + 80),
+      Paint()..color = const Color(0xFFFFFFFF),
+    );
+  for (final (i, riga) in righe.indexed) {
+    final paragrafo =
+        (ui.ParagraphBuilder(ui.ParagraphStyle(fontSize: 40))
+              ..pushStyle(ui.TextStyle(color: const Color(0xFF000000)))
+              ..addText(riga))
+            .build()
+          ..layout(const ui.ParagraphConstraints(width: larghezza - 80));
+    tela.drawParagraph(paragrafo, Offset(40, 40 + i * alto));
+  }
+  final immagine = await registratore.endRecording().toImage(
+    larghezza.toInt(),
+    (alto * righe.length + 80).toInt(),
+  );
+  final dati = await immagine.toByteData(format: ui.ImageByteFormat.png);
+  return dati!.buffer.asUint8List();
 }

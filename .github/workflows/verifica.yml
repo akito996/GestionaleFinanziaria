@@ -211,9 +211,21 @@ jobs:
           done
       - name: Peso delle build
         run: python3 tool/dimensioni.py build/app/outputs/flutter-apk/*-release.apk
+      # Il file da installare per provare (telefoni e tablet a 64 bit), con un
+      # nome chiaro. Lo zip con tutti gli APK resta per i casi particolari.
+      - name: APK da installare
+        run: |
+          mkdir -p build/da-installare
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-prova-release.apk build/da-installare/GestionaleFinanziaria-prova.apk
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: GestionaleFinanziaria-android-${{ github.sha }}
+          name: android-da-installare-${{ github.sha }}
+          path: build/da-installare/GestionaleFinanziaria-prova.apk
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: GestionaleFinanziaria-android-tutti-gli-apk-${{ github.sha }}
           path: build/app/outputs/flutter-apk/*-release.apk
           if-no-files-found: error
           retention-days: 14
@@ -298,11 +310,17 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: bash -c 'set -o pipefail; flutter test integration_test --flavor prova -d emulator-5554 -r expanded 2>&1 | tee "$RUNNER_TEMP/integration-android.log"'
+      # Cosa ha letto Tesseract dallo scontrino di prova (riepilogo della CI).
+      - name: Lettura delle foto (risultato)
+        if: success()
+        run: |
+          esito="$(grep -E -m1 'SCONTRINO:' "$RUNNER_TEMP/integration-android.log" || true)"
+          echo "::notice title=Lettura foto (${{ matrix.dispositivo }})::${esito:-nessun risultato}"
       - name: Motivo dell'errore
         if: failure()
         run: |
           log="$(cat "$RUNNER_TEMP/integration-android.log" 2>/dev/null)"
-          motivo="$( (echo "$log" | grep -E 'SCHERMO:|FINESTRA:|PULSANTE:|APPUNTI|Warning: A call to tap'; echo "$log" | grep -v -E '^\s*$' | grep -E -A25 'EXCEPTION CAUGHT|Expected:|\[E\]|Error|FAILURE|What went wrong') | head -70)"
+          motivo="$( (echo "$log" | grep -E 'SCHERMO:|FINESTRA:|PULSANTE:|APPUNTI|FOTO:|SCONTRINO:|Warning: A call to tap'; echo "$log" | grep -v -E '^\s*$' | grep -E -A25 'EXCEPTION CAUGHT|Expected:|\[E\]|Error|FAILURE|What went wrong') | head -70)"
           motivo="${motivo//'%'/'%25'}"
           motivo="${motivo//$'\n'/'%0A'}"
           motivo="${motivo//$'\r'/}"

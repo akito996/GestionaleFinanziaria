@@ -21,6 +21,7 @@ import '../portafogli/elenco_portafogli.dart';
 import 'entrate_previste.dart';
 import 'entrate_uscite.dart';
 import 'schede_panoramica.dart';
+import '../comuni/avvisi.dart';
 
 /// Panoramica: totale e portafogli (sempre), poi le schede scelte dall'utente
 /// nell'ordine che preferisce, e "+ Movimento". Su Windows: Ctrl+N = nuovo
@@ -89,21 +90,21 @@ class _HomePaginaState extends State<HomePagina> {
     });
 
     // Conferma visibile dell'apertura ("Archivio sbloccato", "Archivio creato", ...).
-    final avviso = _sessione.avviso;
+    final apertura = _sessione.avviso;
     _sessione.avviso = null;
-    if (avviso != null) {
+    if (apertura != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           ScaffoldMessenger.of(context)
             ..clearSnackBars()
             ..showSnackBar(
-              SnackBar(
+              avviso(
                 content: Row(
                   children: [
                     const LucchettoAperto(colore: Colors.white),
                     const SizedBox(width: 12),
                     // Sul telefono il testo va a capo invece di uscire dal bordo.
-                    Expanded(child: Text(avviso)),
+                    Expanded(child: Text(apertura)),
                   ],
                 ),
                 duration: const Duration(seconds: 2),

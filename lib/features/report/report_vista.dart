@@ -11,6 +11,7 @@ import '../comuni/layout.dart';
 import '../comuni/salva_file.dart';
 import '../grafici/grafici.dart';
 import '../grafici/grafici_avanzati.dart';
+import '../comuni/avvisi.dart';
 
 /// Un report a schermo, con i pulsanti per scaricarlo in PDF ed Excel.
 class ReportVista extends StatefulWidget {
@@ -59,7 +60,7 @@ class _ReportVistaState extends State<ReportVista> {
         ScaffoldMessenger.of(context)
           ..clearSnackBars()
           ..showSnackBar(
-            SnackBar(
+            avviso(
               content: Text(
                 'Report salvato ($dove). Il file non è cifrato: '
                 'conservalo in un posto sicuro.',

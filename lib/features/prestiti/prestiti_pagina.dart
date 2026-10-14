@@ -9,6 +9,7 @@ import '../comuni/layout.dart';
 import '../movimenti/riga_movimento.dart';
 import 'avviso_maxi.dart';
 import 'prestito_modulo.dart';
+import '../comuni/avvisi.dart';
 
 String etichettaTipoPrestito(String tipo) => switch (tipo) {
   TipoPrestito.mutuo => 'Mutuo',
@@ -235,7 +236,7 @@ class PrestitoPagina extends StatelessWidget {
     messenger
       ..clearSnackBars()
       ..showSnackBar(
-        SnackBar(
+        avviso(
           content: Text('"${s.prestito.nome}" archiviato'),
           action: SnackBarAction(
             label: 'Annulla',

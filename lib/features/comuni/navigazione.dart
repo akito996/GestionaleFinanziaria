@@ -16,6 +16,7 @@ import '../notifiche/campanella.dart';
 import '../obiettivi/obiettivi_pagina.dart';
 import 'icone.dart';
 import 'layout.dart';
+import 'avvisi.dart';
 
 /// Pulsante "blocca" presente in ogni sezione: lucchetto aperto = archivio
 /// aperto. Accanto, la campanella delle notifiche.
@@ -104,7 +105,7 @@ class _GuscioState extends State<Guscio> {
     await _avvisi();
     if (n > 0 && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        avviso(
           content: Text(
             n == 1
                 ? 'Registrato 1 pagamento programmato'

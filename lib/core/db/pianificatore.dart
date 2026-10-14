@@ -30,6 +30,7 @@ class DatiPianificazione {
     this.valuta = 'EUR',
     this.avvisoGiorni = 3,
     this.richiedeConferma = false,
+    this.registraDal,
   });
 
   final String origine;
@@ -46,6 +47,10 @@ class DatiPianificazione {
 
   /// Vedi [Pianificazioni.richiedeConferma].
   final bool richiedeConferma;
+
+  /// "Conta dal" ([Pianificazioni.registraDal]). `null` = alla creazione
+  /// oggi (conta solo da quando la inserisci), alla modifica resta com'è.
+  final DateTime? registraDal;
 }
 
 /// Una scadenza futura non ancora registrata.
@@ -158,6 +163,9 @@ class Pianificatore {
       attiva: const Value(true),
       eliminato: const Value(false),
       richiedeConferma: Value(d.richiedeConferma),
+      registraDal: d.registraDal == null
+          ? const Value.absent()
+          : Value(Contabilita.giorno(d.registraDal!)),
     );
     if (esistente != null) {
       await (_db.update(
@@ -166,8 +174,61 @@ class Pianificatore {
       return esistente.id;
     }
     final id = nuovoId();
-    await _db.into(_db.pianificazioni).insert(valori.copyWith(id: Value(id)));
+    await _db
+        .into(_db.pianificazioni)
+        .insert(
+          valori.copyWith(
+            id: Value(id),
+            // Già in corso quando la inserisci: conta solo da oggi.
+            registraDal: Value(Contabilita.giorno(d.registraDal ?? _oggi())),
+          ),
+        );
     return id;
+  }
+
+  /// "Conta dal" su una scadenza già esistente: le scadenze prima di [dal] non
+  /// si registrano più e i movimenti già registrati per quelle scadenze si
+  /// eliminano. Restituisce gli id eliminati (per "Annulla" con
+  /// [ripristinaMovimenti]).
+  Future<List<String>> contaDal(String pianificazioneId, DateTime dal) async {
+    final giorno = Contabilita.giorno(dal);
+    return _db.transaction(() async {
+      await (_db.update(
+        _db.pianificazioni,
+      )..where((p) => p.id.equals(pianificazioneId))).write(
+        PianificazioniCompanion(
+          aggiornatoIl: Value(_orologio.adesso()),
+          registraDal: Value(giorno),
+        ),
+      );
+      final prima =
+          await (_db.select(_db.movimenti)..where(
+                (m) =>
+                    m.pianificazioneId.equals(pianificazioneId) &
+                    m.dataPrevista.isSmallerThanValue(giorno) &
+                    m.eliminato.equals(false),
+              ))
+              .get();
+      final ids = [for (final m in prima) m.id];
+      await _segnaEliminati(ids, true);
+      return ids;
+    });
+  }
+
+  /// Rimette i movimenti tolti da [contaDal].
+  Future<void> ripristinaMovimenti(List<String> ids) =>
+      _segnaEliminati(ids, false);
+
+  Future<void> _segnaEliminati(List<String> ids, bool eliminato) async {
+    if (ids.isEmpty) {
+      return;
+    }
+    await (_db.update(_db.movimenti)..where((m) => m.id.isIn(ids))).write(
+      MovimentiCompanion(
+        aggiornatoIl: Value(_orologio.adesso()),
+        eliminato: Value(eliminato),
+      ),
+    );
   }
 
   /// Toglie il pagamento programmato (i movimenti già registrati restano).
@@ -428,10 +489,18 @@ class Pianificatore {
     Map<String, Occorrenza> scelte,
   ) {
     bool dentro(DateTime d) => !d.isBefore(da) && !d.isAfter(a);
+    // "Conta dal": quelle prima erano già avvenute quando è stata inserita.
+    final dal = p.registraDal == null
+        ? null
+        : Contabilita.daGiorno(p.registraDal!);
+    bool contata(DateTime prevista) => dal == null || !prevista.isBefore(dal);
     final regola = ricorrenzaDi(p);
     final out = <(DateTime, DateTime, Occorrenza?)>[];
     final viste = <String>{};
     for (final prevista in regola.tra(da, a)) {
+      if (!contata(prevista)) {
+        continue;
+      }
       final chiave = Contabilita.giorno(prevista);
       viste.add(chiave);
       final scelta = scelte[chiave];
@@ -449,7 +518,9 @@ class Pianificatore {
       final prevista = Contabilita.daGiorno(scelta.dataPrevista);
       final data = Contabilita.daGiorno(scelta.nuovaData!);
       // Solo se il giorno appartiene ancora alla regola (la voce può cambiare).
-      if (dentro(data) && regola.tra(prevista, prevista).isNotEmpty) {
+      if (dentro(data) &&
+          contata(prevista) &&
+          regola.tra(prevista, prevista).isNotEmpty) {
         out.add((prevista, data, scelta));
       }
     }

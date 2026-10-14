@@ -5,6 +5,7 @@ import '../../core/db/tabelle.dart';
 import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import 'movimento_modulo.dart';
+import '../comuni/avvisi.dart';
 
 /// Colore delle entrate (verde leggibile sia in chiaro sia in scuro).
 Color coloreEntrata(BuildContext context) =>
@@ -65,7 +66,7 @@ class RigaMovimento extends StatelessWidget {
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(
-        SnackBar(
+        avviso(
           content: const Text('Movimento eliminato'),
           action: SnackBarAction(
             label: 'Annulla',

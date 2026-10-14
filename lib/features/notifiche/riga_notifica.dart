@@ -8,6 +8,7 @@ import '../comuni/campi.dart';
 import '../comuni/errori.dart';
 import '../movimenti/riga_movimento.dart';
 import '../prestiti/avviso_maxi.dart';
+import '../comuni/avvisi.dart';
 
 /// "oggi", "domani", "ieri" oppure la data breve ("gio 15 ott").
 String giornoNotifica(BuildContext context, DateTime data) {
@@ -61,7 +62,7 @@ void _avviso(
   messenger
     ..clearSnackBars()
     ..showSnackBar(
-      SnackBar(
+      avviso(
         content: Text(testo),
         action: indietro == null
             ? null

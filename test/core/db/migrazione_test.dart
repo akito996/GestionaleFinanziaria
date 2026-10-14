@@ -8,7 +8,7 @@ import 'package:sqlite3/sqlite3.dart' as sql;
 
 void main() {
   test(
-    'migrazione v1 → v12: dati conservati, nuove tabelle e categorie',
+    'migrazione v1 → v13: dati conservati, nuove tabelle e categorie',
     () async {
       // Lo schema delle tabelle già presenti in v1 non è cambiato: si crea un archivio
       // attuale e lo si riporta com'era in v1 (senza le aggiunte della v2).
@@ -80,12 +80,12 @@ void main() {
       expect(await db.select(db.obiettivi).get(), isEmpty);
       expect(portafogli.single.preferito, isFalse);
       expect(portafogli.single.gruppo, isNull);
-      expect(grezzo.userVersion, 12);
+      expect(grezzo.userVersion, 13);
     },
   );
 
   test(
-    'migrazione v7 → v12: spese ripartite, maxi rata, entrate previste, report',
+    'migrazione v7 → v13: spese ripartite, maxi rata, entrate previste, report',
     () async {
       final grezzo = sql.sqlite3.openInMemory();
       final v8 = Archivio.conEsecutore(
@@ -111,6 +111,7 @@ void main() {
         ..execute('ALTER TABLE prestiti DROP COLUMN decisione_maxi')
         ..execute('ALTER TABLE prestiti DROP COLUMN maxi_rimandata_il')
         ..execute('ALTER TABLE pianificazioni DROP COLUMN richiede_conferma')
+        ..execute('ALTER TABLE pianificazioni DROP COLUMN registra_dal')
         ..execute('DROP TABLE occorrenze')
         ..execute('DROP TABLE notifiche_lette')
         ..userVersion = 7;
@@ -123,10 +124,10 @@ void main() {
       expect(voce.natura, NaturaVoce.spesa); // le voci esistenti sono spese
       expect(await db.select(db.report).get(), isEmpty);
       expect(await db.select(db.prestiti).get(), isEmpty);
-      expect(grezzo.userVersion, 12);
+      expect(grezzo.userVersion, 13);
     },
   );
-  test('migrazione v11 → v12: le entrate previste chiedono conferma', () async {
+  test('migrazione v11 → v13: le entrate previste chiedono conferma', () async {
     final grezzo = sql.sqlite3.openInMemory();
     final v11 = Archivio.conEsecutore(
       NativeDatabase.opened(grezzo, closeUnderlyingOnClose: false),
@@ -161,6 +162,7 @@ void main() {
     await v11.close();
     grezzo
       ..execute('ALTER TABLE pianificazioni DROP COLUMN richiede_conferma')
+      ..execute('ALTER TABLE pianificazioni DROP COLUMN registra_dal')
       ..execute('DROP TABLE occorrenze')
       ..execute('DROP TABLE notifiche_lette')
       ..userVersion = 11;
@@ -172,8 +174,13 @@ void main() {
         p.origineId: p.richiedeConferma,
     };
     expect(conferma, {'stipendio': true, 'affitto': false});
+    // v13: per quelle già inserite "Conta dal" resta vuoto (contano tutte).
+    expect(
+      (await db.select(db.pianificazioni).get()).map((p) => p.registraDal),
+      everyElement(isNull),
+    );
     expect(await db.select(db.occorrenze).get(), isEmpty);
     expect(await db.select(db.notificheLette).get(), isEmpty);
-    expect(grezzo.userVersion, 12);
+    expect(grezzo.userVersion, 13);
   });
 }

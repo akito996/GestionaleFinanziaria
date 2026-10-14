@@ -113,7 +113,7 @@ class Archivio extends _$Archivio {
   Archivio.conEsecutore(super.e);
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -202,6 +202,10 @@ class Archivio extends _$Archivio {
           "WHERE origine = 'costo_vita' AND origine_id IN "
           "(SELECT id FROM voci_costo WHERE natura = 'entrata')",
         );
+      }
+      // v13: "Conta dal" (prestiti ed entrate già in corso quando li inserisci).
+      if (da < 13 && da >= 3) {
+        await m.addColumn(pianificazioni, pianificazioni.registraDal);
       }
     },
     beforeOpen: (_) async {

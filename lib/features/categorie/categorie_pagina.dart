@@ -6,6 +6,7 @@ import '../comuni/dialogo_testo.dart';
 import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
 import 'albero_vista.dart';
+import '../comuni/avvisi.dart';
 
 /// Gestione delle categorie: albero senza limiti, aggiungi sottocategoria,
 /// rinomina, archivia (con Annulla).
@@ -57,7 +58,7 @@ class CategoriePagina extends StatelessWidget {
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(
-        SnackBar(
+        avviso(
           content: Text('"${categoria.nome}" archiviata'),
           action: SnackBarAction(
             label: 'Annulla',

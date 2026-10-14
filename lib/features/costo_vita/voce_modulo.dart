@@ -9,8 +9,10 @@ import '../categorie/scelta_categoria.dart';
 import '../comuni/campi.dart';
 import '../comuni/errori.dart';
 import '../comuni/navigazione.dart';
+import '../comuni/conta_dal.dart';
 import 'sezione_addebito.dart';
 import 'testi_voci.dart';
+import '../comuni/avvisi.dart';
 
 /// Nuova voce del costo della vita (fissa o variabile), con nome suggerito.
 Future<void> apriNuovaVoce(
@@ -104,6 +106,7 @@ class _NuovaVoceState extends State<_NuovaVoce> {
           ricorrenza: _addebito.ricorrenza,
           portafoglioId: _addebito.portafoglioId,
           richiedeConferma: _addebito.conferma,
+          contaDal: _addebito.contaDalDaSalvare,
         );
         // Se il primo addebito è oggi o già passato, si registra subito.
         await widget.sessione.pianificatore.registraScadute();
@@ -231,7 +234,7 @@ Future<bool> eliminaVoceConConferma(
   messenger
     ..clearSnackBars()
     ..showSnackBar(
-      SnackBar(
+      avviso(
         content: Text('"${voce.nome}" eliminata'),
         action: SnackBarAction(
           label: 'Annulla',
@@ -327,6 +330,9 @@ class _ModificaVoceState extends State<_ModificaVoce> {
     final cv = widget.sessione.costoVita;
     final v = widget.voce;
     final importo = Importo.leggi(_importo.text)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final contaDal = _addebito.contaDalDaSalvare;
+    var tolti = const <String>[];
     await _esegui(() async {
       if (_nome.text.trim() != v.voce.nome ||
           _categoria != v.voce.categoriaId ||
@@ -340,11 +346,12 @@ class _ModificaVoceState extends State<_ModificaVoce> {
           ripartita: _addebito.ripartitaEffettiva,
         );
       }
-      await cv.impostaAddebito(
+      tolti = await cv.impostaAddebito(
         v.voce.id,
         ricorrenza: _addebito.ricorrenza,
         portafoglioId: _addebito.portafoglioId,
         richiedeConferma: _addebito.conferma,
+        contaDal: contaDal,
       );
       if (importo != _importoMostrato) {
         switch (_ambito) {
@@ -366,6 +373,9 @@ class _ModificaVoceState extends State<_ModificaVoce> {
       }
       await widget.sessione.pianificatore.registraScadute();
     });
+    if (contaDal != null && mounted) {
+      avvisaMovimentiTolti(messenger, widget.sessione, tolti, contaDal);
+    }
   }
 
   Future<void> _elimina() async {

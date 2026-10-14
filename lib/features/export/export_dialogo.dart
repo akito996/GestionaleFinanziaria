@@ -10,6 +10,7 @@ import '../comuni/errori.dart';
 import '../comuni/icone.dart';
 import '../comuni/salva_file.dart';
 import '../movimenti/riga_movimento.dart';
+import '../comuni/avvisi.dart';
 
 enum _Periodo { meseCorrente, ultimiTre, annoCorrente, personalizzato }
 
@@ -110,7 +111,7 @@ class _ExportDialogoState extends State<_ExportDialogo> {
       Navigator.of(context).pop();
       if (salvati > 0) {
         messenger.showSnackBar(
-          SnackBar(
+          avviso(
             content: Text(
               salvati == 1 ? 'File esportato' : '$salvati file esportati',
             ),

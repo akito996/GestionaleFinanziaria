@@ -11,6 +11,7 @@ import '../comuni/layout.dart';
 import '../movimenti/movimento_modulo.dart';
 import '../movimenti/riga_movimento.dart';
 import '../portafogli/portafoglio_pagina.dart';
+import '../comuni/avvisi.dart';
 
 /// Carte di credito: spese della carta, prossimo addebito sul conto, plafond.
 class CartePagina extends StatefulWidget {
@@ -392,7 +393,7 @@ class _ModuloCartaState extends State<_ModuloCarta> {
     messenger
       ..clearSnackBars()
       ..showSnackBar(
-        SnackBar(
+        avviso(
           content: Text('Carta "${carta.portafoglio.nome}" archiviata'),
           action: SnackBarAction(
             label: 'Annulla',

@@ -163,16 +163,24 @@ class CostoVita {
   /// è un'entrata.
   /// Con [richiedeConferma] non si registra da solo: nel giorno previsto resta
   /// nelle notifiche finché l'utente conferma, sposta o annulla.
-  Future<void> impostaAddebito(
+  /// [contaDal]: le scadenze prima non si registrano (alla creazione `null` =
+  /// oggi). Su una voce che aveva già l'addebito, i movimenti registrati prima
+  /// di [contaDal] si eliminano: restituisce i loro id (per "Annulla").
+  Future<List<String>> impostaAddebito(
     String voceId, {
     Ricorrenza? ricorrenza,
     String? portafoglioId,
     bool richiedeConferma = false,
+    DateTime? contaDal,
   }) async {
     if (ricorrenza == null) {
       await _pianificatore.rimuovi(OriginePianificazione.costoVita, voceId);
-      return;
+      return const [];
     }
+    final prima = await _pianificatore.perOrigine(
+      OriginePianificazione.costoVita,
+      voceId,
+    );
     final voce = await (_db.select(
       _db.vociCosto,
     )..where((v) => v.id.equals(voceId))).getSingle();
@@ -194,8 +202,24 @@ class CostoVita {
         descrizione: voce.nome,
         valuta: valuta ?? voce.valuta,
         richiedeConferma: richiedeConferma,
+        registraDal: contaDal,
       ),
     );
+    if (prima == null || contaDal == null) {
+      return const [];
+    }
+    return _pianificatore.contaDal(prima.id, contaDal);
+  }
+
+  /// "Conta dal" dell'addebito della voce (`null` = dal primo addebito).
+  Future<DateTime?> contaDal(String voceId) async {
+    final p = await _pianificatore.perOrigine(
+      OriginePianificazione.costoVita,
+      voceId,
+    );
+    return p?.registraDal == null
+        ? null
+        : Contabilita.daGiorno(p!.registraDal!);
   }
 
   Future<String> _tipoEntrata() async =>
@@ -471,6 +495,21 @@ class CostoVita {
               .get())
         p.origineId: p,
     };
+    // "Conta dal" dei prestiti: le rate prima non contano.
+    final contaDalPrestiti = {
+      for (final p
+          in await (_db.select(_db.pianificazioni)..where(
+                (p) =>
+                    p.origine.equals(OriginePianificazione.prestito) &
+                    p.eliminato.equals(false),
+              ))
+              .get())
+        if ((p.origineId, p.registraDal) case (
+          final String id,
+          final String dal,
+        ))
+          id: dal,
+    };
 
     final perVoce = <String, List<ImportoVoce>>{};
     for (final i in importi) {
@@ -581,7 +620,9 @@ class CostoVita {
         RiepilogoMese(
           mese,
           righe,
-          rate: entrate ? const [] : _rateDelMese(prestiti, mese),
+          rate: entrate
+              ? const []
+              : _rateDelMese(prestiti, mese, contaDalPrestiti),
         ),
       );
     }
@@ -590,10 +631,12 @@ class CostoVita {
 
   // ------------------------------------------------------------- interni
 
-  /// Rate dei prestiti che cadono nel mese, fino all'estinzione.
+  /// Rate dei prestiti che cadono nel mese, fino all'estinzione. Quelle prima
+  /// del "Conta dal" del prestito ([contaDal], per id) non contano.
   static List<RataDelMese> _rateDelMese(
     List<Prestito> prestiti,
     DateTime mese,
+    Map<String, String> contaDal,
   ) {
     final risultato = <RataDelMese>[];
     for (final p in prestiti) {
@@ -602,7 +645,11 @@ class CostoVita {
         frequenza: Frequenza.daCodice(p.frequenza),
         occorrenze: p.numeroRate,
       );
-      final date = regola.nelMese(mese);
+      final dal = contaDal[p.id];
+      final date = [
+        for (final d in regola.nelMese(mese))
+          if (dal == null || Contabilita.giorno(d).compareTo(dal) >= 0) d,
+      ];
       if (date.isEmpty) {
         continue;
       }

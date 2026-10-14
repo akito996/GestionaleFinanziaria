@@ -28,6 +28,7 @@ class DatiPrestito {
     this.portafoglioId,
     this.categoriaId,
     this.note = '',
+    this.contaDal,
   });
 
   final String nome;
@@ -49,6 +50,11 @@ class DatiPrestito {
   final String? portafoglioId;
   final String? categoriaId;
   final String note;
+
+  /// "Conta dal" (prestito già in corso): le rate prima si considerano già
+  /// pagate e non si registrano. Alla creazione `null` = oggi; alla modifica
+  /// `null` = resta com'è.
+  final DateTime? contaDal;
 }
 
 /// Una rata con la sua data e se è già stata pagata (registrata).
@@ -306,11 +312,14 @@ class PrestitiServizio {
             note: Value(d.note),
           ),
         );
-    await _aggiornaRate(id);
+    await _aggiornaRate(id, contaDal: d.contaDal);
     return id;
   }
 
-  Future<void> modifica(String id, DatiPrestito d) async {
+  /// Aggiorna il prestito. Con un nuovo "Conta dal" le rate registrate prima
+  /// di quel giorno si eliminano: restituisce i loro id (per "Annulla", con
+  /// [Pianificatore.ripristinaMovimenti]).
+  Future<List<String>> modifica(String id, DatiPrestito d) async {
     await (_db.update(_db.prestiti)..where((p) => p.id.equals(id))).write(
       PrestitiCompanion(
         aggiornatoIl: Value(_orologio.adesso()),
@@ -332,6 +341,26 @@ class PrestitiServizio {
       ),
     );
     await _aggiornaRate(id);
+    final dal = d.contaDal;
+    final pianificazione = await _pianificatore.perOrigine(
+      OriginePianificazione.prestito,
+      id,
+    );
+    if (dal == null || pianificazione == null) {
+      return const [];
+    }
+    return _pianificatore.contaDal(pianificazione.id, dal);
+  }
+
+  /// "Conta dal" del prestito (`null` = dalla prima rata).
+  Future<DateTime?> contaDal(String id) async {
+    final p = await _pianificatore.perOrigine(
+      OriginePianificazione.prestito,
+      id,
+    );
+    return p?.registraDal == null
+        ? null
+        : Contabilita.daGiorno(p!.registraDal!);
   }
 
   /// Archivia (es. estinto in anticipo): le rate future non si registrano più.
@@ -400,6 +429,7 @@ class PrestitiServizio {
     final date = _ricorrenza(p)
         .tra(Contabilita.daGiorno(p.primaRata), DateTime(9999));
     final pagate = await _dateRegistrate(p.id);
+    final dal = await contaDal(p.id);
     final oggi = _oggi();
     final rate = <RataDatata>[];
     for (var i = 0; i < piano.length && i < date.length; i++) {
@@ -411,7 +441,9 @@ class PrestitiServizio {
           i == p.numeroRate - 1 &&
           p.maxiRataMinimo != null &&
           p.decisioneMaxi == DecisioneMaxi.rifinanzia;
-      final pagata = p.portafoglioId == null || rifinanziata
+      // Prima di "Conta dal" erano già pagate quando l'hai inserito.
+      final giaPagata = dal != null && data.isBefore(dal);
+      final pagata = p.portafoglioId == null || rifinanziata || giaPagata
           ? !data.isAfter(oggi)
           : pagate.contains(Contabilita.giorno(data));
       rate.add(RataDatata(piano[i], data, pagata: pagata));
@@ -481,7 +513,7 @@ class PrestitiServizio {
     };
   }
 
-  Future<void> _aggiornaRate(String id) async {
+  Future<void> _aggiornaRate(String id, {DateTime? contaDal}) async {
     final p = await (_db.select(
       _db.prestiti,
     )..where((x) => x.id.equals(id))).getSingle();
@@ -498,6 +530,7 @@ class PrestitiServizio {
             ? p.importoRataMinimo + (p.speseRataMinimo ?? 0)
             : null,
         valuta: p.valuta,
+        registraDal: contaDal,
       ),
     );
   }

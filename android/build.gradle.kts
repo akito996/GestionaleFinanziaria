@@ -2,6 +2,12 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // JitPack solo per Tesseract4Android (lettura delle foto): nessun altro
+        // pacchetto può arrivare da qui. Impronta verificata in app/build.gradle.kts.
+        exclusiveContent {
+            forRepository { maven("https://jitpack.io") }
+            filter { includeGroup("cz.adaptech.tesseract4android") }
+        }
     }
 }
 

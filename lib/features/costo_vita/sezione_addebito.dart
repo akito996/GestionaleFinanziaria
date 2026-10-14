@@ -9,6 +9,7 @@ import '../../core/importo.dart';
 import '../../core/ricorrenza.dart';
 import '../../core/sessione.dart';
 import '../comuni/campi.dart';
+import '../comuni/conta_dal.dart';
 import 'testi_voci.dart';
 
 enum TipoFine { mai, data, occorrenze }
@@ -25,7 +26,10 @@ class ImpostazioneAddebito {
     this.portafoglioId,
     this.ripartita = false,
     this.conferma = false,
-  }) : inizio = inizio ?? DateUtils.dateOnly(DateTime.now());
+    DateTime? contaDal,
+    this.contaDalIniziale,
+  }) : inizio = inizio ?? DateUtils.dateOnly(DateTime.now()),
+       contaDal = contaDal ?? DateUtils.dateOnly(DateTime.now());
 
   /// Dal pagamento programmato salvato; senza, [conferma] è la scelta
   /// predefinita (entrate: chiedi conferma; spese: da sola).
@@ -38,6 +42,10 @@ class ImpostazioneAddebito {
       return ImpostazioneAddebito(ripartita: ripartita, conferma: conferma);
     }
     final r = Pianificatore.ricorrenzaDi(p);
+    // Senza "Conta dal" (archivi di prima) contano tutte, dal primo addebito.
+    final dal = p.registraDal == null
+        ? r.inizio
+        : Contabilita.daGiorno(p.registraDal!);
     return ImpostazioneAddebito(
       attivo: true,
       inizio: r.inizio,
@@ -52,6 +60,8 @@ class ImpostazioneAddebito {
       portafoglioId: p.portafoglioId,
       ripartita: ripartita,
       conferma: p.richiedeConferma,
+      contaDal: dal,
+      contaDalIniziale: dal,
     );
   }
 
@@ -69,6 +79,28 @@ class ImpostazioneAddebito {
   /// Con un portafoglio: `true` = nel giorno previsto chiede conferma nelle
   /// notifiche, `false` = si registra da solo.
   bool conferma;
+
+  /// "Conta dal": le scadenze prima sono già avvenute (voce già in corso).
+  DateTime contaDal;
+
+  /// "Conta dal" salvato (`null` = voce nuova).
+  final DateTime? contaDalIniziale;
+
+  /// Già in corso: la prima data è passata.
+  bool get giaInCorso =>
+      attivo && inizio.isBefore(DateUtils.dateOnly(DateTime.now()));
+
+  /// Da passare a [CostoVita.impostaAddebito]: `null` = nuova voce che inizia
+  /// oggi o dopo, oppure nessun cambiamento.
+  DateTime? get contaDalDaSalvare {
+    if (!attivo) {
+      return null;
+    }
+    if (contaDalIniziale == null) {
+      return giaInCorso ? contaDal : null;
+    }
+    return contaDal == contaDalIniziale ? null : contaDal;
+  }
 
   /// La casella "Suddividi nei mesi" ha senso solo per addebiti non mensili.
   bool get nonMensile => attivo && frequenza != Frequenza.mensile;
@@ -169,6 +201,17 @@ class _SezioneAddebitoState extends State<SezioneAddebito> {
             primo: DateTime(2000),
             onChanged: (d) => _aggiorna(() => v.inizio = d),
           ),
+          if (v.giaInCorso) ...[
+            const SizedBox(height: 12),
+            CampoContaDal(
+              valore: v.contaDal,
+              inizio: v.inizio,
+              onChanged: (d) => _aggiorna(() => v.contaDal = d),
+              spiegazione: widget.testi.entrate
+                  ? 'gli accrediti prima di questa data sono già arrivati'
+                  : 'gli addebiti prima di questa data sono già usciti',
+            ),
+          ],
           const SizedBox(height: 12),
           DropdownButtonFormField<Frequenza>(
             isExpanded: true,

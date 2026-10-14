@@ -8,7 +8,9 @@ import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import '../categorie/scelta_categoria.dart';
 import '../comuni/campi.dart';
+import '../../core/foto/scontrino.dart';
 import '../comuni/errori.dart';
+import '../foto/foto.dart';
 import 'riga_movimento.dart';
 
 /// Apre il modulo per un nuovo movimento (o per modificarne uno [esistente]).
@@ -113,6 +115,65 @@ class _MovimentoModuloState extends State<_MovimentoModulo> {
     super.dispose();
   }
 
+  /// Dalla foto dello scontrino: data, negozio e importo (lo "zoom" sui dati
+  /// li rilegge ingranditi), da controllare prima di usarli.
+  Future<void> _daFoto() async {
+    final percorso = await scegliFoto(context, titolo: 'Foto dello scontrino');
+    if (percorso == null || !mounted) {
+      return;
+    }
+    final messaggio = ValueNotifier('Leggo lo scontrino…');
+    final letto = await leggiConAttesa(
+      context,
+      messaggio,
+      () => LettoreScontrino.leggi(lettoreFoto, percorso),
+    );
+    messaggio.dispose();
+    cancellaFoto(percorso);
+    if (letto == null || !mounted) {
+      return;
+    }
+    if (letto.vuoto) {
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          icon: const Icon(Icons.receipt_long_outlined),
+          title: const Text('Non riesco a leggere lo scontrino'),
+          content: const Text(
+            'Riprova con lo scontrino dritto, ben illuminato e che riempia la '
+            'foto. Puoi anche scrivere i dati a mano.',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Ho capito'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    final scelto = await confermaScontrino(context, letto);
+    if (scelto == null || !mounted) {
+      return;
+    }
+    setState(() {
+      // Uno scontrino è una spesa.
+      _tipo =
+          _tipi.where((t) => t.effetto == EffettoSaldo.uscita).firstOrNull ??
+          _tipo;
+      if (scelto.importo case final importo?) {
+        _importo.text = Importo.perCampo(importo.valore);
+      }
+      if (scelto.negozio case final negozio?) {
+        _descrizione.text = negozio.valore;
+      }
+      if (scelto.data case final data?) {
+        _data = data.valore;
+      }
+    });
+  }
+
   Portafoglio? _portafoglioDa(String? id) =>
       _portafogli.where((p) => p.portafoglio.id == id).firstOrNull?.portafoglio;
 
@@ -176,7 +237,19 @@ class _MovimentoModuloState extends State<_MovimentoModulo> {
         const SingleActivator(LogicalKeyboardKey.enter, control: true): _salva,
       },
       child: AlertDialog(
-        title: Text(modifica ? 'Modifica movimento' : 'Nuovo movimento'),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(modifica ? 'Modifica movimento' : 'Nuovo movimento'),
+            ),
+            if (!modifica && fotoDisponibile())
+              IconButton(
+                tooltip: 'Leggi da una foto dello scontrino',
+                icon: const Icon(Icons.photo_camera_outlined),
+                onPressed: _tipo == null ? null : _daFoto,
+              ),
+          ],
+        ),
         content: _tipo == null
             ? const SizedBox(
                 height: 120,

@@ -11,7 +11,10 @@ import '../../core/prestiti/lettore_contratto.dart';
 import '../../core/ricorrenza.dart';
 import '../../core/sessione.dart';
 import '../categorie/scelta_categoria.dart';
+import '../../core/foto/contratto_foto.dart';
 import '../comuni/campi.dart';
+import '../comuni/conta_dal.dart';
+import '../foto/foto.dart';
 import '../comuni/dialogo_testo.dart';
 import '../comuni/errori.dart';
 
@@ -39,6 +42,16 @@ Future<void> apriNuovoPrestito(BuildContext context, Sessione sessione) async {
             ),
             onTap: () => Navigator.of(context).pop('pdf'),
           ),
+          if (fotoDisponibile())
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Fotografa il contratto'),
+              subtitle: const Text(
+                'Una foto per pagina: leggo e ingrandisco TAN, TAEG, rate e '
+                'importi',
+              ),
+              onTap: () => Navigator.of(context).pop('foto'),
+            ),
           ListTile(
             leading: const Icon(Icons.content_paste),
             title: const Text('Incolla il testo del contratto'),
@@ -91,6 +104,32 @@ Future<void> apriNuovoPrestito(BuildContext context, Sessione sessione) async {
         return;
       }
       proposte = LettoreContratto.leggi(testo);
+    } else if (modo == 'foto') {
+      if (!context.mounted) {
+        return;
+      }
+      final pagine = await _fotografaPagine(context);
+      if (pagine.isEmpty || !context.mounted) {
+        return;
+      }
+      final messaggio = ValueNotifier('Leggo il contratto…');
+      final testo = await leggiConAttesa(
+        context,
+        messaggio,
+        () => ContrattoDaFoto.leggi(
+          lettoreFoto,
+          pagine,
+          avanzamento: (pagina, totale) => messaggio.value = totale == 1
+              ? 'Leggo il contratto…'
+              : 'Leggo la pagina $pagina di $totale…',
+        ),
+      );
+      messaggio.dispose();
+      pagine.forEach(cancellaFoto);
+      if (testo == null) {
+        return;
+      }
+      proposte = LettoreContratto.leggi(testo);
     }
   } catch (e, stack) {
     if (context.mounted) {
@@ -101,6 +140,57 @@ Future<void> apriNuovoPrestito(BuildContext context, Sessione sessione) async {
   if (context.mounted) {
     await apriModuloPrestito(context, sessione, proposte: proposte);
   }
+}
+
+/// Foto delle pagine del contratto, una alla volta, finché l'utente vuole.
+Future<List<String>> _fotografaPagine(BuildContext context) async {
+  final pagine = <String>[];
+  while (true) {
+    if (!context.mounted) {
+      break;
+    }
+    final percorso = await scegliFoto(
+      context,
+      titolo: pagine.isEmpty
+          ? 'Foto del contratto: prima pagina'
+          : 'Pagina ${pagine.length + 1} del contratto',
+    );
+    if (percorso == null) {
+      break;
+    }
+    pagine.add(percorso);
+    if (!context.mounted) {
+      break;
+    }
+    final altra = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          pagine.length == 1
+              ? '1 pagina pronta'
+              : '${pagine.length} pagine pronte',
+        ),
+        content: const Text(
+          'Fotografa anche le altre pagine con importo, rate, TAN, TAEG e '
+          'spese (di solito il modulo SECCI o PIES).',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text("Aggiungi un'altra pagina"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Leggi il contratto'),
+          ),
+        ],
+      ),
+    );
+    if (altra != true) {
+      break;
+    }
+  }
+  return pagine;
 }
 
 /// Modulo del prestito (nuovo, da proposte del contratto, o modifica).
@@ -163,6 +253,12 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
   DateTime _primaRata = DateUtils.dateOnly(
     DateTime(DateTime.now().year, DateTime.now().month + 1, 1),
   );
+
+  /// "Conta dal" (prestito già in corso): le rate prima sono già pagate.
+  DateTime _contaDal = DateUtils.dateOnly(DateTime.now());
+
+  /// "Conta dal" salvato (`null` = prestito nuovo).
+  DateTime? _contaDalIniziale;
   String? _conto;
   String? _categoria;
   bool _categoriaScelta = false;
@@ -245,16 +341,30 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
   }
 
   Future<void> _carica() async {
-    final portafogli = await widget.sessione.contabilita
-        .osservaPortafogli()
-        .first;
+    // Presi subito: se l'archivio si blocca durante il caricamento, il modulo
+    // si chiude e qui non si tocca più la sessione.
+    final contabilita = widget.sessione.contabilita;
+    final prestiti = widget.sessione.prestiti;
+    final portafogli = await contabilita.osservaPortafogli().first;
+    if (!mounted) {
+      return;
+    }
     final categoria = _categoriaScelta
         ? _categoria
-        : await widget.sessione.prestiti.categoriaPredefinita(_tipo);
+        : await prestiti.categoriaPredefinita(_tipo);
+    final e = widget.esistente?.prestito;
+    // Senza "Conta dal" (archivi di prima) contano tutte, dalla prima rata.
+    final contaDal = e == null || !mounted
+        ? null
+        : await prestiti.contaDal(e.id) ?? _primaRata;
     if (mounted) {
       setState(() {
         _portafogli = portafogli;
         _categoria = categoria;
+        if (contaDal != null) {
+          _contaDal = contaDal;
+          _contaDalIniziale = contaDal;
+        }
       });
     }
   }
@@ -298,6 +408,18 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
     );
   }
 
+  bool get _giaInCorso =>
+      _primaRata.isBefore(DateUtils.dateOnly(DateTime.now()));
+
+  /// `null` = prestito nuovo che inizia oggi o dopo, oppure nessun
+  /// cambiamento.
+  DateTime? get _contaDalDaSalvare {
+    if (_contaDalIniziale == null) {
+      return _giaInCorso ? _contaDal : null;
+    }
+    return _contaDal == _contaDalIniziale ? null : _contaDal;
+  }
+
   Future<void> _salva() async {
     if (_salvataggio || !_form.currentState!.validate()) {
       return;
@@ -317,18 +439,29 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
       frequenza: _frequenza,
       portafoglioId: _conto,
       categoriaId: _categoria,
+      contaDal: _contaDalDaSalvare,
     );
     setState(() => _salvataggio = true);
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final servizio = widget.sessione.prestiti;
+      var tolti = const <String>[];
       if (widget.esistente == null) {
         await servizio.crea(dati);
       } else {
-        await servizio.modifica(widget.esistente!.prestito.id, dati);
+        tolti = await servizio.modifica(widget.esistente!.prestito.id, dati);
       }
       await widget.sessione.pianificatore.registraScadute();
       if (mounted) {
         Navigator.of(context).pop();
+        if (dati.contaDal != null) {
+          avvisaMovimentiTolti(
+            messenger,
+            widget.sessione,
+            tolti,
+            dati.contaDal!,
+          );
+        }
       }
     } catch (e, stack) {
       if (mounted) {
@@ -633,6 +766,16 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
                   valore: _primaRata,
                   onChanged: (d) => setState(() => _primaRata = d),
                 ),
+                if (_giaInCorso) ...[
+                  const SizedBox(height: 12),
+                  CampoContaDal(
+                    valore: _contaDal,
+                    inizio: _primaRata,
+                    onChanged: (d) => setState(() => _contaDal = d),
+                    spiegazione:
+                        'le rate prima di questa data le consideri già pagate',
+                  ),
+                ],
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String?>(
                   initialValue:

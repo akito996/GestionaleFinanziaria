@@ -205,6 +205,12 @@ class Pianificazioni extends Table with ColonneSincronizzate {
   /// notifiche finché l'utente conferma, sposta o annulla.
   BoolColumn get richiedeConferma =>
       boolean().withDefault(const Constant(false))();
+
+  /// AAAA-MM-GG, "Conta dal": le scadenze prima di questo giorno erano già
+  /// avvenute quando è stata inserita (prestito o entrata già in corso): non
+  /// si registrano, non si notificano e non contano nel costo della vita.
+  /// `null` = tutte (archivi creati prima della v13).
+  TextColumn get registraDal => text().nullable()();
 }
 
 /// Scelta dell'utente su una singola scadenza di un pagamento programmato:

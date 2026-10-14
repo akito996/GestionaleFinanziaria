@@ -15,6 +15,7 @@ import '../movimenti/movimento_modulo.dart';
 import '../movimenti/riga_movimento.dart';
 import 'avviso_obiettivi.dart';
 import 'portafoglio_modulo.dart';
+import '../comuni/avvisi.dart';
 
 /// Dettaglio di un portafoglio: saldo e movimenti, con modifica e archiviazione.
 class PortafoglioPagina extends StatelessWidget {
@@ -61,7 +62,7 @@ class PortafoglioPagina extends StatelessWidget {
     messenger
       ..clearSnackBars()
       ..showSnackBar(
-        SnackBar(
+        avviso(
           content: Text('"${p.portafoglio.nome}" archiviato'),
           action: SnackBarAction(
             label: 'Annulla',

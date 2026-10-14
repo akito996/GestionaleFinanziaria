@@ -11,6 +11,7 @@ import '../comuni/errori.dart';
 import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
 import 'report_vista.dart';
+import '../comuni/avvisi.dart';
 
 enum _Periodo {
   meseCorrente('Mese in corso'),
@@ -80,7 +81,7 @@ class _ReportPaginaState extends State<ReportPagina> {
       if (mounted) {
         ScaffoldMessenger.of(context)
           ..clearSnackBars()
-          ..showSnackBar(SnackBar(content: Text('${e.message}')));
+          ..showSnackBar(avviso(content: Text('${e.message}')));
       }
     } catch (e, stack) {
       if (mounted) {
