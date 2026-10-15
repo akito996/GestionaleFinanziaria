@@ -150,6 +150,28 @@ void main() {
         importoObiettivo: 100000,
       );
     }
+    for (final (nome, tipo) in [
+      ('Stipendio', TipoVoce.fissa),
+      ('Affitto incassato', TipoVoce.fissa),
+      ('Lezioni private', TipoVoce.variabile),
+      ('Vendite online', TipoVoce.variabile),
+      ('Rimborsi', TipoVoce.variabile),
+      ('Regali', TipoVoce.variabile),
+    ]) {
+      await sessione.costoVita.creaVoce(
+        nome: nome,
+        tipo: tipo,
+        importo: 20000,
+        natura: NaturaVoce.entrata,
+      );
+    }
+    for (final nome in ['Carta oro', 'Carta viaggi', 'Carta spesa']) {
+      await sessione.carte.crea(
+        nome: nome,
+        contoAddebitoId: conto!,
+        giornoAddebito: 15,
+      );
+    }
   }
 
   testWidgets(
@@ -211,6 +233,54 @@ void main() {
       await tocca(tester, find.text('Vacanza'));
       await tocca(tester, find.text('Mostra meno').last);
       restaInVista(find.text('Vacanza'), 'Obiettivi (una voce)');
+
+      // Entrate: l'ultima sezione, in fondo alla pagina.
+      await tocca(tester, find.text('Entrate').hitTestable().last);
+      await attendi(tester, find.text('Entrate fisse'));
+      await cercaScorrendo(tester, find.text('Entrate variabili'));
+      final entrateVariabili = find.ancestor(
+        of: find.text('Entrate variabili'),
+        matching: find.byType(ListTile),
+      );
+      await tocca(
+        tester,
+        find.descendant(
+          of: entrateVariabili,
+          matching: find.byTooltip('Mostra meno'),
+        ),
+      );
+      restaInVista(
+        find.descendant(
+          of: entrateVariabili,
+          matching: find.byTooltip('Mostra di più'),
+        ),
+        'Entrate',
+      );
+
+      // Carte: tutte ridotte, poi una sola aperta e richiusa.
+      await tocca(tester, find.text('Altro'));
+      await tocca(tester, find.text('Carte'));
+      await attendi(tester, find.text('Carta spesa'));
+      await tocca(tester, find.text('Mostra meno'));
+      restaInVista(find.text('Mostra di più'), 'Carte');
+      await tocca(tester, find.text('Carta viaggi'));
+      await tocca(tester, find.text('Mostra meno').last);
+      restaInVista(find.text('Carta viaggi'), 'Carte (una voce)');
+
+      // Categorie: un ramo chiuso in fondo all'albero resta in vista.
+      await tocca(tester, find.text('Altro'));
+      await tocca(tester, find.text('Categorie'));
+      await attendi(tester, find.byTooltip('Chiudi'));
+      await cercaScorrendo(tester, find.byTooltip('Chiudi').hitTestable());
+      final ramo = find.byTooltip('Chiudi').hitTestable().last;
+      final riga = find.ancestor(of: ramo, matching: find.byType(ListTile));
+      final nome = tester
+          .widget<Text>(
+            find.descendant(of: riga.first, matching: find.byType(Text)).last,
+          )
+          .data!;
+      await tocca(tester, ramo);
+      restaInVista(find.text(nome), 'Categorie');
 
       sessione.blocca().ignore();
       await attendi(tester, find.text('Archivio bloccato'));
