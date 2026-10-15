@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/foto/lettura_foto.dart';
 import '../../core/foto/scontrino.dart';
 import '../../core/importo.dart';
+import '../comuni/blocco_automatico.dart';
 import '../comuni/campi.dart';
 import '../comuni/errori.dart';
 
@@ -17,8 +18,10 @@ bool Function() fotoDisponibile = () => !kIsWeb && Platform.isAndroid;
 LettoreFoto lettoreFoto = const LettoreFotoAndroid();
 
 /// Da dove arriva la foto: fotocamera o galleria (sostituibile nei test).
-Future<String?> Function(ImageSource sorgente) prendiFoto = (sorgente) async =>
-    (await ImagePicker().pickImage(source: sorgente))?.path;
+Future<String?> Function(ImageSource sorgente) prendiFoto = (sorgente) =>
+    senzaBloccoAutomatico(
+      () async => (await ImagePicker().pickImage(source: sorgente))?.path,
+    );
 
 /// Chiede "Scatta una foto" o "Scegli dalla galleria" e restituisce il file.
 Future<String?> scegliFoto(

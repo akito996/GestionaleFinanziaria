@@ -14,6 +14,7 @@ import 'package:gestionale_finanziaria/core/db/deposito_locale.dart';
 import 'package:gestionale_finanziaria/core/foto/lettura_foto.dart';
 import 'package:gestionale_finanziaria/core/foto/scontrino.dart';
 import 'package:gestionale_finanziaria/core/sessione.dart';
+import 'package:gestionale_finanziaria/core/sicurezza/cassaforte.dart';
 import 'package:gestionale_finanziaria/features/sblocco/sblocco_pagina.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:sodium/sodium_sumo.dart';
@@ -88,6 +89,7 @@ void main() {
     final sessione = Sessione(
       sodium: await SodiumSumoInit.init(),
       deposito: deposito,
+      cassaforte: _SenzaSbloccoRapido(),
     );
     await tester.pumpWidget(GestionaleApp(sessione: sessione));
     await sessione.avvia();
@@ -209,6 +211,23 @@ void main() {
     deposito.cartella.deleteSync(recursive: true);
   });
 
+  // Il canale nativo dello sblocco rapido (Android Keystore / Windows Hello)
+  // risponde. La verifica vera (impronta, PIN) richiede una persona.
+  testWidgets('sblocco rapido: il canale nativo risponde', (tester) async {
+    final risposta = await const MethodChannel('gestionale/sblocco_rapido')
+        .invokeMapMethod<String, Object?>('disponibilita')
+        .timeout(const Duration(seconds: 30));
+    debugPrint('SBLOCCO: ${risposta?['stato']} (PIN: ${risposta?['pin']})');
+    expect(
+      risposta?['stato'],
+      isIn(['pronta', 'nessunMetodo', 'nonSupportata']),
+    );
+    expect(
+      await CassaforteDiPiattaforma().disponibilita(),
+      isA<DisponibilitaCassaforte>(),
+    );
+  }, skip: !(Platform.isAndroid || Platform.isWindows));
+
   // Solo Android: Tesseract e il modello italiano dentro l'APK, la foto letta
   // sul telefono e lo "zoom" sui dati.
   testWidgets('lettura di uno scontrino con Tesseract (Android)', (
@@ -238,6 +257,27 @@ void main() {
     await tester.runAsync(lettore.chiudi);
     await file.delete();
   }, skip: !Platform.isAndroid);
+}
+
+/// Dispositivo senza sblocco rapido.
+class _SenzaSbloccoRapido implements CassaforteDispositivo {
+  @override
+  bool get conPin => false;
+
+  @override
+  Future<DisponibilitaCassaforte> disponibilita() async =>
+      DisponibilitaCassaforte.nonSupportata;
+
+  @override
+  Future<MaterialeCassaforte> attiva(Uint8List sfida) =>
+      throw UnsupportedError('sblocco rapido');
+
+  @override
+  Future<Uint8List> leggi(Uint8List sfida, Uint8List dati) =>
+      throw UnsupportedError('sblocco rapido');
+
+  @override
+  Future<void> disattiva() async {}
 }
 
 /// Uno scontrino disegnato (nero su bianco), come una foto ben fatta.

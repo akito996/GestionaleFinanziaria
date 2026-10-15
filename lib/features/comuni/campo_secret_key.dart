@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/crypto/eccezioni.dart';
 import '../../core/crypto/secret_key.dart';
+import 'blocco_automatico.dart';
 
 /// Inserimento della Secret Key senza digitare: "Scegli il file" o "Incolla".
 /// Si può anche scrivere a mano. Il controllo del formato è immediato.
@@ -68,15 +69,17 @@ class _CampoSecretKeyState extends State<CampoSecretKey> {
   }
 
   Future<void> _scegliFile() async {
-    final file = await openFile(
-      acceptedTypeGroups: const [
-        XTypeGroup(
-          label: 'Secret Key (.txt)',
-          extensions: ['txt'],
-          mimeTypes: ['text/plain'],
-        ),
-      ],
-      confirmButtonText: 'Usa questo file',
+    final file = await senzaBloccoAutomatico(
+      () => openFile(
+        acceptedTypeGroups: const [
+          XTypeGroup(
+            label: 'Secret Key (.txt)',
+            extensions: ['txt'],
+            mimeTypes: ['text/plain'],
+          ),
+        ],
+        confirmButtonText: 'Usa questo file',
+      ),
     );
     if (file == null) {
       return;

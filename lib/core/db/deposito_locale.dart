@@ -19,6 +19,9 @@ class DepositoLocale {
   File get fileKeyring => File(_unisci(cartella.path, 'keyring.bin'));
   File get fileArchivio => File(_unisci(cartella.path, 'archivio.db'));
 
+  /// Sblocco rapido e blocco automatico di questo dispositivo (mai sincronizzato).
+  File get fileSicurezza => File(_unisci(cartella.path, 'sicurezza.json'));
+
   Future<bool> esisteKeyring() async => fileKeyring.existsSync();
 
   Future<Uint8List> leggiKeyring() => fileKeyring.readAsBytes();

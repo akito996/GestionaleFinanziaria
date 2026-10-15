@@ -19,6 +19,8 @@ import 'db/statistiche.dart';
 import 'db/orologio.dart';
 import 'report/report_automatici.dart';
 import 'report/report_personalizzati.dart';
+import 'sicurezza/cassaforte.dart';
+import 'sicurezza/sicurezza_dispositivo.dart';
 import 'sync/accesso_google.dart';
 import 'sync/drive.dart';
 import 'sync/sincronizzatore.dart';
@@ -38,11 +40,42 @@ class Sessione extends ChangeNotifier {
     this.costoArgon2 = costoArgon2Predefinito,
     AccessoGoogle? accessoGoogle,
     CreaBackend? creaBackend,
+    this._cassaforte,
   }) : _accessoIniettato = accessoGoogle,
        _creaBackend = creaBackend ?? DriveBackend.new;
 
   final AccessoGoogle? _accessoIniettato;
   final CreaBackend _creaBackend;
+  final CassaforteDispositivo? _cassaforte;
+
+  /// Sblocco rapido e blocco automatico di questo dispositivo (ADR-016):
+  /// disponibile in ogni fase.
+  late final SicurezzaDispositivo sicurezza = SicurezzaDispositivo(
+    sodium: sodium,
+    file: deposito.fileSicurezza,
+    cassaforte: _cassaforte ?? CassaforteDiPiattaforma(),
+  );
+
+  /// Archivio bloccato all'avvio o dal blocco automatico: lo sblocco rapido
+  /// parte da solo. Dopo il lucchetto toccato a mano, no.
+  bool _proponiSbloccoRapido = false;
+
+  /// Dopo la password: proporre di attivare lo sblocco rapido.
+  bool _proponiAttivazione = false;
+
+  /// Una volta sola: lo sblocco rapido deve partire da solo?
+  bool prendiAvvioSbloccoRapido() {
+    final proponi = _proponiSbloccoRapido;
+    _proponiSbloccoRapido = false;
+    return proponi;
+  }
+
+  /// Una volta sola: proporre di attivare lo sblocco rapido?
+  bool prendiPropostaAttivazione() {
+    final proponi = _proponiAttivazione && sicurezza.proponibile;
+    _proponiAttivazione = false;
+    return proponi;
+  }
 
   /// Credenziali di Google (Windows): nell'archivio cifrato quando è aperto.
   late final _credenzialiGoogle = _CredenzialiNellArchivio(this);
@@ -139,11 +172,22 @@ class Sessione extends ChangeNotifier {
   ArchivioCreato? _inPreparazione;
 
   Future<void> avvia() async {
-    _cambia(
-      await deposito.esisteKeyring()
-          ? FaseSessione.bloccata
-          : FaseSessione.primoAvvio,
+    // L'avvio non aspetta il dispositivo: per lo sblocco rapido basta il
+    // file; cosa offre il dispositivo serve dopo (proposta, Impostazioni).
+    try {
+      sicurezza.leggi();
+    } catch (e) {
+      // Senza sblocco rapido si entra comunque con la password.
+      debugPrint('Sicurezza del dispositivo non letta: $e');
+    }
+    unawaited(
+      sicurezza.aggiornaDisponibilita().catchError(
+        (Object e) => debugPrint('Sblocco rapido: dispositivo non letto: $e'),
+      ),
     );
+    final esiste = await deposito.esisteKeyring();
+    _proponiSbloccoRapido = esiste;
+    _cambia(esiste ? FaseSessione.bloccata : FaseSessione.primoAvvio);
   }
 
   /// Primo passo del primo avvio: protegge la password e genera ID e Secret Key
@@ -190,6 +234,7 @@ class Sessione extends ChangeNotifier {
     _inPreparazione = null;
     await deposito.metteDaParteArchivioOrfano();
     await deposito.scriviKeyring(pronto.keyring);
+    await _dopoPassword(archivioNuovo: true);
     await _apri(pronto.dek, pronto.idArchivio, 'Archivio creato');
   }
 
@@ -201,11 +246,44 @@ class Sessione extends ChangeNotifier {
       keyring,
       password,
     );
+    await _dopoPassword();
     await _apri(
       dek,
       Keyring.deserializza(keyring).idArchivio,
       'Archivio sbloccato',
     );
+  }
+
+  /// Apre l'archivio con impronta, viso, PIN o Windows Hello. `false` se
+  /// l'utente annulla. Lancia `ChiaveDispositivoAnnullata` (serve la
+  /// password) o `VerificaBloccata`.
+  Future<bool> sbloccaRapido() async {
+    final id = Keyring.deserializza(await deposito.leggiKeyring()).idArchivio;
+    final dek = await sicurezza.apriRapido(id);
+    if (dek == null) {
+      return false;
+    }
+    await _apri(dek, id, 'Archivio sbloccato');
+    return true;
+  }
+
+  /// Attiva lo sblocco rapido per l'archivio aperto (chiede la verifica).
+  /// Lancia `VerificaAnnullata` se l'utente rinuncia.
+  Future<void> attivaSbloccoRapido() =>
+      sicurezza.attivaRapido(_dek!, _idArchivio!);
+
+  /// Password giusta: si azzera il conto dei 14 giorni. Con un archivio
+  /// diverso (nuovo o scaricato) lo sblocco rapido di prima non vale più.
+  Future<void> _dopoPassword({bool archivioNuovo = false}) async {
+    try {
+      if (archivioNuovo) {
+        await sicurezza.disattivaRapido();
+      }
+      await sicurezza.passwordUsata();
+    } catch (e) {
+      debugPrint('Sicurezza del dispositivo non aggiornata: $e');
+    }
+    _proponiAttivazione = true;
   }
 
   /// Password dimenticata: Secret Key (testo o contenuto del file) + nuova password.
@@ -219,6 +297,7 @@ class Sessione extends ChangeNotifier {
       costo: costoArgon2,
     );
     await deposito.scriviKeyring(recuperato.keyring);
+    await _dopoPassword();
     await _apri(
       recuperato.dek,
       Keyring.deserializza(recuperato.keyring).idArchivio,
@@ -226,9 +305,13 @@ class Sessione extends ChangeNotifier {
     );
   }
 
-  Future<void> blocca() async {
+  /// [automatico]: blocco automatico (app rimasta in secondo piano): allo
+  /// sblocco lo sblocco rapido parte da solo.
+  Future<void> blocca({bool automatico = false}) async {
     final archivio = _archivio;
     final dek = _dek;
+    _proponiSbloccoRapido = automatico;
+    _proponiAttivazione = false;
     // Prima si tolgono le schermate dell'archivio, poi si chiude tutto:
     // nessuna schermata può leggere un archivio già chiuso.
     _idArchivio = null;
@@ -330,6 +413,7 @@ class Sessione extends ChangeNotifier {
     await _credenzialiGoogle.scrivi(credenziali);
     await deposito.metteDaParteArchivio();
     await deposito.scriviKeyring(keyring);
+    await _dopoPassword(archivioNuovo: true);
     final id = Keyring.deserializza(keyring).idArchivio;
     await _apri(
       dek,

@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../core/crypto/eccezioni.dart';
 import '../../core/sessione.dart';
+import '../../core/sicurezza/cassaforte.dart';
 import '../comuni/campo_secret_key.dart';
 import '../comuni/errori.dart';
 import '../comuni/nuova_password.dart';
+import 'sblocco_rapido.dart';
 
-/// Archivio bloccato: si apre con la password principale.
+/// Archivio bloccato: si apre con la password principale oppure, se attivo,
+/// con lo sblocco rapido (impronta, viso, PIN o Windows Hello).
 class SbloccoPagina extends StatefulWidget {
   const SbloccoPagina({super.key, required this.sessione});
 
@@ -22,10 +25,83 @@ class _SbloccoPaginaState extends State<SbloccoPagina> {
   bool _nascosta = true;
   String? _errore;
 
+  /// Sblocco rapido pronto (attivo e password chiesta da meno di 14 giorni).
+  late bool _rapido;
+
+  /// Spiegazione (es. sblocco rapido spento dal sistema, password dei 14 giorni).
+  String? _nota;
+
+  AppLifecycleListener? _attesa;
+
+  @override
+  void initState() {
+    super.initState();
+    final sicurezza = widget.sessione.sicurezza;
+    _rapido = sicurezza.rapidoPronto;
+    _nota = sicurezza.prendiAvviso();
+    if (sicurezza.passwordDaChiedere) {
+      _nota =
+          'Ogni 14 giorni ti chiediamo la password, così non la dimentichi.';
+    }
+    // All'avvio e dopo il blocco automatico la verifica parte da sola, ma
+    // solo con l'app davanti (non mentre è in secondo piano).
+    if (_rapido && widget.sessione.prendiAvvioSbloccoRapido()) {
+      final stato = WidgetsBinding.instance.lifecycleState;
+      if (stato == null || stato == AppLifecycleState.resumed) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _sbloccaRapido());
+      } else {
+        _attesa = AppLifecycleListener(
+          onResume: () {
+            _attesa?.dispose();
+            _attesa = null;
+            _sbloccaRapido();
+          },
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _attesa?.dispose();
     _password.dispose();
     super.dispose();
+  }
+
+  Future<void> _sbloccaRapido() async {
+    if (_occupato || !mounted) {
+      return;
+    }
+    setState(() {
+      _occupato = true;
+      _errore = null;
+    });
+    String? errore;
+    try {
+      if (await widget.sessione.sbloccaRapido()) {
+        return;
+      }
+    } on ChiaveDispositivoAnnullata {
+      _rapido = false;
+      _nota = widget.sessione.sicurezza.prendiAvviso();
+    } on VerificaBloccata {
+      errore = 'Troppi tentativi: usa la password.';
+    } on ErroreCassaforte catch (e) {
+      debugPrint('$e');
+      errore = 'Sblocco rapido non riuscito: usa la password.';
+    } catch (e, stack) {
+      if (mounted) {
+        setState(() => _occupato = false);
+        await mostraErroreImprevisto(context, e, stack);
+      }
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _occupato = false;
+        _errore = errore;
+      });
+    }
   }
 
   Future<void> _sblocca() async {
@@ -59,6 +135,7 @@ class _SbloccoPaginaState extends State<SbloccoPagina> {
 
   @override
   Widget build(BuildContext context) {
+    final sicurezza = widget.sessione.sicurezza;
     return PaginaCentrata(
       children: [
         const Icon(Icons.lock_outline, size: 56),
@@ -68,10 +145,25 @@ class _SbloccoPaginaState extends State<SbloccoPagina> {
           style: Theme.of(context).textTheme.headlineSmall,
           textAlign: TextAlign.center,
         ),
+        if (_nota != null) ...[
+          const SizedBox(height: 16),
+          Text(_nota!, textAlign: TextAlign.center),
+        ],
+        if (_rapido) ...[
+          const SizedBox(height: 24),
+          FilledButton.icon(
+            onPressed: _occupato ? null : _sbloccaRapido,
+            icon: Icon(iconaSbloccoRapido),
+            label: Text(pulsanteSbloccoRapido(sicurezza)),
+          ),
+          const SizedBox(height: 16),
+          const Text('oppure con la password', textAlign: TextAlign.center),
+        ],
         const SizedBox(height: 24),
         TextField(
           controller: _password,
-          autofocus: true,
+          // Con lo sblocco rapido la tastiera non si apre da sola.
+          autofocus: !_rapido,
           obscureText: _nascosta,
           enabled: !_occupato,
           autofillHints: const [AutofillHints.password],
@@ -89,6 +181,11 @@ class _SbloccoPaginaState extends State<SbloccoPagina> {
         const SizedBox(height: 24),
         if (_occupato)
           const InCorso(testo: 'Sto aprendo l\'archivio…')
+        else if (_rapido)
+          OutlinedButton(
+            onPressed: _sblocca,
+            child: const Text('Sblocca con la password'),
+          )
         else
           FilledButton(onPressed: _sblocca, child: const Text('Sblocca')),
         const SizedBox(height: 8),

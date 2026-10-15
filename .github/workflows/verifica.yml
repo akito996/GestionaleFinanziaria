@@ -90,11 +90,18 @@ jobs:
         run: |
           set -o pipefail
           flutter test integration_test -d windows -r expanded 2>&1 | tee "$RUNNER_TEMP/integration.log"
+      # Il canale nativo di Windows Hello risponde (sul PC di GitHub di solito
+      # non è configurato: "nessunMetodo").
+      - name: Sblocco rapido (risultato)
+        if: success()
+        run: |
+          esito="$(grep -E -m1 'SBLOCCO:' "$RUNNER_TEMP/integration.log" || true)"
+          echo "::notice title=Sblocco rapido (Windows)::${esito:-nessun risultato}"
       # In caso di errore il motivo diventa un'annotazione (visibile nel riepilogo dell'esecuzione).
       - name: Motivo dell'errore
         if: failure()
         run: |
-          motivo="$( (grep -E 'SCHERMO:|FINESTRA:|PULSANTE:|Warning: A call to tap' "$RUNNER_TEMP/integration.log"; grep -v -E '^\s*$' "$RUNNER_TEMP/integration.log" | grep -E -A25 'EXCEPTION CAUGHT|Expected:|\[E\]|Error') | head -70)"
+          motivo="$( (grep -E 'SCHERMO:|FINESTRA:|PULSANTE:|SBLOCCO:|Warning: A call to tap' "$RUNNER_TEMP/integration.log"; grep -v -E '^\s*$' "$RUNNER_TEMP/integration.log" | grep -E -A25 'EXCEPTION CAUGHT|Expected:|\[E\]|Error') | head -70)"
           motivo="${motivo//'%'/'%25'}"
           motivo="${motivo//$'\n'/'%0A'}"
           motivo="${motivo//$'\r'/}"
@@ -142,6 +149,37 @@ jobs:
         with:
           name: GestionaleFinanziaria-windows-${{ github.sha }}
           path: build/windows/x64/runner/Release/
+          if-no-files-found: error
+      # Pacchetto per il Microsoft Store (ADR-017): lo firma Microsoft quando
+      # lo pubblica, quindi niente avviso "PC protetto da Windows". I dati
+      # dello Store (Partner Center) sono pubblici: variabili del repository,
+      # non secret. Versione: maggiore.minore del pubspec + numero
+      # dell'esecuzione (lo Store vuole numeri sempre crescenti, l'ultimo 0).
+      - name: Pacchetto MSIX (Microsoft Store)
+        shell: pwsh
+        env:
+          MSIX_NOME: ${{ vars.MSIX_IDENTITY_NAME }}
+          MSIX_EDITORE: ${{ vars.MSIX_PUBLISHER }}
+          MSIX_NOME_EDITORE: ${{ vars.MSIX_PUBLISHER_DISPLAY_NAME }}
+        run: |
+          $v = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(\d+)\.(\d+)\.').Matches[0].Groups
+          $argomenti = @{
+            Build = 'build/windows/x64/runner/Release'
+            Uscita = 'build/GestionaleFinanziaria.msix'
+            Versione = "$($v[1].Value).$($v[2].Value).${{ github.run_number }}.0"
+          }
+          if ($env:MSIX_NOME -and $env:MSIX_EDITORE -and $env:MSIX_NOME_EDITORE) {
+            $argomenti.Nome = $env:MSIX_NOME
+            $argomenti.Editore = $env:MSIX_EDITORE
+            $argomenti.NomeEditore = $env:MSIX_NOME_EDITORE
+          } else {
+            echo "::warning title=Microsoft Store::Dati dello Store non ancora impostati (variabili MSIX_*): pacchetto di prova, non caricabile nello Store."
+          }
+          ./tool/msix.ps1 @argomenti
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: GestionaleFinanziaria-msix-${{ github.sha }}
+          path: build/GestionaleFinanziaria.msix
           if-no-files-found: error
           retention-days: 14
       # Per leggere gli errori ("flutter symbolize"): restano più a lungo.
@@ -266,7 +304,7 @@ jobs:
               done
             fi
             echo "::notice title=Firma $nome::Schemi: $schemi · $chiave · $titolare · SHA-1 $sha1 · 16 KB: $pagine"
-            if [[ "$pagine" == no* ]]; then
+            if [[ "$pagine" == "no ("* ]]; then
               echo "::warning title=16 KB $nome::Non allineato a 16 KB: $pagine"
             fi
             if [[ "$schemi" != *v2* ]]; then
@@ -379,11 +417,13 @@ jobs:
         run: |
           esito="$(grep -E -m1 'SCONTRINO:' "$RUNNER_TEMP/integration-android.log" || true)"
           echo "::notice title=Lettura foto (${{ matrix.dispositivo }})::${esito:-nessun risultato}"
+          esito="$(grep -E -m1 'SBLOCCO:' "$RUNNER_TEMP/integration-android.log" || true)"
+          echo "::notice title=Sblocco rapido (${{ matrix.dispositivo }})::${esito:-nessun risultato}"
       - name: Motivo dell'errore
         if: failure()
         run: |
           log="$(cat "$RUNNER_TEMP/integration-android.log" 2>/dev/null)"
-          motivo="$( (echo "$log" | grep -E 'SCHERMO:|FINESTRA:|PULSANTE:|APPUNTI|FOTO:|SCONTRINO:|Warning: A call to tap'; echo "$log" | grep -v -E '^\s*$' | grep -E -A25 'EXCEPTION CAUGHT|Expected:|\[E\]|Error|FAILURE|What went wrong') | head -70)"
+          motivo="$( (echo "$log" | grep -E 'SCHERMO:|FINESTRA:|PULSANTE:|APPUNTI|FOTO:|SCONTRINO:|SBLOCCO:|Warning: A call to tap'; echo "$log" | grep -v -E '^\s*$' | grep -E -A25 'EXCEPTION CAUGHT|Expected:|\[E\]|Error|FAILURE|What went wrong') | head -70)"
           motivo="${motivo//'%'/'%25'}"
           motivo="${motivo//$'\n'/'%0A'}"
           motivo="${motivo//$'\r'/}"

@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_selector/file_selector.dart';
 
+import 'blocco_automatico.dart';
+
 /// "Salva con nome" su tutte le piattaforme:
 /// - Windows: la finestra di salvataggio di file_selector;
 /// - Android: la finestra di sistema "Salva in…" (Download, Drive, ...),
@@ -12,6 +14,22 @@ import 'package:file_selector/file_selector.dart';
 /// Restituisce dove è stato salvato (da mostrare all'utente), `null` se
 /// l'utente ha annullato.
 Future<String?> salvaConNome({
+  required String nome,
+  required Uint8List byte,
+  required String tipo,
+  required String estensione,
+  required String mime,
+}) => senzaBloccoAutomatico(
+  () => _salvaConNome(
+    nome: nome,
+    byte: byte,
+    tipo: tipo,
+    estensione: estensione,
+    mime: mime,
+  ),
+);
+
+Future<String?> _salvaConNome({
   required String nome,
   required Uint8List byte,
   required String tipo,

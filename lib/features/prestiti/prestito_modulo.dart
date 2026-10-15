@@ -12,6 +12,7 @@ import '../../core/ricorrenza.dart';
 import '../../core/sessione.dart';
 import '../categorie/scelta_categoria.dart';
 import '../../core/foto/contratto_foto.dart';
+import '../comuni/blocco_automatico.dart';
 import '../comuni/campi.dart';
 import '../comuni/conta_dal.dart';
 import '../foto/foto.dart';
@@ -72,14 +73,16 @@ Future<void> apriNuovoPrestito(BuildContext context, Sessione sessione) async {
   ProposteContratto? proposte;
   try {
     if (modo == 'pdf') {
-      final file = await openFile(
-        acceptedTypeGroups: const [
-          XTypeGroup(
-            label: 'Contratto (PDF)',
-            extensions: ['pdf'],
-            mimeTypes: ['application/pdf'],
-          ),
-        ],
+      final file = await senzaBloccoAutomatico(
+        () => openFile(
+          acceptedTypeGroups: const [
+            XTypeGroup(
+              label: 'Contratto (PDF)',
+              extensions: ['pdf'],
+              mimeTypes: ['application/pdf'],
+            ),
+          ],
+        ),
       );
       if (file == null) {
         return;

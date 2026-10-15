@@ -23,4 +23,4 @@ I dati devono essere illeggibili fuori dai dispositivi dell'utente (E2EE, ADR-00
 - ✅ Nuovi algoritmi (es. post-quantum) aggiungibili con un nuovo numero di versione, leggendo ancora i dati vecchi.
 - ⚠️ Argon2id è volutamente lento: nell'interfaccia va eseguito fuori dal thread grafico (`Sodium.runIsolated`).
 - ⚠️ Persi password, Secret Key e tutti i dispositivi → dati irrecuperabili (per progetto; da spiegare nell'onboarding).
-- 🔜 Taratura dei parametri Argon2 per dispositivo, normalizzazione Unicode della password; con la build Android: sblocco biometrico (Android Keystore / Windows Hello) e dispositivi fidati (nuovo dispositivo con password + Secret Key o QR da un dispositivo fidato).
+- 🔜 Taratura dei parametri Argon2 per dispositivo, normalizzazione Unicode della password; sblocco biometrico (Android Keystore / Windows Hello: ✅ ADR-016) e dispositivi fidati (nuovo dispositivo con password + Secret Key o QR da un dispositivo fidato).

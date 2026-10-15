@@ -34,4 +34,5 @@ Si comincia a provare l'app su Android. Sul PC la build Android non è possibile
 ## Conseguenze
 - ✅ Ogni push produce un APK da provare e verifica l'app vera su Android.
 - FLAG_SECURE resta attivo anche nella variante di prova (scelta dell'utente: per le segnalazioni usa la foto da un altro telefono).
-- 🔜 Firma definitiva; sblocco biometrico (`local_auth`); dispositivi fidati; notifiche di sistema (avvisi delle scadenze e della maxi rata).
+- ✅ Firma definitiva; sblocco con impronta, viso o PIN (ADR-016, Android Keystore, non `local_auth`).
+- 🔜 Dispositivi fidati; notifiche di sistema (avvisi delle scadenze e della maxi rata).

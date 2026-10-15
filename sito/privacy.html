@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Informativa privacy – GestionaleFinanziaria</title>
+  <link rel="stylesheet" href="stile.css">
+</head>
+<body>
+  <main>
+    <p><a href="index.html">← GestionaleFinanziaria</a></p>
+    <h1>Informativa privacy</h1>
+    <p class="nota">Ultimo aggiornamento: 15 ottobre 2026</p>
+
+    <h2>In breve</h2>
+    <ul>
+      <li>Lo sviluppatore <strong>non raccoglie nessun dato</strong>: niente account, niente server, niente pubblicità, niente statistiche d'uso.</li>
+      <li>I tuoi dati restano <strong>sul tuo dispositivo, cifrati</strong>. Se lo scegli, viaggiano cifrati nel <strong>tuo</strong> Google Drive.</li>
+      <li>Nessuno, nemmeno Google o lo sviluppatore, può leggerli senza la tua password o la tua Secret Key.</li>
+    </ul>
+
+    <h2>Chi è il titolare</h2>
+    <p>GestionaleFinanziaria è un'app open source (licenza GNU AGPL-3.0) pubblicata da akito996. Per domande sulla privacy apri una segnalazione nel <a href="https://github.com/akito996/GestionaleFinanziaria/issues">repository del progetto</a>. Per problemi di sicurezza usa la <a href="https://github.com/akito996/GestionaleFinanziaria/security">segnalazione privata</a>.</p>
+
+    <h2>Dati sul dispositivo</h2>
+    <p>Portafogli, movimenti, scadenze, prestiti, obiettivi e report stanno in un archivio sul tuo dispositivo.</p>
+    <ul>
+      <li>L'archivio è cifrato: SQLCipher, con una chiave protetta da Argon2id e XChaCha20-Poly1305.</li>
+      <li>La password principale non viene mai salvata.</li>
+      <li>La Secret Key la conservi tu: serve solo se dimentichi la password.</li>
+    </ul>
+
+    <h2>Sincronizzazione con Google Drive (facoltativa)</h2>
+    <p>Se la accendi, l'app usa la cartella nascosta dell'app nel tuo Google Drive (permesso <code>drive.appdata</code>).</p>
+    <ul>
+      <li>L'app vede solo i propri file, non gli altri tuoi documenti.</li>
+      <li>Ogni file è cifrato sul dispositivo prima di partire: Google conserva solo dati illeggibili.</li>
+      <li>L'app non chiede il tuo nome, la tua email né altri dati del profilo Google.</li>
+    </ul>
+    <p>L'uso e il trasferimento ad altre app delle informazioni ricevute dalle API di Google rispettano le <a href="https://developers.google.com/terms/api-services-user-data-policy">Norme sui dati utente dei servizi API di Google</a>, compresi i requisiti di uso limitato.</p>
+    <p>Puoi spegnere la sincronizzazione dall'app in qualsiasi momento. I dati su Drive li cancelli da Google Drive › Impostazioni › Gestisci app › GestionaleFinanziaria › "Elimina dati app nascosti". L'accesso lo revochi dal tuo account Google, nella sezione dedicata alle app di terze parti.</p>
+
+    <h2>Fotocamera (facoltativa, Android)</h2>
+    <p>Puoi fotografare uno scontrino o un contratto per compilare i campi più in fretta.</p>
+    <ul>
+      <li>La foto viene letta sul telefono (Tesseract, senza internet) e poi cancellata.</li>
+      <li>La foto non viene inviata a nessuno.</li>
+    </ul>
+
+    <h2>Sblocco con impronta, viso o PIN, Windows Hello</h2>
+    <p>La verifica la fa il sistema operativo del tuo dispositivo: l'app non riceve né conserva dati biometrici. Riceve solo l'esito, tramite una chiave conservata nel chip di sicurezza del dispositivo.</p>
+
+    <h2>Connessioni a internet</h2>
+    <p>L'app si collega a internet solo per due cose:</p>
+    <ul>
+      <li>la sincronizzazione con Google Drive, se la accendi;</li>
+      <li>aprire nel browser le pagine che scegli tu (per esempio il codice sorgente).</li>
+    </ul>
+
+    <h2>Conservazione e cancellazione</h2>
+    <p>I dati restano finché li tieni tu. Disinstallando l'app (versione del Microsoft Store) l'archivio sul dispositivo viene cancellato: tieni la sincronizzazione accesa se vuoi una copia.</p>
+
+    <h2>Minori</h2>
+    <p>L'app non è pensata per i minori di 14 anni e non raccoglie dati di nessuno.</p>
+
+    <h2>Modifiche</h2>
+    <p>Ogni modifica a questa informativa viene pubblicata su questa pagina, con la data in alto. Lo storico completo è nel repository.</p>
+  </main>
+</body>
+</html>

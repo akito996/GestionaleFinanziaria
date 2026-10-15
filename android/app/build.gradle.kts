@@ -44,6 +44,9 @@ android {
                 storeFile = file(chiaveProperties["storeFile"] as String)
                 storePassword = chiaveProperties["storePassword"] as String
             }
+            // Schema v3: permette in futuro di cambiare chiave di firma senza
+            // reinstallare l'app (rotazione della chiave).
+            enableV3Signing = true
         }
     }
 
@@ -98,6 +101,8 @@ val improntaTesseract = "bce5d6413a1a5ae3d7240033fbbc851ba3217d0a08d9769400e17a0
 
 dependencies {
     implementation(tesseract)
+    // Sblocco con impronta, viso o PIN (AndroidX, Apache-2.0).
+    implementation("androidx.biometric:biometric:1.1.0")
 }
 
 fun sha256(file: File): String =

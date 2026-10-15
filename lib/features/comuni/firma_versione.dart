@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/sessione.dart';
 import '../../core/versione.dart';
 import 'avvisi.dart';
+import 'blocco_automatico.dart';
 import 'layout.dart';
 
 /// Indirizzo del codice sorgente (licenza AGPL-3.0: chi usa l'app può averlo).
@@ -203,9 +204,11 @@ class InformazioniPagina extends StatelessWidget {
                   title: const Text('Codice sorgente'),
                   subtitle: const Text(indirizzoCodice),
                   trailing: const Icon(Icons.open_in_new),
-                  onTap: () => launchUrl(
-                    Uri.parse(indirizzoCodice),
-                    mode: LaunchMode.externalApplication,
+                  onTap: () => senzaBloccoAutomatico(
+                    () => launchUrl(
+                      Uri.parse(indirizzoCodice),
+                      mode: LaunchMode.externalApplication,
+                    ),
                   ),
                 ),
                 ListTile(

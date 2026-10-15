@@ -12,10 +12,13 @@ import '../prestiti/prestiti_pagina.dart';
 import '../report/report_pagina.dart';
 import '../costo_vita/costo_vita_pagina.dart';
 import '../home/home_pagina.dart';
+import '../impostazioni/impostazioni_pagina.dart';
 import '../movimenti/movimenti_pagina.dart';
 import '../notifiche/campanella.dart';
 import '../sync/sync_pagina.dart';
 import '../obiettivi/obiettivi_pagina.dart';
+import '../sblocco/sblocco_rapido.dart';
+import 'blocco_automatico.dart';
 import 'firma_versione.dart';
 import 'icone.dart';
 import 'layout.dart';
@@ -81,6 +84,7 @@ class _GuscioState extends State<Guscio> {
   Timer? _controllo;
   Timer? _sincronia;
   AppLifecycleListener? _ciclo;
+  BloccoAutomatico? _blocco;
 
   @override
   void initState() {
@@ -102,6 +106,8 @@ class _GuscioState extends State<Guscio> {
       onPause: _sincronizza,
       onResume: _sincronizza,
     );
+    // In secondo piano troppo a lungo: l'archivio si blocca (Impostazioni).
+    _blocco = BloccoAutomatico(widget.sessione);
   }
 
   void _sincronizza() {
@@ -111,6 +117,13 @@ class _GuscioState extends State<Guscio> {
   }
 
   Future<void> _avvisi() async {
+    if (!mounted || widget.sessione.fase != FaseSessione.sbloccata) {
+      return;
+    }
+    // Appena entrati con la password: proporre lo sblocco rapido (una volta).
+    if (widget.sessione.prendiPropostaAttivazione()) {
+      await proponiSbloccoRapido(context, widget.sessione);
+    }
     if (mounted && widget.sessione.fase == FaseSessione.sbloccata) {
       await controllaAvvisiMaxi(context, widget.sessione);
     }
@@ -121,6 +134,7 @@ class _GuscioState extends State<Guscio> {
     _controllo?.cancel();
     _sincronia?.cancel();
     _ciclo?.dispose();
+    _blocco?.dispose();
     super.dispose();
   }
 
@@ -129,6 +143,10 @@ class _GuscioState extends State<Guscio> {
       return;
     }
     final n = await widget.sessione.pianificatore.registraScadute();
+    // Nel frattempo l'archivio può essersi bloccato (anche da solo).
+    if (widget.sessione.fase != FaseSessione.sbloccata) {
+      return;
+    }
     // A cavallo di fine mese: il report del mese appena concluso.
     await widget.sessione.report.aggiorna();
     // Se l'app resta aperta per giorni, le richieste rimandate tornano.
@@ -156,6 +174,7 @@ class _GuscioState extends State<Guscio> {
     (Icons.savings_outlined, Icons.savings, 'Obiettivi'),
     (Icons.assessment_outlined, Icons.assessment, 'Report'),
     (Icons.category_outlined, Icons.category, 'Categorie'),
+    (Icons.settings_outlined, Icons.settings, 'Impostazioni'),
   ];
 
   void _vaiA(int sezione) => setState(() => _sezione = sezione);
@@ -204,6 +223,7 @@ class _GuscioState extends State<Guscio> {
       ObiettiviPagina(sessione: widget.sessione),
       ReportPagina(sessione: widget.sessione),
       CategoriePagina(sessione: widget.sessione),
+      ImpostazioniPagina(sessione: widget.sessione),
     ];
     final corpo = IndexedStack(index: _sezione, children: pagine);
 

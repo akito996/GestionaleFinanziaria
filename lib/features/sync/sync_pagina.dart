@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/sessione.dart';
 import '../../core/sync/sincronizzazione.dart';
+import '../comuni/blocco_automatico.dart';
 import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
 import '../movimenti/riga_movimento.dart';
@@ -137,12 +138,12 @@ class SincronizzazionePagina extends StatelessWidget {
       ),
     );
     if (si == true) {
-      await _sync.sostituisciRemoto();
+      await senzaBloccoAutomatico(_sync.sostituisciRemoto);
     }
   }
 
   Future<void> _usaRemoto(BuildContext context, String idRemoto) async {
-    final remoto = await sessione.spazioRemoto();
+    final remoto = await senzaBloccoAutomatico(sessione.spazioRemoto);
     if (remoto == null || !context.mounted) {
       return;
     }
@@ -243,7 +244,7 @@ class SincronizzazionePagina extends StatelessWidget {
       case FaseSync.spenta:
         return [
           FilledButton.icon(
-            onPressed: _sync.accendi,
+            onPressed: () => senzaBloccoAutomatico(_sync.accendi),
             icon: const Icon(Icons.cloud_upload_outlined),
             label: const Text('Accendi con Google Drive'),
           ),
@@ -278,7 +279,9 @@ class SincronizzazionePagina extends StatelessWidget {
       case FaseSync.accessoRichiesto:
         return [
           FilledButton.icon(
-            onPressed: () => _sync.sincronizza(interattivo: true),
+            onPressed: () => senzaBloccoAutomatico(
+              () => _sync.sincronizza(interattivo: true),
+            ),
             icon: const Icon(Icons.login),
             label: const Text('Riaccedi a Google'),
           ),
@@ -293,7 +296,9 @@ class SincronizzazionePagina extends StatelessWidget {
           FilledButton.icon(
             onPressed: stato.fase == FaseSync.inCorso
                 ? null
-                : () => _sync.sincronizza(interattivo: true),
+                : () => senzaBloccoAutomatico(
+                    () => _sync.sincronizza(interattivo: true),
+                  ),
             icon: const Icon(Icons.sync),
             label: const Text('Sincronizza ora'),
           ),

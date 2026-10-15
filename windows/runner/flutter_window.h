@@ -2,7 +2,9 @@
 #define RUNNER_FLUTTER_WINDOW_H_
 
 #include <flutter/dart_project.h>
+#include <flutter/encodable_value.h>
 #include <flutter/flutter_view_controller.h>
+#include <flutter/method_channel.h>
 
 #include <memory>
 
@@ -28,6 +30,14 @@ class FlutterWindow : public Win32Window {
 
   // The Flutter instance hosted by this window.
   std::unique_ptr<flutter::FlutterViewController> flutter_controller_;
+
+  // Sblocco con Windows Hello (canale "gestionale/sblocco_rapido").
+  std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>
+      sblocco_rapido_;
+  void GestisciSbloccoRapido(
+      const flutter::MethodCall<flutter::EncodableValue>& chiamata,
+      std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
+          risultato);
 };
 
 #endif  // RUNNER_FLUTTER_WINDOW_H_
