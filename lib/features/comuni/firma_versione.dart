@@ -9,9 +9,10 @@ import '../../core/versione.dart';
 import 'avvisi.dart';
 import 'blocco_automatico.dart';
 import 'layout.dart';
+import '../../core/identita.dart';
 
 /// Indirizzo del codice sorgente (licenza AGPL-3.0: chi usa l'app può averlo).
-const indirizzoCodice = 'https://github.com/akito996/GestionaleFinanziaria';
+const indirizzoCodice = Identita.indirizzoCodice;
 
 /// La versione come una firma, solo all'apertura: compare per 3 secondi in
 /// basso a sinistra quando si apre l'app e quando si sblocca l'archivio, poi
@@ -101,8 +102,10 @@ class _FirmaInizialeState extends State<FirmaIniziale> {
                     decoration: TextDecoration.none,
                   ),
                   child: Text(
-                    Versione.firma,
-                    semanticsLabel: 'Versione ${Versione.numero}',
+                    '${Identita.nome} ${Versione.firma} · ${Identita.copyright}',
+                    semanticsLabel:
+                        '${Identita.nome} versione ${Versione.numero}, '
+                        '${Identita.copyright}',
                   ),
                 ),
               ),
@@ -123,7 +126,7 @@ class InformazioniPagina extends StatelessWidget {
   const InformazioniPagina({super.key});
 
   String get _dettagli => [
-    'GestionaleFinanziaria ${Versione.numero}',
+    '${Identita.nome} ${Versione.numero}',
     if (Versione.commit.isNotEmpty) 'Build ${Versione.commit}',
     'Variante ${Versione.prova ? 'prova' : 'ufficiale'}',
   ].join('\n');
@@ -143,8 +146,9 @@ class InformazioniPagina extends StatelessWidget {
                 children: [
                   const Icon(Icons.account_balance_wallet_outlined, size: 48),
                   const SizedBox(height: 8),
-                  Text('GestionaleFinanziaria', style: testo.titleLarge),
+                  Text(Identita.nome, style: testo.titleLarge),
                   Text('Versione ${Versione.numero}', style: testo.bodyMedium),
+                  Text(Identita.copyright, style: testo.bodySmall),
                 ],
               ),
             ),
@@ -195,8 +199,9 @@ class InformazioniPagina extends StatelessWidget {
                   leading: Icon(Icons.gavel_outlined),
                   title: Text('Licenza'),
                   subtitle: Text(
-                    'Software libero con licenza GNU AGPL-3.0: puoi usarlo, '
-                    'studiarlo, modificarlo e condividerlo.',
+                    '${Identita.copyright}. Software libero con licenza GNU '
+                    'AGPL-3.0: puoi usarlo, studiarlo, modificarlo e '
+                    'condividerlo.',
                   ),
                 ),
                 ListTile(
@@ -217,9 +222,10 @@ class InformazioniPagina extends StatelessWidget {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => showLicensePage(
                     context: context,
-                    applicationName: 'GestionaleFinanziaria',
+                    applicationName: Identita.nome,
                     applicationVersion: Versione.firma,
-                    applicationLegalese: 'Licenza GNU AGPL-3.0',
+                    applicationLegalese:
+                        '${Identita.copyright}\nLicenza GNU AGPL-3.0',
                   ),
                 ),
               ],

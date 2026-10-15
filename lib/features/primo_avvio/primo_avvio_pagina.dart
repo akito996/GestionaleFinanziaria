@@ -11,6 +11,7 @@ import '../comuni/errori.dart';
 import '../comuni/nuova_password.dart';
 import '../comuni/salva_file.dart';
 import '../sync/archivio_remoto.dart';
+import '../../core/identita.dart';
 
 /// Primo avvio: spiegazione → password → Secret Key (salva file o copia) → verifica.
 /// L'archivio viene creato solo alla fine, dopo la verifica.
@@ -77,7 +78,7 @@ class _PrimoAvvioPaginaState extends State<PrimoAvvioPagina> {
   });
 
   String get _nomeFile =>
-      'GestionaleFinanziaria-SecretKey-${_creata!.idArchivio}.txt';
+      '${Identita.nome}-SecretKey-${_creata!.idArchivio}.txt';
 
   String _contenutoFile() {
     final oggi = DateTime.now();
@@ -85,7 +86,7 @@ class _PrimoAvvioPaginaState extends State<PrimoAvvioPagina> {
         '${oggi.day.toString().padLeft(2, '0')}/'
         '${oggi.month.toString().padLeft(2, '0')}/${oggi.year}';
     return [
-      'GestionaleFinanziaria - Secret Key',
+      '${Identita.nome} - Secret Key',
       '',
       'ID archivio: ${_creata!.idArchivio}',
       'Secret Key:  ${_creata!.secretKey}',
@@ -184,7 +185,7 @@ class _PrimoAvvioPaginaState extends State<PrimoAvvioPagina> {
         const Icon(Icons.lock_outline, size: 56),
         const SizedBox(height: 16),
         Text(
-          'Benvenuto in GestionaleFinanziaria',
+          'Benvenuto in ${Identita.nome}',
           style: testo.headlineSmall,
           textAlign: TextAlign.center,
         ),

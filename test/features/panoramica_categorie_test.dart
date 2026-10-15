@@ -240,7 +240,7 @@ void main() {
     expect(find.text('Portafogli'), findsOneWidget);
     // La versione compare solo all'apertura e poi sfuma.
     final firma = find.ancestor(
-      of: find.text(Versione.firma),
+      of: find.textContaining(Versione.firma),
       matching: find.byType(AnimatedOpacity),
     );
     expect(firma, findsOneWidget);

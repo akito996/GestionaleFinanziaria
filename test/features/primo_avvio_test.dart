@@ -75,7 +75,7 @@ void main() {
   /// Dal benvenuto alla schermata della Secret Key; restituisce la Secret Key mostrata.
   Future<String> finoAllaSecretKey(WidgetTester tester) async {
     await avviaApp(tester);
-    expect(find.text('Benvenuto in GestionaleFinanziaria'), findsOneWidget);
+    expect(find.text('Benvenuto in WalleCy'), findsOneWidget);
     await tocca(tester, find.text('Inizia'));
 
     final campi = find.byType(TextFormField);
@@ -132,7 +132,7 @@ void main() {
     await tocca(tester, find.byTooltip('Archivio aperto: tocca per bloccarlo'));
     await attendi(tester, find.text('Archivio bloccato'));
     // La firma c'è sempre (visibile per 3 secondi all'apertura e allo sblocco).
-    expect(find.text(Versione.firma), findsOneWidget);
+    expect(find.textContaining(Versione.firma), findsOneWidget);
     await tester.enterText(find.byType(TextField), 'Password-Lunga-1');
     await tocca(tester, find.text('Sblocca'));
     await attendi(tester, find.text('Archivio sbloccato'));

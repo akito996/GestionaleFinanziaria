@@ -5,7 +5,7 @@ Il progetto è in sviluppo: non esistono ancora versioni rilasciate. Dalla prima
 
 ## Come segnalare una vulnerabilità
 **Non aprire una issue pubblica.** Usa la segnalazione privata di GitHub:
-**Security → Report a vulnerability** (https://github.com/akito996/GestionaleFinanziaria/security/advisories/new).
+**Security → Report a vulnerability** (https://github.com/akito996/WalleCy/security/advisories/new).
 
 Indica, se possibile:
 - versione e piattaforma (Windows / Android);

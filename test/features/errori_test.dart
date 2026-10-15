@@ -27,10 +27,7 @@ void main() {
     await tester.tap(find.text('Dettagli tecnici'));
     await tester.pumpAndSettle();
     // Servono per decodificare l'elenco delle chiamate con i simboli giusti.
-    expect(
-      find.textContaining('GestionaleFinanziaria ${Versione.firma}'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('WalleCy ${Versione.firma}'), findsOneWidget);
     expect(find.textContaining('StateError'), findsOneWidget);
   });
 }

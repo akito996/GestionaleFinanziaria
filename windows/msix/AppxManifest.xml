@@ -16,7 +16,7 @@
     Version="{{VERSIONE}}"
     ProcessorArchitecture="x64" />
   <Properties>
-    <DisplayName>GestionaleFinanziaria</DisplayName>
+    <DisplayName>WalleCy</DisplayName>
     <PublisherDisplayName>{{NOME_EDITORE}}</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -31,11 +31,11 @@
   </Resources>
   <Applications>
     <Application
-      Id="GestionaleFinanziaria"
-      Executable="GestionaleFinanziaria.exe"
+      Id="WalleCy"
+      Executable="WalleCy.exe"
       EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="GestionaleFinanziaria"
+        DisplayName="WalleCy"
         Description="Finanza personale privacy-first e open source"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"

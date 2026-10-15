@@ -57,13 +57,13 @@ android {
     productFlavors {
         create("ufficiale") {
             dimension = "versione"
-            manifestPlaceholders["nomeApp"] = "GestionaleFinanziaria"
+            manifestPlaceholders["nomeApp"] = "WalleCy"
         }
         create("prova") {
             dimension = "versione"
             applicationIdSuffix = ".prova"
             versionNameSuffix = "-prova"
-            manifestPlaceholders["nomeApp"] = "GF Prova"
+            manifestPlaceholders["nomeApp"] = "WalleCy Prova"
         }
     }
 

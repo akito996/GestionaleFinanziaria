@@ -7,6 +7,7 @@ import '../export/esportazione.dart';
 import '../export/xlsx.dart';
 import '../importo.dart';
 import 'documento.dart';
+import '../identita.dart';
 
 /// Scarica un [DocumentoReport] in PDF (con grafici) o in Excel (un foglio per
 /// tabella, importi come numeri).
@@ -33,7 +34,7 @@ abstract final class EsportaReport {
         Esportazione.testoPdf(testo, carattereCompleto: conCarattere);
     final doc = pw.Document(
       title: t(d.titolo),
-      creator: 'GestionaleFinanziaria',
+      creator: Identita.nome,
       theme: conCarattere
           ? pw.ThemeData.withFont(
               base: pw.Font.ttf(normale),
@@ -150,7 +151,7 @@ abstract final class EsportaReport {
           alignment: pw.Alignment.centerRight,
           child: pw.Text(
             t(
-              'GestionaleFinanziaria · pagina ${context.pageNumber} di '
+              '${Identita.nome} · pagina ${context.pageNumber} di '
               '${context.pagesCount}',
             ),
             style: const pw.TextStyle(fontSize: 7, color: _grigio),

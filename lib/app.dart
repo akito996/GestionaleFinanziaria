@@ -6,6 +6,7 @@ import 'features/comuni/navigazione.dart';
 import 'features/primo_avvio/primo_avvio_pagina.dart';
 import 'features/sblocco/sblocco_pagina.dart';
 import 'features/comuni/firma_versione.dart';
+import 'core/identita.dart';
 
 /// Radice dell'app: tema, lingua italiana e schermata in base allo stato della [sessione].
 class GestionaleApp extends StatefulWidget {
@@ -50,7 +51,7 @@ class _GestionaleAppState extends State<GestionaleApp> {
     final sessione = widget.sessione;
     return MaterialApp(
       navigatorKey: _navigatore,
-      title: 'GestionaleFinanziaria',
+      title: Identita.nome,
       debugShowCheckedModeBanner: false,
       locale: const Locale('it', 'IT'),
       supportedLocales: const [Locale('it', 'IT')],

@@ -1,10 +1,13 @@
 # Verifica del codice a ogni push e pull request: formattazione, analisi statica severa e test.
 # La versione di Flutter è quella scritta in pubspec.yaml (environment.flutter).
+# Con un tag "v*" (es. v0.9.0), se tutto è verde, pubblica anche la release
+# su GitHub (ADR-018).
 name: Verifica
 
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
@@ -121,7 +124,7 @@ jobs:
           if [ -z "$GOOGLE_CLIENT_SECRET_WINDOWS" ]; then
             echo "::warning title=Google Drive::Secret GOOGLE_CLIENT_SECRET_WINDOWS non configurato: nella build Windows la sincronizzazione non è disponibile."
           fi
-          flutter build windows --release --split-debug-info=build/simboli/windows --dart-define=GF_COMMIT=${{ github.sha }} --dart-define=GOOGLE_CLIENT_SECRET_WINDOWS="$GOOGLE_CLIENT_SECRET_WINDOWS"
+          flutter build windows --release --build-number=${{ github.run_number }} --split-debug-info=build/simboli/windows --dart-define=GF_COMMIT=${{ github.sha }} --dart-define=GOOGLE_CLIENT_SECRET_WINDOWS="$GOOGLE_CLIENT_SECRET_WINDOWS"
       # Librerie Visual C++ accanto all'app: parte anche sui PC appena
       # installati, senza il pacchetto "Visual C++ Redistributable".
       # Distribuzione locale consentita dalla licenza (file elencati in redist).
@@ -149,7 +152,7 @@ jobs:
           echo "::notice title=Firma Windows::$($righe -join ' · ')"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: GestionaleFinanziaria-windows-${{ github.sha }}
+          name: WalleCy-windows-${{ github.sha }}
           path: build/windows/x64/runner/Release/
           if-no-files-found: error
       # Pacchetto per il Microsoft Store (ADR-017): lo firma Microsoft quando
@@ -167,7 +170,7 @@ jobs:
           $v = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(\d+)\.(\d+)\.').Matches[0].Groups
           $argomenti = @{
             Build = 'build/windows/x64/runner/Release'
-            Uscita = 'build/GestionaleFinanziaria.msix'
+            Uscita = 'build/WalleCy.msix'
             Versione = "$($v[1].Value).$($v[2].Value).${{ github.run_number }}.0"
           }
           if ($env:MSIX_NOME -and $env:MSIX_EDITORE -and $env:MSIX_NOME_EDITORE) {
@@ -180,8 +183,8 @@ jobs:
           ./tool/msix.ps1 @argomenti
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: GestionaleFinanziaria-msix-${{ github.sha }}
-          path: build/GestionaleFinanziaria.msix
+          name: WalleCy-msix-${{ github.sha }}
+          path: build/WalleCy.msix
           if-no-files-found: error
           retention-days: 14
       # Per leggere gli errori ("flutter symbolize"): restano più a lungo.
@@ -269,6 +272,7 @@ jobs:
           set -o pipefail
           for variante in ufficiale prova; do
             flutter build apk --release --flavor "$variante" \
+              --build-number=${{ github.run_number }} \
               --split-per-abi --target-platform android-arm,android-arm64 \
               --split-debug-info=build/simboli/android \
               --dart-define=GF_COMMIT=${{ github.sha }} \
@@ -319,16 +323,16 @@ jobs:
       - name: APK da installare
         run: |
           mkdir -p build/da-installare
-          cp build/app/outputs/flutter-apk/app-arm64-v8a-prova-release.apk build/da-installare/GestionaleFinanziaria-prova.apk
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-prova-release.apk build/da-installare/WalleCy-prova.apk
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: android-da-installare-${{ github.sha }}
-          path: build/da-installare/GestionaleFinanziaria-prova.apk
+          path: build/da-installare/WalleCy-prova.apk
           if-no-files-found: error
           retention-days: 14
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: GestionaleFinanziaria-android-tutti-gli-apk-${{ github.sha }}
+          name: WalleCy-android-tutti-gli-apk-${{ github.sha }}
           path: build/app/outputs/flutter-apk/*-release.apk
           if-no-files-found: error
           retention-days: 14
@@ -430,3 +434,59 @@ jobs:
           motivo="${motivo//$'\n'/'%0A'}"
           motivo="${motivo//$'\r'/}"
           echo "::error title=Android (${{ matrix.dispositivo }})::${motivo}"
+
+  # Release su GitHub (solo con un tag "v*" e tutti i controlli verdi):
+  # APK ufficiali firmati, zip per Windows, impronte SHA-256 e attestazione
+  # di provenienza (Sigstore): chiunque può verificare che i file sono stati
+  # costruiti da GitHub Actions da questo codice.
+  rilascio:
+    name: Release su GitHub
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, android, android-emulatore]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: WalleCy-windows-${{ github.sha }}
+          path: scaricati/windows
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: WalleCy-android-tutti-gli-apk-${{ github.sha }}
+          path: scaricati/android
+      - name: File della release
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          grep -q "^version: $v+" pubspec.yaml || {
+            echo "::error title=Versione::Il tag $GITHUB_REF_NAME non coincide con la versione di pubspec.yaml."
+            exit 1
+          }
+          mkdir rilascio
+          cp scaricati/android/app-arm64-v8a-ufficiale-release.apk "rilascio/WalleCy-$v-android-arm64.apk"
+          cp scaricati/android/app-armeabi-v7a-ufficiale-release.apk "rilascio/WalleCy-$v-android-armv7.apk"
+          (cd scaricati/windows && zip -qr "../../rilascio/WalleCy-$v-windows-x64.zip" .)
+          (cd rilascio && sha256sum WalleCy-* > SHA256SUMS.txt)
+          cat rilascio/SHA256SUMS.txt
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: 'rilascio/WalleCy-*'
+      # Le versioni 0.x escono come "pre-release" (anteprima).
+      - name: Pubblica la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          note="docs/rilasci/$GITHUB_REF_NAME.md"
+          [ -f "$note" ] || { echo "::error title=Note di rilascio::Manca $note"; exit 1; }
+          anteprima=()
+          [[ "$GITHUB_REF_NAME" == v0.* ]] && anteprima=(--prerelease)
+          gh release create "$GITHUB_REF_NAME" rilascio/* \
+            --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "WalleCy ${GITHUB_REF_NAME#v}" --notes-file "$note" "${anteprima[@]}"
+          echo "::notice title=Release::https://github.com/$GITHUB_REPOSITORY/releases/tag/$GITHUB_REF_NAME"

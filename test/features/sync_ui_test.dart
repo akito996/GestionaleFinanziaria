@@ -153,7 +153,7 @@ void main() {
     final telefono = (await tester.runAsync(dispositivo))!;
     await tester.pumpWidget(GestionaleApp(sessione: telefono));
     await tester.runAsync(telefono.avvia);
-    await attendi(tester, find.text('Benvenuto in GestionaleFinanziaria'));
+    await attendi(tester, find.text('Benvenuto in WalleCy'));
     await tocca(
       tester,
       find.text('Ho già un archivio su un altro dispositivo'),

@@ -13,6 +13,7 @@ import '../db/tabelle.dart';
 import '../importo.dart';
 import '../sessione.dart';
 import 'xlsx.dart';
+import '../identita.dart';
 
 /// Cosa si può esportare.
 enum SezioneExport {
@@ -106,8 +107,8 @@ abstract final class Esportazione {
   }) async {
     final conCarattere = normale != null;
     final doc = pw.Document(
-      title: 'GestionaleFinanziaria - Report',
-      creator: 'GestionaleFinanziaria',
+      title: '${Identita.nome} - Report',
+      creator: Identita.nome,
       theme: conCarattere
           ? pw.ThemeData.withFont(
               base: pw.Font.ttf(normale),
@@ -159,7 +160,7 @@ abstract final class Esportazione {
 
     final contenuto = <pw.Widget>[
       pw.Text(
-        'GestionaleFinanziaria - Report',
+        '${Identita.nome} - Report',
         style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
       ),
       pw.Text(

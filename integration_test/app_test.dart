@@ -93,7 +93,7 @@ void main() {
     );
     await tester.pumpWidget(GestionaleApp(sessione: sessione));
     await sessione.avvia();
-    await attendi(tester, find.text('Benvenuto in GestionaleFinanziaria'));
+    await attendi(tester, find.text('Benvenuto in WalleCy'));
 
     // Primo avvio.
     await tocca(tester, find.text('Inizia'));

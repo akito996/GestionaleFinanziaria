@@ -11,6 +11,7 @@ import '../comuni/icone.dart';
 import '../comuni/salva_file.dart';
 import '../movimenti/riga_movimento.dart';
 import '../comuni/avvisi.dart';
+import '../../core/identita.dart';
 
 enum _Periodo { meseCorrente, ultimiTre, annoCorrente, personalizzato }
 
@@ -65,7 +66,7 @@ class _ExportDialogoState extends State<_ExportDialogo> {
     final i = _intervallo;
     String g(DateTime d) =>
         '${d.year}${d.month.toString().padLeft(2, '0')}${d.day.toString().padLeft(2, '0')}';
-    return 'GestionaleFinanziaria_${g(i.start)}-${g(i.end)}';
+    return '${Identita.nome}_${g(i.start)}-${g(i.end)}';
   }
 
   Future<bool> _salva(String nome, String estensione, Uint8List byte) async =>

@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "io.github.akito996" "\0"
-            VALUE "FileDescription", "GestionaleFinanziaria - finanza personale privacy-first" "\0"
+            VALUE "CompanyName", "agjin" "\0"
+            VALUE "FileDescription", "WalleCy - finanza personale privacy-first" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "GestionaleFinanziaria" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 akito996 - Licenza GNU AGPL-3.0" "\0"
-            VALUE "OriginalFilename", "GestionaleFinanziaria.exe" "\0"
-            VALUE "ProductName", "GestionaleFinanziaria" "\0"
+            VALUE "InternalName", "WalleCy" "\0"
+            VALUE "LegalCopyright", "Copyright © 2026 agjin - Licenza GNU AGPL-3.0" "\0"
+            VALUE "OriginalFilename", "WalleCy.exe" "\0"
+            VALUE "ProductName", "WalleCy" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

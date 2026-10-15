@@ -11,9 +11,9 @@ param(
   [Parameter(Mandatory)] [string] $Uscita,
   # Quattro numeri, l'ultimo 0 (regola dello Store), es. 0.1.37.0.
   [Parameter(Mandatory)] [string] $Versione,
-  [string] $Nome = 'GestionaleFinanziaria.Prova',
-  [string] $Editore = 'CN=GestionaleFinanziaria-Prova',
-  [string] $NomeEditore = 'GestionaleFinanziaria (prova)'
+  [string] $Nome = 'WalleCy.Prova',
+  [string] $Editore = 'CN=WalleCy-Prova',
+  [string] $NomeEditore = 'agjin (prova)'
 )
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing

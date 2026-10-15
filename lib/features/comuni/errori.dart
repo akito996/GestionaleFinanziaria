@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/versione.dart';
+import '../../core/identita.dart';
 
 /// Errore non previsto: mai silenzio. Spiega che i dati sono al sicuro e permette
 /// di copiare i dettagli tecnici (tipo ed elenco delle chiamate: niente password né dati).
@@ -13,7 +14,7 @@ Future<void> mostraErroreImprevisto(
   // La versione (con il commit) dice quali simboli usare per decodificare le
   // righe: nelle build di release l'elenco delle chiamate è in forma compatta.
   final dettagli =
-      'GestionaleFinanziaria ${Versione.firma}\n'
+      '${Identita.nome} ${Versione.firma}\n'
       '${errore.runtimeType}: $errore\n\n'
       '${stack.toString().split('\n').take(40).join('\n')}';
   return showDialog<void>(
