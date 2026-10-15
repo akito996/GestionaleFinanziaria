@@ -131,7 +131,8 @@ void main() {
     // Blocco e sblocco con conferma visibile.
     await tocca(tester, find.byTooltip('Archivio aperto: tocca per bloccarlo'));
     await attendi(tester, find.text('Archivio bloccato'));
-    expect(find.text(Versione.firma), findsOneWidget); // firma anche qui
+    // La firma c'è sempre (visibile per 3 secondi all'apertura e allo sblocco).
+    expect(find.text(Versione.firma), findsOneWidget);
     await tester.enterText(find.byType(TextField), 'Password-Lunga-1');
     await tocca(tester, find.text('Sblocca'));
     await attendi(tester, find.text('Archivio sbloccato'));

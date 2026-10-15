@@ -1,73 +1,109 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/sessione.dart';
 import '../../core/versione.dart';
 import 'avvisi.dart';
+import 'layout.dart';
 
 /// Indirizzo del codice sorgente (licenza AGPL-3.0: chi usa l'app può averlo).
 const indirizzoCodice = 'https://github.com/akito996/GestionaleFinanziaria';
 
-/// Titolo della barra in alto con la versione, piccola, sotto: la firma
-/// dell'app su ogni schermata, senza coprire nulla. Un tocco sulla versione
-/// apre "Informazioni".
-class TitoloConFirma extends StatelessWidget {
-  const TitoloConFirma(this.titolo, {super.key});
+/// La versione come una firma, solo all'apertura: compare per 3 secondi in
+/// basso a sinistra quando si apre l'app e quando si sblocca l'archivio, poi
+/// sfuma. Non intercetta tocchi e clic. Per rivederla: "Informazioni" (tocco
+/// lungo sul lucchetto).
+class FirmaIniziale extends StatefulWidget {
+  const FirmaIniziale({super.key, required this.sessione});
 
-  final String titolo;
+  final Sessione sessione;
+
+  /// Quanto resta visibile prima di sfumare.
+  static const durata = Duration(seconds: 3);
 
   @override
-  Widget build(BuildContext context) {
-    final tema = Theme.of(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(titolo, maxLines: 1, overflow: TextOverflow.ellipsis),
-        Tooltip(
-          message: 'Informazioni sull\'app',
-          child: InkWell(
-            borderRadius: BorderRadius.circular(4),
-            onTap: () => apriInformazioni(context),
-            child: Text(
-              Versione.firma,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              semanticsLabel: 'Versione ${Versione.numero}',
-              style: tema.textTheme.labelSmall?.copyWith(
-                fontSize: 10,
-                letterSpacing: 0.3,
-                color: tema.colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  State<FirmaIniziale> createState() => _FirmaInizialeState();
 }
 
-/// La versione in fondo alle pagine senza barra in alto (es. primo avvio).
-class FirmaInFondo extends StatelessWidget {
-  const FirmaInFondo({super.key});
+class _FirmaInizialeState extends State<FirmaIniziale> {
+  bool _visibile = true;
+  Timer? _timer;
+  FaseSessione? _fase;
+
+  @override
+  void initState() {
+    super.initState();
+    _fase = widget.sessione.fase;
+    widget.sessione.addListener(_alCambio);
+    _mostra();
+  }
+
+  @override
+  void dispose() {
+    widget.sessione.removeListener(_alCambio);
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  /// Di nuovo per 3 secondi quando l'archivio si apre.
+  void _alCambio() {
+    final fase = widget.sessione.fase;
+    if (fase != _fase && fase == FaseSessione.sbloccata) {
+      _mostra();
+    }
+    _fase = fase;
+  }
+
+  void _mostra() {
+    _timer?.cancel();
+    if (mounted) {
+      setState(() => _visibile = true);
+    }
+    _timer = Timer(FirmaIniziale.durata, () {
+      if (mounted) {
+        setState(() => _visibile = false);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(top: 24),
-      child: Center(
-        child: InkWell(
-          borderRadius: BorderRadius.circular(4),
-          onTap: () => apriInformazioni(context),
-          child: Padding(
-            padding: const EdgeInsets.all(4),
-            child: Text(
-              Versione.firma,
-              semanticsLabel: 'Versione ${Versione.numero}',
-              style: tema.textTheme.labelSmall?.copyWith(
-                fontSize: 10,
-                color: tema.colorScheme.onSurface.withValues(alpha: 0.45),
+    return IgnorePointer(
+      child: AnimatedOpacity(
+        opacity: _visibile ? 1 : 0,
+        duration: const Duration(milliseconds: 600),
+        child: LayoutBuilder(
+          builder: (context, vincoli) => Align(
+            alignment: Alignment.bottomLeft,
+            child: SafeArea(
+              top: false,
+              right: false,
+              child: Padding(
+                // Sul telefono sta appena sopra la barra di navigazione.
+                padding: EdgeInsets.fromLTRB(
+                  8,
+                  0,
+                  8,
+                  vincoli.maxWidth < Larghezze.media
+                      ? (NavigationBarTheme.of(context).height ?? 80) + 2
+                      : 3,
+                ),
+                child: DefaultTextStyle(
+                  style: tema.textTheme.labelSmall!.copyWith(
+                    fontSize: 10,
+                    letterSpacing: 0.3,
+                    color: tema.colorScheme.onSurface.withValues(alpha: 0.45),
+                    decoration: TextDecoration.none,
+                  ),
+                  child: Text(
+                    Versione.firma,
+                    semanticsLabel: 'Versione ${Versione.numero}',
+                  ),
+                ),
               ),
             ),
           ),

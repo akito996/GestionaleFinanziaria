@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gestionale_finanziaria/features/comuni/firma_versione.dart';
 import 'package:gestionale_finanziaria/app.dart';
 import 'package:gestionale_finanziaria/core/crypto/derivazione.dart';
 import 'package:gestionale_finanziaria/core/db/deposito_locale.dart';
@@ -237,8 +238,14 @@ void main() {
     // Totale e portafogli restano sempre.
     expect(find.text('Totale'), findsOneWidget);
     expect(find.text('Portafogli'), findsOneWidget);
-    // La versione, come firma, è sotto il titolo in alto.
-    expect(find.text(Versione.firma), findsOneWidget);
+    // La versione compare solo all'apertura e poi sfuma.
+    final firma = find.ancestor(
+      of: find.text(Versione.firma),
+      matching: find.byType(AnimatedOpacity),
+    );
+    expect(firma, findsOneWidget);
+    await tester.pump(FirmaIniziale.durata + const Duration(seconds: 1));
+    expect(tester.widget<AnimatedOpacity>(firma).opacity, 0);
 
     // Tocco lungo sul lucchetto: Informazioni (versione, licenza, codice).
     await tester.longPress(
@@ -248,12 +255,6 @@ void main() {
     await attendi(tester, find.text('Informazioni'));
     expect(find.text('Licenza'), findsOneWidget);
     expect(find.text('Codice sorgente'), findsOneWidget);
-    await tocca(tester, find.byType(BackButton));
-    await assestamento(tester);
-
-    // Anche un tocco sulla versione sotto il titolo apre Informazioni.
-    await tocca(tester, find.text(Versione.firma));
-    await attendi(tester, find.text('Licenze delle librerie usate'));
     await tocca(tester, find.byType(BackButton));
     await assestamento(tester);
 

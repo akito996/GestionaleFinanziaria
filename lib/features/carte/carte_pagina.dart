@@ -12,7 +12,6 @@ import '../movimenti/movimento_modulo.dart';
 import '../movimenti/riga_movimento.dart';
 import '../portafogli/portafoglio_pagina.dart';
 import '../comuni/avvisi.dart';
-import '../comuni/firma_versione.dart';
 
 /// Carte di credito: spese della carta, prossimo addebito sul conto, plafond.
 class CartePagina extends StatefulWidget {
@@ -32,7 +31,7 @@ class _CartePaginaState extends State<CartePagina> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const TitoloConFirma('Carte di credito'),
+        title: const Text('Carte di credito'),
         actions: [PulsanteBlocca(sessione: widget.sessione)],
       ),
       floatingActionButton: FloatingActionButton.extended(

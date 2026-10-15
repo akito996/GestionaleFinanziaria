@@ -5,6 +5,7 @@ import 'core/sessione.dart';
 import 'features/comuni/navigazione.dart';
 import 'features/primo_avvio/primo_avvio_pagina.dart';
 import 'features/sblocco/sblocco_pagina.dart';
+import 'features/comuni/firma_versione.dart';
 
 /// Radice dell'app: tema, lingua italiana e schermata in base allo stato della [sessione].
 class GestionaleApp extends StatefulWidget {
@@ -64,6 +65,13 @@ class _GestionaleAppState extends State<GestionaleApp> {
         brightness: Brightness.dark,
         useMaterial3: true,
         snackBarTheme: _avvisi,
+      ),
+      // La versione, come una firma, solo all'apertura (poi sfuma).
+      builder: (context, child) => Stack(
+        children: [
+          ?child,
+          Positioned.fill(child: FirmaIniziale(sessione: sessione)),
+        ],
       ),
       home: ListenableBuilder(
         listenable: sessione,

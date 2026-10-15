@@ -16,7 +16,6 @@ import '../prestiti/prestiti_pagina.dart';
 import 'grafico_costo_vita.dart';
 import 'testi_voci.dart';
 import 'voce_modulo.dart';
-import '../comuni/firma_versione.dart';
 
 /// Abbreviazione del mese per l'asse del grafico ("ott").
 String meseBreve(BuildContext context, DateTime mese) {
@@ -94,7 +93,7 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
     final cv = widget.sessione.costoVita;
     return Scaffold(
       appBar: AppBar(
-        title: TitoloConFirma(_t.sezione),
+        title: Text(_t.sezione),
         actions: [PulsanteBlocca(sessione: widget.sessione)],
       ),
       body: StreamBuilder<List<RiepilogoMese>>(

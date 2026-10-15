@@ -13,7 +13,6 @@ import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
 import 'report_vista.dart';
 import '../comuni/avvisi.dart';
-import '../comuni/firma_versione.dart';
 
 enum _Periodo {
   meseCorrente('Mese in corso'),
@@ -197,7 +196,7 @@ class _ReportPaginaState extends State<ReportPagina> {
     final testo = Theme.of(context).textTheme;
     return Scaffold(
       appBar: AppBar(
-        title: const TitoloConFirma('Report'),
+        title: const Text('Report'),
         actions: [PulsanteBlocca(sessione: widget.sessione)],
       ),
       body: LayoutBuilder(

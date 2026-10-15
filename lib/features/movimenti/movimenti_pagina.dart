@@ -14,7 +14,6 @@ import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
 import 'movimento_modulo.dart';
 import 'riga_movimento.dart';
-import '../comuni/firma_versione.dart';
 
 /// Periodi già pronti (o date a scelta).
 enum _Periodo {
@@ -216,7 +215,7 @@ class _MovimentiPaginaState extends State<MovimentiPagina> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const TitoloConFirma('Movimenti'),
+          title: const Text('Movimenti'),
           actions: [PulsanteBlocca(sessione: _sessione)],
         ),
         floatingActionButton: FloatingActionButton.extended(

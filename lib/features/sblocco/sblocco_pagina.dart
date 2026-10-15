@@ -5,7 +5,6 @@ import '../../core/sessione.dart';
 import '../comuni/campo_secret_key.dart';
 import '../comuni/errori.dart';
 import '../comuni/nuova_password.dart';
-import '../comuni/firma_versione.dart';
 
 /// Archivio bloccato: si apre con la password principale.
 class SbloccoPagina extends StatefulWidget {
@@ -169,7 +168,7 @@ class _RecuperoPaginaState extends State<RecuperoPagina> {
     final testo = Theme.of(context).textTheme.bodyLarge;
     return PaginaCentrata(
       appBar: AppBar(
-        title: TitoloConFirma(
+        title: Text(
           _passoPassword ? 'Nuova password (2 di 2)' : 'Secret Key (1 di 2)',
         ),
         leading: BackButton(

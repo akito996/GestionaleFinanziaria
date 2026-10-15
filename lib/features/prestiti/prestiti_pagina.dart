@@ -11,7 +11,6 @@ import '../movimenti/riga_movimento.dart';
 import 'avviso_maxi.dart';
 import 'prestito_modulo.dart';
 import '../comuni/avvisi.dart';
-import '../comuni/firma_versione.dart';
 
 String etichettaTipoPrestito(String tipo) => switch (tipo) {
   TipoPrestito.mutuo => 'Mutuo',
@@ -38,7 +37,7 @@ class _PrestitiPaginaState extends State<PrestitiPagina> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const TitoloConFirma('Prestiti e rate'),
+        title: const Text('Prestiti e rate'),
         actions: [PulsanteBlocca(sessione: widget.sessione)],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -281,7 +280,7 @@ class PrestitoPagina extends StatelessWidget {
         String euro(int v) => Importo.formatta(v, p.valuta);
         return Scaffold(
           appBar: AppBar(
-            title: TitoloConFirma(p.nome),
+            title: Text(p.nome),
             actions: [
               IconButton(
                 tooltip: 'Modifica',

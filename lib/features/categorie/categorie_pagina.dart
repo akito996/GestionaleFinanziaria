@@ -7,7 +7,6 @@ import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
 import 'albero_vista.dart';
 import '../comuni/avvisi.dart';
-import '../comuni/firma_versione.dart';
 
 /// Gestione delle categorie: albero senza limiti, aggiungi sottocategoria,
 /// rinomina, archivia (con Annulla).
@@ -74,7 +73,7 @@ class CategoriePagina extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const TitoloConFirma('Categorie'),
+        title: const Text('Categorie'),
         actions: [PulsanteBlocca(sessione: sessione)],
       ),
       floatingActionButton: FloatingActionButton.extended(

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'firma_versione.dart';
-
 /// Lunghezza minima della password principale.
 const int lunghezzaMinimaPassword = 12;
 
@@ -96,11 +94,7 @@ class PaginaCentrata extends StatelessWidget {
               constraints: const BoxConstraints(maxWidth: 560),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ...children,
-                  // Senza barra in alto la versione sta in fondo alla pagina.
-                  if (appBar == null) const FirmaInFondo(),
-                ],
+                children: children,
               ),
             ),
           ),

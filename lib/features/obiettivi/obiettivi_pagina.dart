@@ -14,7 +14,6 @@ import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
 import '../movimenti/riga_movimento.dart';
 import '../comuni/avvisi.dart';
-import '../comuni/firma_versione.dart';
 
 /// Obiettivi di risparmio personali e collette con altre persone.
 class ObiettiviPagina extends StatefulWidget {
@@ -36,7 +35,7 @@ class _ObiettiviPaginaState extends State<ObiettiviPagina> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const TitoloConFirma('Obiettivi e collette'),
+        title: const Text('Obiettivi e collette'),
         actions: [PulsanteBlocca(sessione: widget.sessione)],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -227,7 +226,7 @@ class ObiettivoPagina extends StatelessWidget {
         };
         return Scaffold(
           appBar: AppBar(
-            title: TitoloConFirma(o.nome),
+            title: Text(o.nome),
             actions: [
               IconButton(
                 tooltip: 'Copia riepilogo',
