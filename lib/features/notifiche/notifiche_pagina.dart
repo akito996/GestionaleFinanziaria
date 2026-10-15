@@ -5,6 +5,7 @@ import '../../core/sessione.dart';
 import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
 import 'riga_notifica.dart';
+import '../comuni/firma_versione.dart';
 
 /// Scorciatoie dei filtri.
 enum _Vista { tutte, daLeggere, daConfermare }
@@ -58,7 +59,7 @@ class _NotifichePaginaState extends State<NotifichePagina> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifiche'),
+        title: const TitoloConFirma('Notifiche'),
         actions: [PulsanteBlocca(sessione: widget.sessione, campanella: false)],
       ),
       body: StreamBuilder<List<Notifica>>(

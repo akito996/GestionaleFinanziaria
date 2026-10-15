@@ -16,6 +16,7 @@ import '../movimenti/movimenti_pagina.dart';
 import '../notifiche/campanella.dart';
 import '../sync/sync_pagina.dart';
 import '../obiettivi/obiettivi_pagina.dart';
+import 'firma_versione.dart';
 import 'icone.dart';
 import 'layout.dart';
 import 'avvisi.dart';
@@ -52,6 +53,8 @@ class PulsanteBlocca extends StatelessWidget {
             ScaffoldMessenger.of(context).clearSnackBars();
             sessione.blocca();
           },
+          // Tocco lungo: versione, licenza e codice sorgente.
+          onLongPress: () => apriInformazioni(context),
         ),
       ],
     );

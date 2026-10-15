@@ -6,6 +6,7 @@ import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
 import '../movimenti/riga_movimento.dart';
 import 'archivio_remoto.dart';
+import '../comuni/firma_versione.dart';
 
 /// "oggi alle 14:32", "ieri alle 9:05", "lun 12 ott alle 18:00".
 String quandoSincronizzato(BuildContext context, DateTime quando) {
@@ -149,7 +150,9 @@ class SincronizzazionePagina extends StatelessWidget {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => Scaffold(
-          appBar: AppBar(title: const Text('Usa l\'archivio di Drive')),
+          appBar: AppBar(
+            title: const TitoloConFirma('Usa l\'archivio di Drive'),
+          ),
           body: LayoutBuilder(
             builder: (context, vincoli) => ListView(
               padding: marginiPagina(vincoli),
@@ -175,7 +178,7 @@ class SincronizzazionePagina extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sincronizzazione'),
+        title: const TitoloConFirma('Sincronizzazione'),
         actions: [PulsanteBlocca(sessione: sessione, sincronizzazione: false)],
       ),
       body: ValueListenableBuilder<StatoSync>(

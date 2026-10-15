@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../comuni/firma_versione.dart';
 import '../../core/crypto/eccezioni.dart';
 import '../../core/sessione.dart';
 import '../../core/sync/sincronizzatore.dart';
@@ -264,7 +265,7 @@ class _CollegaDispositivoState extends State<CollegaDispositivo> {
     return PaginaCentrata(
       appBar: AppBar(
         leading: BackButton(onPressed: widget.onIndietro),
-        title: const Text('Ho già un archivio'),
+        title: const TitoloConFirma('Ho già un archivio'),
       ),
       children: [
         const Icon(Icons.devices_outlined, size: 56),

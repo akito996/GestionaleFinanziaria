@@ -12,6 +12,7 @@ import '../comuni/salva_file.dart';
 import '../grafici/grafici.dart';
 import '../grafici/grafici_avanzati.dart';
 import '../comuni/avvisi.dart';
+import '../comuni/firma_versione.dart';
 
 /// Un report a schermo, con i pulsanti per scaricarlo in PDF ed Excel.
 class ReportVista extends StatefulWidget {
@@ -85,7 +86,7 @@ class _ReportVistaState extends State<ReportVista> {
     final testo = Theme.of(context).textTheme;
     return Scaffold(
       appBar: AppBar(
-        title: Text(d.titolo),
+        title: TitoloConFirma(d.titolo),
         actions: [
           IconButton(
             tooltip: 'Scarica in PDF',

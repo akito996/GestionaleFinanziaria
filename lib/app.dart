@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/sessione.dart';
-import 'features/comuni/firma_versione.dart';
 import 'features/comuni/navigazione.dart';
 import 'features/primo_avvio/primo_avvio_pagina.dart';
 import 'features/sblocco/sblocco_pagina.dart';
@@ -65,13 +64,6 @@ class _GestionaleAppState extends State<GestionaleApp> {
         brightness: Brightness.dark,
         useMaterial3: true,
         snackBarTheme: _avvisi,
-      ),
-      // La versione, come una firma, sopra tutte le schermate.
-      builder: (context, child) => Stack(
-        children: [
-          ?child,
-          const Positioned.fill(child: FirmaVersione()),
-        ],
       ),
       home: ListenableBuilder(
         listenable: sessione,

@@ -11,6 +11,7 @@ import '../comuni/errori.dart';
 import '../comuni/nuova_password.dart';
 import '../comuni/salva_file.dart';
 import '../sync/archivio_remoto.dart';
+import '../comuni/firma_versione.dart';
 
 /// Primo avvio: spiegazione → password → Secret Key (salva file o copia) → verifica.
 /// L'archivio viene creato solo alla fine, dopo la verifica.
@@ -233,7 +234,7 @@ class _PrimoAvvioPaginaState extends State<PrimoAvvioPagina> {
   Widget _sceltaPassword(BuildContext context) {
     return PaginaCentrata(
       appBar: AppBar(
-        title: const Text('Password principale'),
+        title: const TitoloConFirma('Password principale'),
         leading: BackButton(onPressed: _occupato ? null : _ricomincia),
       ),
       children: [
@@ -266,7 +267,7 @@ class _PrimoAvvioPaginaState extends State<PrimoAvvioPagina> {
     final creata = _creata!;
     return PaginaCentrata(
       appBar: AppBar(
-        title: const Text('La tua Secret Key'),
+        title: const TitoloConFirma('La tua Secret Key'),
         leading: BackButton(onPressed: _ricomincia),
       ),
       children: [
@@ -358,7 +359,7 @@ class _PrimoAvvioPaginaState extends State<PrimoAvvioPagina> {
   Widget _verificaSecretKey(BuildContext context) {
     return PaginaCentrata(
       appBar: AppBar(
-        title: const Text('Verifica'),
+        title: const TitoloConFirma('Verifica'),
         leading: BackButton(
           onPressed: _occupato
               ? null

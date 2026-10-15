@@ -237,8 +237,25 @@ void main() {
     // Totale e portafogli restano sempre.
     expect(find.text('Totale'), findsOneWidget);
     expect(find.text('Portafogli'), findsOneWidget);
-    // La versione, come firma, è sempre visibile.
+    // La versione, come firma, è sotto il titolo in alto.
     expect(find.text(Versione.firma), findsOneWidget);
+
+    // Tocco lungo sul lucchetto: Informazioni (versione, licenza, codice).
+    await tester.longPress(
+      find.byTooltip('Archivio aperto: tocca per bloccarlo').first,
+    );
+    await assestamento(tester);
+    await attendi(tester, find.text('Informazioni'));
+    expect(find.text('Licenza'), findsOneWidget);
+    expect(find.text('Codice sorgente'), findsOneWidget);
+    await tocca(tester, find.byType(BackButton));
+    await assestamento(tester);
+
+    // Anche un tocco sulla versione sotto il titolo apre Informazioni.
+    await tocca(tester, find.text(Versione.firma));
+    await attendi(tester, find.text('Licenze delle librerie usate'));
+    await tocca(tester, find.byType(BackButton));
+    await assestamento(tester);
 
     await chiudi(tester);
   });

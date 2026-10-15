@@ -22,6 +22,7 @@ import 'entrate_previste.dart';
 import 'entrate_uscite.dart';
 import 'schede_panoramica.dart';
 import '../comuni/avvisi.dart';
+import '../comuni/firma_versione.dart';
 
 /// Panoramica: totale e portafogli (sempre), poi le schede scelte dall'utente
 /// nell'ordine che preferisce, e "+ Movimento". Su Windows: Ctrl+N = nuovo
@@ -145,7 +146,7 @@ class _HomePaginaState extends State<HomePagina> {
             autofocus: true,
             child: Scaffold(
               appBar: AppBar(
-                title: const Text('GestionaleFinanziaria'),
+                title: const TitoloConFirma('GestionaleFinanziaria'),
                 actions: [
                   if (portafogli != null && !vuoto)
                     IconButton(

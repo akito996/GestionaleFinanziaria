@@ -16,6 +16,7 @@ import '../movimenti/riga_movimento.dart';
 import 'avviso_obiettivi.dart';
 import 'portafoglio_modulo.dart';
 import '../comuni/avvisi.dart';
+import '../comuni/firma_versione.dart';
 
 /// Dettaglio di un portafoglio: saldo e movimenti, con modifica e archiviazione.
 class PortafoglioPagina extends StatelessWidget {
@@ -91,7 +92,7 @@ class PortafoglioPagina extends StatelessWidget {
         }
         return Scaffold(
           appBar: AppBar(
-            title: Text(p.portafoglio.nome),
+            title: TitoloConFirma(p.portafoglio.nome),
             actions: [
               IconButton(
                 tooltip: 'Modifica portafoglio',
