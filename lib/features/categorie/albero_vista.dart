@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../comuni/sezioni.dart';
 import '../../core/db/archivio.dart';
 import '../../core/db/contabilita.dart';
 import '../../core/sessione.dart';
@@ -71,15 +72,22 @@ class _AlberoCategorieVistaState extends State<AlberoCategorieVista> {
   bool _aperta(String id) =>
       _aperte.contains(id) || (_aperteAllAvvio && !_chiuse.contains(id));
 
-  void _alterna(String id) => setState(() {
-    if (_aperta(id)) {
-      _aperte.remove(id);
-      _chiuse.add(id);
-    } else {
-      _chiuse.remove(id);
-      _aperte.add(id);
+  /// [riga]: il punto toccato, che resta in vista se il ramo si chiude.
+  void _alterna(String id, BuildContext riga) {
+    final chiudo = _aperta(id);
+    setState(() {
+      if (chiudo) {
+        _aperte.remove(id);
+        _chiuse.add(id);
+      } else {
+        _chiuse.remove(id);
+        _aperte.add(id);
+      }
+    });
+    if (chiudo) {
+      mantieniInVista(() => riga);
     }
-  });
+  }
 
   void _tutte(bool aperte) => setState(() {
     _aperte.clear();
@@ -242,13 +250,15 @@ class _AlberoCategorieVistaState extends State<AlberoCategorieVista> {
             SizedBox(
               width: 32,
               child: haFigli
-                  ? IconButton(
-                      padding: EdgeInsets.zero,
-                      tooltip: aperta ? 'Chiudi' : 'Apri',
-                      icon: Icon(
-                        aperta ? Icons.expand_more : Icons.chevron_right,
+                  ? Builder(
+                      builder: (riga) => IconButton(
+                        padding: EdgeInsets.zero,
+                        tooltip: aperta ? 'Chiudi' : 'Apri',
+                        icon: Icon(
+                          aperta ? Icons.expand_more : Icons.chevron_right,
+                        ),
+                        onPressed: () => _alterna(c.id, riga),
                       ),
-                      onPressed: () => _alterna(c.id),
                     )
                   : null,
             ),

@@ -1,7 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../../core/sessione.dart';
 import 'layout.dart';
+
+/// Dopo "Mostra meno" la parte chiusa (il pulsante, la sezione, la voce)
+/// resta sullo schermo: la pagina si è accorciata e, se [contesto] è finito
+/// sopra o sotto il bordo visibile (es. sotto la barra in basso), la pagina
+/// scorre fino a lì. Altrimenti sembrerebbe sparito tutto.
+void mantieniInVista(BuildContext? Function() contesto) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final c = contesto();
+    if (c == null || !c.mounted) {
+      return;
+    }
+    final oggetto = c.findRenderObject();
+    final posizione = Scrollable.maybeOf(c)?.position;
+    if (oggetto == null || !oggetto.attached || posizione == null) {
+      return;
+    }
+    final vista = RenderAbstractViewport.maybeOf(oggetto);
+    if (vista == null) {
+      return;
+    }
+    // Scorrimento con l'elemento in cima / in fondo alla parte visibile.
+    final inCima = vista.getOffsetToReveal(oggetto, 0).offset;
+    final inFondo = vista.getOffsetToReveal(oggetto, 1).offset;
+    final attuale = posizione.pixels;
+    double? destinazione;
+    if (attuale > inCima) {
+      // Finito sopra il bordo: torna visibile, un po' sotto il bordo in alto.
+      destinazione = vista.getOffsetToReveal(oggetto, 0.2).offset;
+    } else if (attuale < inFondo) {
+      // Finito sotto il bordo (o sotto la barra in basso): un po' più su.
+      destinazione = vista.getOffsetToReveal(oggetto, 0.8).offset;
+    }
+    if (destinazione != null) {
+      posizione.animateTo(
+        destinazione.clamp(
+          posizione.minScrollExtent,
+          posizione.maxScrollExtent,
+        ),
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  });
+}
 
 /// Ricorda una scelta "aperta/chiusa" (preferenza del dispositivo).
 mixin _Ricordata<T extends StatefulWidget> on State<T> {
@@ -24,6 +69,9 @@ mixin _Ricordata<T extends StatefulWidget> on State<T> {
   void alterna() {
     setState(() => aperta = !aperta);
     sessione.statistiche.salvaPreferenza(chiavePreferenza, aperta ? '1' : '0');
+    if (!aperta) {
+      mantieniInVista(() => context);
+    }
   }
 }
 
@@ -202,12 +250,29 @@ class ElencoRipiegabile extends StatefulWidget {
 
 class _ElencoRipiegabileState extends State<ElencoRipiegabile> with _Ricordata {
   final Set<String> _aperte = {};
+  final _pulsante = GlobalKey();
+  final _chiavi = <String, GlobalKey>{};
+
+  GlobalKey _chiaveVoce(String id) => _chiavi.putIfAbsent(id, GlobalKey.new);
 
   @override
   Sessione get sessione => widget.sessione;
 
   @override
   String get chiavePreferenza => 'elenco.${widget.chiave}.completo';
+
+  /// Tutte ridotte o tutte complete: il pulsante in cima resta in vista.
+  void _alternaTutte() {
+    setState(_aperte.clear);
+    alterna();
+    mantieniInVista(() => _pulsante.currentContext);
+  }
+
+  /// Una voce aperta da ridotta torna a una riga, e resta in vista.
+  void _riduci(String id) {
+    setState(() => _aperte.remove(id));
+    mantieniInVista(() => _chiaveVoce(id).currentContext);
+  }
 
   @override
   bool get predefinita => true;
@@ -219,12 +284,10 @@ class _ElencoRipiegabileState extends State<ElencoRipiegabile> with _Ricordata {
       intestazione: [
         ...widget.intestazione,
         Align(
+          key: _pulsante,
           alignment: AlignmentDirectional.centerEnd,
           child: TextButton.icon(
-            onPressed: () => setState(() {
-              _aperte.clear();
-              alterna();
-            }),
+            onPressed: _alternaTutte,
             icon: Icon(aperta ? Icons.unfold_less : Icons.unfold_more),
             label: Text(aperta ? 'Mostra meno' : 'Mostra di più'),
           ),
@@ -236,11 +299,12 @@ class _ElencoRipiegabileState extends State<ElencoRipiegabile> with _Ricordata {
             aperta
                 ? v.completa
                 : Column(
+                    key: _chiaveVoce(v.id),
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       v.completa,
                       TextButton.icon(
-                        onPressed: () => setState(() => _aperte.remove(v.id)),
+                        onPressed: () => _riduci(v.id),
                         icon: const Icon(Icons.expand_less),
                         label: const Text('Mostra meno'),
                       ),
@@ -248,6 +312,7 @@ class _ElencoRipiegabileState extends State<ElencoRipiegabile> with _Ricordata {
                   )
           else
             Card(
+              key: _chiaveVoce(v.id),
               child: ListTile(
                 leading: v.icona == null ? null : Icon(v.icona),
                 title: Text(

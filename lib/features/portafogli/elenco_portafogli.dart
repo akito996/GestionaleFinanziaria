@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../comuni/sezioni.dart';
 import '../../core/db/archivio.dart';
 import '../../core/db/carte_credito.dart';
 import '../../core/db/contabilita.dart';
@@ -49,6 +50,9 @@ class _ElencoPortafogliState extends State<ElencoPortafogli> {
   /// `false` = "mostra meno" (predefinito: schermata più pulita).
   bool _tutti = false;
 
+  /// Il pulsante "Mostra altro / Mostra meno" (resta in vista dopo il tocco).
+  final _pulsante = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -65,6 +69,10 @@ class _ElencoPortafogliState extends State<ElencoPortafogli> {
       _preferenza,
       _tutti ? '1' : '0',
     );
+    // La lista si accorcia: senza questo il pulsante finirebbe fuori vista.
+    if (!_tutti) {
+      mantieniInVista(() => _pulsante.currentContext);
+    }
   }
 
   @override
@@ -109,6 +117,7 @@ class _ElencoPortafogliState extends State<ElencoPortafogli> {
               for (final p in nascosti) riga(p),
             if (nascosti.isNotEmpty)
               Align(
+                key: _pulsante,
                 child: TextButton.icon(
                   onPressed: _alterna,
                   icon: Icon(_tutti ? Icons.expand_less : Icons.expand_more),
