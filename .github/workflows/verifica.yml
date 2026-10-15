@@ -126,6 +126,18 @@ jobs:
             build/windows/x64/runner/Release/
       - name: Peso della build
         run: python tool/dimensioni.py build/windows/x64/runner/Release
+      # Firma del programma (Authenticode): senza, Windows mostra "PC
+      # protetto da Windows" (SmartScreen) a chi lo scarica.
+      - name: Firma del programma Windows
+        shell: pwsh
+        run: |
+          $file = Get-ChildItem build/windows/x64/runner/Release -Recurse -Include *.exe, *.dll
+          $righe = foreach ($f in $file) {
+            $firma = Get-AuthenticodeSignature $f.FullName
+            $chi = if ($firma.SignerCertificate) { ($firma.SignerCertificate.Subject -split ',')[0] } else { 'nessuno' }
+            "$($f.Name): $($firma.Status) ($chi)"
+          }
+          echo "::notice title=Firma Windows::$($righe -join ' · ')"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: GestionaleFinanziaria-windows-${{ github.sha }}
@@ -202,6 +214,13 @@ jobs:
             echo "keyAlias=$KEY_ALIAS"
             echo "storeFile=upload-keystore.jks"
           } > android/key.properties
+          # Dati pubblici del certificato (nessun segreto): scadenza e chiave.
+          dati="$(keytool -list -v -keystore android/app/upload-keystore.jks \
+            -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" 2>/dev/null || true)"
+          validita="$(echo "$dati" | grep -m1 -E '^Valid from' | sed 's/^Valid from: //' || true)"
+          chiave="$(echo "$dati" | grep -m1 -E 'Subject Public Key Algorithm' | sed 's/.*Algorithm: //' || true)"
+          firma="$(echo "$dati" | grep -m1 -E '^Signature algorithm name' | sed 's/.*name: //' || true)"
+          echo "::notice title=Certificato di firma Android::Validità: $validita · Chiave: $chiave · Algoritmo: $firma"
       # Un APK per tipo di processore: arm64-v8a (quasi tutti i telefoni e
       # tablet) e armeabi-v7a (dispositivi vecchi a 32 bit). Simboli di debug
       # in un file a parte (artifact "simboli").
@@ -217,16 +236,43 @@ jobs:
           done
       - name: Peso delle build
         run: python3 tool/dimensioni.py build/app/outputs/flutter-apk/*-release.apk
-      # Impronte del certificato di firma (pubbliche: sono dentro ogni APK).
-      # Servono per i client OAuth "Android" in Google Cloud (accesso a Drive).
-      - name: Impronte della firma
+      # Prima di ogni rilascio: ogni APK firmato con la chiave definitiva e
+      # con gli schemi moderni (v2/v3), impronta SHA-1 per i client OAuth
+      # Android (pubblica), e librerie a 64 bit allineate a 16 KB (telefoni
+      # Android 15+ con pagine da 16 KB: senza, l'app non si avvia).
+      - name: Verifica firme e allineamento APK
         run: |
           strumenti="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
-          for variante in ufficiale prova; do
-            apk="build/app/outputs/flutter-apk/app-arm64-v8a-$variante-release.apk"
-            sha1="$("$strumenti/apksigner" verify --print-certs "$apk" | grep -m1 'SHA-1 digest' | awk '{print $NF}')"
-            leggibile="$(echo "$sha1" | tr 'a-f' 'A-F' | sed 's/../&:/g; s/:$//')"
-            echo "::notice title=Impronta SHA-1 ($variante)::$leggibile"
+          ndk="$(ls -d "$ANDROID_HOME"/ndk/* | sort -V | tail -1)"
+          readelf="$(ls "$ndk"/toolchains/llvm/prebuilt/*/bin/llvm-readelf | head -1)"
+          for apk in build/app/outputs/flutter-apk/*-release.apk; do
+            nome="$(basename "$apk" -release.apk)"
+            verifica="$("$strumenti/apksigner" verify --verbose --print-certs "$apk")"
+            schemi="$(echo "$verifica" | grep -E '^Verified using v[0-9.]+ scheme' \
+              | sed -E 's/^Verified using (v[0-9.]+) scheme.*: (true|false)$/\1 \2/' \
+              | awk '$2=="true"{print $1}' | paste -sd ',' -)"
+            titolare="$(echo "$verifica" | grep -m1 'certificate DN' | sed 's/.*DN: //')"
+            chiave="$(echo "$verifica" | grep -m1 'key algorithm' | awk '{print $NF}') $(echo "$verifica" | grep -m1 'key size' | awk '{print $NF}') bit"
+            sha1="$(echo "$verifica" | grep -m1 'SHA-1 digest' | awk '{print $NF}' | tr 'a-f' 'A-F' | sed 's/../&:/g; s/:$//')"
+            pagine="non serve (32 bit)"
+            if [[ "$nome" == *arm64* ]]; then
+              pagine="sì"
+              "$strumenti/zipalign" -c -P 16 4 "$apk" > /dev/null 2>&1 || pagine="no (zip)"
+              rm -rf so && mkdir so && unzip -q "$apk" 'lib/arm64-v8a/*.so' -d so
+              for so in so/lib/arm64-v8a/*.so; do
+                if "$readelf" -lW "$so" | awk '$1=="LOAD"{print $NF}' | grep -qvE '^0x(4000|8000|10000)$'; then
+                  pagine="no ($(basename "$so"))"
+                fi
+              done
+            fi
+            echo "::notice title=Firma $nome::Schemi: $schemi · $chiave · $titolare · SHA-1 $sha1 · 16 KB: $pagine"
+            if [[ "$pagine" == no* ]]; then
+              echo "::warning title=16 KB $nome::Non allineato a 16 KB: $pagine"
+            fi
+            if [[ "$schemi" != *v2* ]]; then
+              echo "::error title=Firma $nome::APK senza firma v2: non si installa sui telefoni moderni."
+              exit 1
+            fi
           done
       # Il file da installare per provare (telefoni e tablet a 64 bit), con un
       # nome chiaro. Lo zip con tutti gli APK resta per i casi particolari.
