@@ -8,6 +8,7 @@ import '../../core/report/report_personalizzati.dart';
 import '../../core/sessione.dart';
 import '../comuni/campi.dart';
 import '../comuni/errori.dart';
+import '../comuni/filtri.dart';
 import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
 import 'report_vista.dart';
@@ -25,8 +26,52 @@ enum _Periodo {
   final String etichetta;
 }
 
+/// Le scelte per creare un report (una copia di lavoro nel pannello compatto).
+class _Opzioni {
+  Set<StrumentoReport> strumenti = {
+    StrumentoReport.entrateUscite,
+    StrumentoReport.costoVita,
+    StrumentoReport.entratePreviste,
+  };
+  Dettaglio dettaglio = Dettaglio.mese;
+  _Periodo periodo = _Periodo.ultimiDodici;
+  DateTime da = DateTime(DateTime.now().year, DateTime.now().month - 2);
+  DateTime a = DateUtils.dateOnly(DateTime.now());
+
+  _Opzioni copia() => _Opzioni()
+    ..strumenti = {...strumenti}
+    ..dettaglio = dettaglio
+    ..periodo = periodo
+    ..da = da
+    ..a = a;
+
+  void prendiDa(_Opzioni altre) {
+    strumenti = {...altre.strumenti};
+    dettaglio = altre.dettaglio;
+    periodo = altre.periodo;
+    da = altre.da;
+    a = altre.a;
+  }
+
+  /// "Entrate e uscite, Costo della vita · per mese · Ultimi 12 mesi".
+  String descrizione(BuildContext context) => [
+    strumenti.isEmpty
+        ? 'Nessuno strumento scelto'
+        : [for (final s in strumenti) s.etichetta].join(', '),
+    'dettaglio: ${dettaglio.etichetta.toLowerCase()}',
+    if (periodo == _Periodo.scelto)
+      '${MaterialLocalizations.of(context).formatMediumDate(da)} – '
+          '${MaterialLocalizations.of(context).formatMediumDate(a)}'
+    else
+      periodo.etichetta,
+  ].join(' · ');
+}
+
 /// Sezione Report: crea un report del gestionale (strumenti, dettaglio,
 /// periodo) e consulta i report automatici di ogni mese e di ogni anno.
+///
+/// Su telefono e tablet le scelte stanno nel pannello "Opzioni" e valgono
+/// con "Applica".
 class ReportPagina extends StatefulWidget {
   const ReportPagina({super.key, required this.sessione});
 
@@ -39,20 +84,12 @@ class ReportPagina extends StatefulWidget {
 class _ReportPaginaState extends State<ReportPagina> {
   late final Stream<List<ReportSalvato>> _salvati = widget.sessione.report
       .osserva();
-  final Set<StrumentoReport> _strumenti = {
-    StrumentoReport.entrateUscite,
-    StrumentoReport.costoVita,
-    StrumentoReport.entratePreviste,
-  };
-  Dettaglio _dettaglio = Dettaglio.mese;
-  _Periodo _periodo = _Periodo.ultimiDodici;
-  late DateTime _da = DateTime(DateTime.now().year, DateTime.now().month - 2);
-  late DateTime _a = DateUtils.dateOnly(DateTime.now());
+  final _opzioni = _Opzioni();
   bool _inCorso = false;
 
   ({DateTime da, DateTime a}) get _intervallo {
     final oggi = DateUtils.dateOnly(DateTime.now());
-    return switch (_periodo) {
+    return switch (_opzioni.periodo) {
       _Periodo.meseCorrente => (da: DateTime(oggi.year, oggi.month), a: oggi),
       _Periodo.ultimiTre => (da: DateTime(oggi.year, oggi.month - 2), a: oggi),
       _Periodo.ultimiDodici => (
@@ -60,7 +97,7 @@ class _ReportPaginaState extends State<ReportPagina> {
         a: oggi,
       ),
       _Periodo.annoCorrente => (da: DateTime(oggi.year), a: oggi),
-      _Periodo.scelto => (da: _da, a: _a),
+      _Periodo.scelto => (da: _opzioni.da, a: _opzioni.a),
     };
   }
 
@@ -69,8 +106,8 @@ class _ReportPaginaState extends State<ReportPagina> {
     setState(() => _inCorso = true);
     try {
       final documento = await widget.sessione.reportPersonalizzati.crea(
-        strumenti: _strumenti,
-        dettaglio: _dettaglio,
+        strumenti: _opzioni.strumenti,
+        dettaglio: _opzioni.dettaglio,
         da: i.da,
         a: i.a,
       );
@@ -98,6 +135,62 @@ class _ReportPaginaState extends State<ReportPagina> {
     MaterialPageRoute<void>(builder: (_) => ReportVista(documento: documento)),
   );
 
+  Widget _pulsanteCrea() => FilledButton.icon(
+    onPressed: _opzioni.strumenti.isEmpty || _inCorso ? null : _crea,
+    icon: _inCorso
+        ? const SizedBox.square(
+            dimension: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : const Icon(Icons.assessment_outlined),
+    label: const Text('Crea il report'),
+  );
+
+  /// Telefono e tablet: riepilogo delle scelte, "Opzioni" e "Crea il report".
+  Widget _schedaCompatta(BuildContext context) => Card(
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Crea un report',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 6),
+          Text(_opzioni.descrizione(context)),
+          const SizedBox(height: 12),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                onPressed: _apriOpzioni,
+                icon: const Icon(Icons.tune),
+                label: const Text('Opzioni'),
+              ),
+              _pulsanteCrea(),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+
+  Future<void> _apriOpzioni() async {
+    final bozza = _opzioni.copia();
+    final applica = await apriPannelloFiltri(
+      context,
+      titolo: 'Opzioni del report',
+      azzera: () => bozza.prendiDa(_Opzioni()),
+      campi: (context, aggiorna) => _campi(context, bozza, aggiorna),
+    );
+    if (applica) {
+      setState(() => _opzioni.prendiDa(bozza));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final testo = Theme.of(context).textTheme;
@@ -110,117 +203,33 @@ class _ReportPaginaState extends State<ReportPagina> {
         builder: (context, vincoli) => ListView(
           padding: marginiPagina(vincoli, sotto: 32),
           children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text('Crea un report', style: testo.titleMedium),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Scegli cosa analizzare, ogni quanto raggruppare i dati e '
-                      'il periodo: lo vedi subito e puoi scaricarlo in PDF o '
-                      'Excel.',
-                    ),
-                    const SizedBox(height: 12),
-                    Text('Strumenti', style: testo.labelLarge),
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final s in StrumentoReport.values)
-                          FilterChip(
-                            label: Text(s.etichetta),
-                            selected: _strumenti.contains(s),
-                            onSelected: (v) => setState(
-                              () =>
-                                  v ? _strumenti.add(s) : _strumenti.remove(s),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text('Dettaglio', style: testo.labelLarge),
-                    const SizedBox(height: 6),
-                    SegmentedButton<Dettaglio>(
-                      segments: [
-                        for (final d in Dettaglio.values)
-                          ButtonSegment(value: d, label: Text(d.etichetta)),
-                      ],
-                      selected: {_dettaglio},
-                      showSelectedIcon: false,
-                      onSelectionChanged: (s) =>
-                          setState(() => _dettaglio = s.first),
-                    ),
-                    const SizedBox(height: 12),
-                    Text('Periodo', style: testo.labelLarge),
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final p in _Periodo.values)
-                          ChoiceChip(
-                            label: Text(p.etichetta),
-                            selected: _periodo == p,
-                            onSelected: (_) => setState(() => _periodo = p),
-                          ),
-                      ],
-                    ),
-                    if (_periodo == _Periodo.scelto)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: CampoData(
-                                etichetta: 'Dal',
-                                valore: _da,
-                                primo: DateTime(2000),
-                                onChanged: (d) => setState(() {
-                                  _da = d;
-                                  if (_a.isBefore(d)) {
-                                    _a = d;
-                                  }
-                                }),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: CampoData(
-                                etichetta: 'Al',
-                                valore: _a,
-                                primo: _da,
-                                onChanged: (d) => setState(() => _a = d),
-                              ),
-                            ),
-                          ],
-                        ),
+            if (filtriCompatti(vincoli))
+              _schedaCompatta(context)
+            else
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text('Crea un report', style: testo.titleMedium),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Scegli cosa analizzare, ogni quanto raggruppare i dati e '
+                        'il periodo: lo vedi subito e puoi scaricarlo in PDF o '
+                        'Excel.',
                       ),
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: FilledButton.icon(
-                        onPressed: _strumenti.isEmpty || _inCorso
-                            ? null
-                            : _crea,
-                        icon: _inCorso
-                            ? const SizedBox.square(
-                                dimension: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.assessment_outlined),
-                        label: const Text('Crea il report'),
+                      const SizedBox(height: 12),
+                      ..._campi(context, _opzioni, setState),
+                      const SizedBox(height: 16),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: _pulsanteCrea(),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
             const SizedBox(height: 16),
             StreamBuilder<List<ReportSalvato>>(
               stream: _salvati,
@@ -234,6 +243,92 @@ class _ReportPaginaState extends State<ReportPagina> {
       ),
     );
   }
+}
+
+/// Le opzioni (in pagina o nel pannello).
+List<Widget> _campi(
+  BuildContext context,
+  _Opzioni o,
+  void Function(VoidCallback) cambia,
+) {
+  final testo = Theme.of(context).textTheme;
+  return [
+    Text('Strumenti', style: testo.labelLarge),
+    const SizedBox(height: 6),
+    Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final s in StrumentoReport.values)
+          FilterChip(
+            label: Text(s.etichetta),
+            selected: o.strumenti.contains(s),
+            onSelected: (v) =>
+                cambia(() => v ? o.strumenti.add(s) : o.strumenti.remove(s)),
+          ),
+      ],
+    ),
+    const SizedBox(height: 12),
+    Text('Dettaglio', style: testo.labelLarge),
+    const SizedBox(height: 6),
+    Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final d in Dettaglio.values)
+          ChoiceChip(
+            label: Text(d.etichetta),
+            selected: o.dettaglio == d,
+            onSelected: (_) => cambia(() => o.dettaglio = d),
+          ),
+      ],
+    ),
+    const SizedBox(height: 12),
+    Text('Periodo', style: testo.labelLarge),
+    const SizedBox(height: 6),
+    Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final p in _Periodo.values)
+          ChoiceChip(
+            label: Text(p.etichetta),
+            selected: o.periodo == p,
+            onSelected: (_) => cambia(() => o.periodo = p),
+          ),
+      ],
+    ),
+    if (o.periodo == _Periodo.scelto)
+      Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: CampoData(
+                etichetta: 'Dal',
+                valore: o.da,
+                primo: DateTime(2000),
+                onChanged: (d) => cambia(() {
+                  o.da = d;
+                  if (o.a.isBefore(d)) {
+                    o.a = d;
+                  }
+                }),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: CampoData(
+                etichetta: 'Al',
+                valore: o.a,
+                primo: o.da,
+                onChanged: (d) => cambia(() => o.a = d),
+              ),
+            ),
+          ],
+        ),
+      ),
+  ];
 }
 
 /// I report creati da soli, raggruppati per anno: l'annuale in cima.

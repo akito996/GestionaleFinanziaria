@@ -9,6 +9,7 @@ import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import '../categorie/scelta_categoria.dart';
 import '../comuni/campi.dart';
+import '../comuni/filtri.dart';
 import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
 import 'movimento_modulo.dart';
@@ -28,8 +29,84 @@ enum _Periodo {
   final String etichetta;
 }
 
+/// Le scelte di ricerca e filtro (una copia di lavoro nel pannello compatto).
+class _Filtri {
+  String testo = '';
+  _Periodo periodo = _Periodo.sempre;
+  DateTime? dal;
+  DateTime? al;
+  String? effetto;
+  String? categoriaId;
+  String categoriaNome = '';
+  Set<String>? categorie;
+  String? portafoglioId;
+  String portafoglioNome = '';
+
+  _Filtri copia() => _Filtri()
+    ..testo = testo
+    ..periodo = periodo
+    ..dal = dal
+    ..al = al
+    ..effetto = effetto
+    ..categoriaId = categoriaId
+    ..categoriaNome = categoriaNome
+    ..categorie = categorie
+    ..portafoglioId = portafoglioId
+    ..portafoglioNome = portafoglioNome;
+
+  /// Quanti filtri sono attivi.
+  int get attivi => [
+    testo.trim().isNotEmpty,
+    periodo != _Periodo.sempre,
+    effetto != null,
+    categoriaId != null,
+    portafoglioId != null,
+  ].where((a) => a).length;
+
+  (DateTime?, DateTime?) intervallo() {
+    final oggi = DateUtils.dateOnly(DateTime.now());
+    return switch (periodo) {
+      _Periodo.sempre => (null, null),
+      _Periodo.questoMese => (
+        DateTime(oggi.year, oggi.month),
+        DateTime(oggi.year, oggi.month + 1, 0),
+      ),
+      _Periodo.meseScorso => (
+        DateTime(oggi.year, oggi.month - 1),
+        DateTime(oggi.year, oggi.month, 0),
+      ),
+      _Periodo.treMesi => (DateTime(oggi.year, oggi.month - 2), oggi),
+      _Periodo.anno => (DateTime(oggi.year), DateTime(oggi.year, 12, 31)),
+      _Periodo.date => (dal, al),
+    };
+  }
+
+  /// "Ultimi 3 mesi · Uscite · Spesa · «lidl»".
+  String descrizione(BuildContext context) {
+    final parti = [
+      if (periodo == _Periodo.date && dal != null && al != null)
+        '${dataLeggibile(context, dal!)} – ${dataLeggibile(context, al!)}'
+      else if (periodo != _Periodo.sempre)
+        periodo.etichetta,
+      switch (effetto) {
+        EffettoSaldo.entrata => 'Entrate',
+        EffettoSaldo.uscita => 'Uscite',
+        EffettoSaldo.trasferimento => 'Trasferimenti',
+        _ => '',
+      },
+      categoriaNome,
+      portafoglioNome,
+      if (testo.trim().isNotEmpty) '«${testo.trim()}»',
+    ].where((p) => p.isNotEmpty);
+    return parti.isEmpty ? 'Tutti i movimenti' : parti.join(' · ');
+  }
+}
+
 /// Tutti i movimenti, con la ricerca e i filtri per periodo, tipo, categoria
 /// e portafoglio. In alto quanti sono e quanto è entrato e uscito.
+///
+/// Sul PC i filtri sono nella pagina e agiscono subito; su telefono e tablet
+/// stanno nel pannello "Filtri" e agiscono con "Applica".
 class MovimentiPagina extends StatefulWidget {
   const MovimentiPagina({super.key, required this.sessione});
 
@@ -44,14 +121,7 @@ class _MovimentiPaginaState extends State<MovimentiPagina> {
 
   final _ricerca = TextEditingController();
   Timer? _attesa;
-  _Periodo _periodo = _Periodo.sempre;
-  DateTime? _dal;
-  DateTime? _al;
-  String? _effetto;
-  String? _categoriaId;
-  String _categoriaNome = '';
-  Set<String>? _categorie;
-  String? _portafoglioId;
+  _Filtri _filtri = _Filtri();
   int _limite = _pagina;
   late Stream<RisultatoMovimenti> _risultati = _cerca();
   late final Future<List<PortafoglioConSaldo>> _portafogli = widget
@@ -69,83 +139,71 @@ class _MovimentiPaginaState extends State<MovimentiPagina> {
     super.dispose();
   }
 
-  (DateTime?, DateTime?) _intervallo() {
-    final oggi = DateUtils.dateOnly(DateTime.now());
-    return switch (_periodo) {
-      _Periodo.sempre => (null, null),
-      _Periodo.questoMese => (
-        DateTime(oggi.year, oggi.month),
-        DateTime(oggi.year, oggi.month + 1, 0),
-      ),
-      _Periodo.meseScorso => (
-        DateTime(oggi.year, oggi.month - 1),
-        DateTime(oggi.year, oggi.month, 0),
-      ),
-      _Periodo.treMesi => (DateTime(oggi.year, oggi.month - 2), oggi),
-      _Periodo.anno => (DateTime(oggi.year), DateTime(oggi.year, 12, 31)),
-      _Periodo.date => (_dal, _al),
-    };
-  }
-
   Stream<RisultatoMovimenti> _cerca() {
-    final (da, a) = _intervallo();
+    final f = _filtri;
+    final (da, a) = f.intervallo();
     return _sessione.contabilita.osservaMovimentiFiltrati(
       FiltroMovimenti(
         da: da,
         a: a,
-        testo: _ricerca.text,
-        categorie: _categorie,
-        portafoglioId: _portafoglioId,
-        effetto: _effetto,
+        testo: f.testo,
+        categorie: f.categorie,
+        portafoglioId: f.portafoglioId,
+        effetto: f.effetto,
       ),
       limite: _limite,
     );
   }
 
-  /// Cambia un filtro e rifà la ricerca dall'inizio.
+  /// Cambia i filtri e rifà la ricerca dall'inizio.
   void _filtra(VoidCallback modifica) => setState(() {
     modifica();
     _limite = _pagina;
     _risultati = _cerca();
   });
 
-  bool get _conFiltri =>
-      _ricerca.text.isNotEmpty ||
-      _periodo != _Periodo.sempre ||
-      _effetto != null ||
-      _categoriaId != null ||
-      _portafoglioId != null;
-
   void _togliFiltri() => _filtra(() {
+    _filtri = _Filtri();
     _ricerca.clear();
-    _periodo = _Periodo.sempre;
-    _dal = null;
-    _al = null;
-    _effetto = null;
-    _categoriaId = null;
-    _categorie = null;
-    _portafoglioId = null;
   });
 
-  Future<void> _scegliCategoria() async {
-    final scelta = await scegliCategoria(
+  /// Telefono e tablet: le scelte su una copia, valide solo con "Applica".
+  Future<void> _apriPannello() async {
+    final bozza = _filtri.copia();
+    final ricerca = TextEditingController(text: bozza.testo);
+    final applica = await apriPannelloFiltri(
       context,
-      _sessione,
-      selezionata: _categoriaId,
-      titolo: 'Filtra per categoria',
+      titolo: 'Filtri',
+      azzera: () {
+        final vuoti = _Filtri();
+        bozza
+          ..testo = vuoti.testo
+          ..periodo = vuoti.periodo
+          ..dal = null
+          ..al = null
+          ..effetto = null
+          ..categoriaId = null
+          ..categoriaNome = ''
+          ..categorie = null
+          ..portafoglioId = null
+          ..portafoglioNome = '';
+        ricerca.clear();
+      },
+      campi: (context, aggiorna) => _campi(
+        context,
+        bozza,
+        cambia: aggiorna,
+        ricerca: ricerca,
+        onTesto: (t) => aggiorna(() => bozza.testo = t),
+      ),
     );
-    if (scelta.annullata) {
-      return;
+    ricerca.dispose();
+    if (applica) {
+      _filtra(() {
+        _filtri = bozza;
+        _ricerca.text = bozza.testo;
+      });
     }
-    final albero = AlberoCategorie(
-      await _sessione.contabilita.osservaCategorie().first,
-    );
-    final id = scelta.id;
-    _filtra(() {
-      _categoriaId = id;
-      _categorie = id == null ? null : albero.discendenti(id);
-      _categoriaNome = id == null ? '' : albero.percorso(id);
-    });
   }
 
   @override
@@ -175,7 +233,15 @@ class _MovimentiPaginaState extends State<MovimentiPagina> {
               builder: (context, vincoli) => ListView(
                 padding: marginiPagina(vincoli),
                 children: [
-                  _filtri(context),
+                  if (filtriCompatti(vincoli))
+                    BarraFiltri(
+                      attivi: _filtri.attivi,
+                      descrizione: _filtri.descrizione(context),
+                      onApri: _apriPannello,
+                      onTogli: _togliFiltri,
+                    )
+                  else
+                    ..._campiInPagina(context),
                   const SizedBox(height: 12),
                   if (r == null)
                     const Padding(
@@ -189,7 +255,7 @@ class _MovimentiPaginaState extends State<MovimentiPagina> {
                       Padding(
                         padding: const EdgeInsets.all(32),
                         child: Text(
-                          _conFiltri
+                          _filtri.attivi > 0
                               ? 'Nessun movimento con questi filtri.'
                               : 'Ancora nessun movimento.',
                           textAlign: TextAlign.center,
@@ -205,7 +271,7 @@ class _MovimentiPaginaState extends State<MovimentiPagina> {
                                 key: ValueKey(m.movimento.id),
                                 sessione: _sessione,
                                 dettaglio: m,
-                                portafoglioId: _portafoglioId,
+                                portafoglioId: _filtri.portafoglioId,
                               ),
                           ],
                         ),
@@ -237,172 +303,214 @@ class _MovimentiPaginaState extends State<MovimentiPagina> {
     );
   }
 
-  Widget _filtri(BuildContext context) {
-    final schema = Theme.of(context).colorScheme;
+  /// PC: i filtri nella pagina, agiscono subito (la ricerca quando smetti di
+  /// scrivere).
+  List<Widget> _campiInPagina(BuildContext context) => [
+    ..._campi(
+      context,
+      _filtri,
+      cambia: _filtra,
+      ricerca: _ricerca,
+      onTesto: (t) {
+        _attesa?.cancel();
+        _attesa = Timer(
+          const Duration(milliseconds: 300),
+          () => _filtra(() => _filtri.testo = t),
+        );
+      },
+    ),
+    if (_filtri.attivi > 0)
+      Align(
+        alignment: AlignmentDirectional.centerEnd,
+        child: TextButton.icon(
+          onPressed: _togliFiltri,
+          icon: const Icon(Icons.filter_alt_off_outlined),
+          label: const Text('Togli i filtri'),
+        ),
+      ),
+  ];
+
+  /// Ricerca e opzioni su [f]; [cambia] le applica (subito o nella copia).
+  List<Widget> _campi(
+    BuildContext context,
+    _Filtri f, {
+    required void Function(VoidCallback) cambia,
+    required TextEditingController ricerca,
+    required ValueChanged<String> onTesto,
+  }) {
     ChoiceChip tipo(String? effetto, String etichetta) => ChoiceChip(
       label: Text(etichetta),
-      selected: _effetto == effetto,
-      onSelected: (_) => _filtra(() => _effetto = effetto),
+      selected: f.effetto == effetto,
+      onSelected: (_) => cambia(() => f.effetto = effetto),
     );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        TextField(
-          controller: _ricerca,
-          onChanged: (_) {
-            // Si cerca quando smetti di scrivere, non a ogni lettera.
-            _attesa?.cancel();
-            _attesa = Timer(
-              const Duration(milliseconds: 300),
-              () => _filtra(() {}),
-            );
-          },
-          decoration: InputDecoration(
-            prefixIcon: const Icon(Icons.search),
-            hintText: 'Cerca: descrizione, categoria, portafoglio o importo',
-            suffixIcon: _ricerca.text.isEmpty
-                ? null
-                : IconButton(
-                    tooltip: 'Cancella la ricerca',
-                    icon: const Icon(Icons.clear),
-                    onPressed: () => _filtra(_ricerca.clear),
-                  ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final p in _Periodo.values)
-              ChoiceChip(
-                label: Text(p.etichetta),
-                selected: _periodo == p,
-                onSelected: (_) => _filtra(() {
-                  _periodo = p;
-                  if (p == _Periodo.date && _dal == null) {
-                    final oggi = DateUtils.dateOnly(DateTime.now());
-                    _dal = DateTime(oggi.year, oggi.month);
-                    _al = oggi;
-                  }
-                }),
-              ),
-          ],
-        ),
-        if (_periodo == _Periodo.date) ...[
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: CampoData(
-                  etichetta: 'Dal',
-                  valore: _dal,
-                  ultimo: _al,
-                  onChanged: (d) => _filtra(() => _dal = d),
+    Future<void> scegliCategoriaPer() async {
+      final scelta = await scegliCategoria(
+        context,
+        _sessione,
+        selezionata: f.categoriaId,
+        titolo: 'Filtra per categoria',
+      );
+      if (scelta.annullata) {
+        return;
+      }
+      final albero = AlberoCategorie(
+        await _sessione.contabilita.osservaCategorie().first,
+      );
+      final id = scelta.id;
+      cambia(() {
+        f.categoriaId = id;
+        f.categorie = id == null ? null : albero.discendenti(id);
+        f.categoriaNome = id == null ? '' : albero.percorso(id);
+      });
+    }
+
+    final categoria = InkWell(
+      borderRadius: BorderRadius.circular(4),
+      onTap: scegliCategoriaPer,
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: 'Categoria',
+          suffixIcon: f.categoriaId == null
+              ? const Icon(Icons.arrow_drop_down)
+              : IconButton(
+                  tooltip: 'Tutte le categorie',
+                  icon: const Icon(Icons.clear),
+                  onPressed: () => cambia(() {
+                    f.categoriaId = null;
+                    f.categorie = null;
+                    f.categoriaNome = '';
+                  }),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: CampoData(
-                  etichetta: 'Al',
-                  valore: _al,
-                  primo: _dal,
-                  onChanged: (d) => _filtra(() => _al = d),
-                ),
-              ),
-            ],
-          ),
-        ],
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            tipo(null, 'Tutti'),
-            tipo(EffettoSaldo.entrata, 'Entrate'),
-            tipo(EffettoSaldo.uscita, 'Uscite'),
-            tipo(EffettoSaldo.trasferimento, 'Trasferimenti'),
-          ],
         ),
-        const SizedBox(height: 12),
-        LayoutBuilder(
-          builder: (context, vincoli) {
-            final categoria = InkWell(
-              borderRadius: BorderRadius.circular(4),
-              onTap: _scegliCategoria,
-              child: InputDecorator(
-                decoration: InputDecoration(
-                  labelText: 'Categoria',
-                  suffixIcon: _categoriaId == null
-                      ? const Icon(Icons.arrow_drop_down)
-                      : IconButton(
-                          tooltip: 'Tutte le categorie',
-                          icon: const Icon(Icons.clear),
-                          onPressed: () => _filtra(() {
-                            _categoriaId = null;
-                            _categorie = null;
-                          }),
-                        ),
-                ),
+        child: Text(
+          f.categoriaId == null
+              ? 'Tutte (con le sottocategorie)'
+              : f.categoriaNome,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+    final portafoglio = FutureBuilder<List<PortafoglioConSaldo>>(
+      future: _portafogli,
+      builder: (context, snapshot) {
+        final portafogli = snapshot.data ?? const [];
+        return DropdownButtonFormField<String?>(
+          key: ValueKey('portafoglio-${f.portafoglioId}-${portafogli.length}'),
+          isExpanded: true,
+          initialValue: f.portafoglioId,
+          decoration: const InputDecoration(labelText: 'Portafoglio'),
+          items: [
+            const DropdownMenuItem<String?>(child: Text('Tutti')),
+            for (final p in portafogli)
+              DropdownMenuItem<String?>(
+                value: p.portafoglio.id,
                 child: Text(
-                  _categoriaId == null
-                      ? 'Tutte (con le sottocategorie)'
-                      : _categoriaNome,
+                  p.portafoglio.nome,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-            );
-            final portafoglio = FutureBuilder<List<PortafoglioConSaldo>>(
-              future: _portafogli,
-              builder: (context, snapshot) {
-                final portafogli = snapshot.data ?? const [];
-                return DropdownButtonFormField<String?>(
-                  key: ValueKey(
-                    'portafoglio-$_portafoglioId-${portafogli.length}',
-                  ),
-                  isExpanded: true,
-                  initialValue: _portafoglioId,
-                  decoration: const InputDecoration(labelText: 'Portafoglio'),
-                  items: [
-                    const DropdownMenuItem<String?>(child: Text('Tutti')),
-                    for (final p in portafogli)
-                      DropdownMenuItem<String?>(
-                        value: p.portafoglio.id,
-                        child: Text(
-                          p.portafoglio.nome,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                  ],
-                  onChanged: (id) => _filtra(() => _portafoglioId = id),
-                );
-              },
-            );
-            if (vincoli.maxWidth < Larghezze.media) {
-              return Column(
-                children: [categoria, const SizedBox(height: 12), portafoglio],
-              );
-            }
-            return Row(
-              children: [
-                Expanded(child: categoria),
-                const SizedBox(width: 12),
-                Expanded(child: portafoglio),
-              ],
-            );
-          },
-        ),
-        if (_conFiltri)
-          Align(
-            alignment: AlignmentDirectional.centerEnd,
-            child: TextButton.icon(
-              onPressed: _togliFiltri,
-              icon: Icon(Icons.filter_alt_off_outlined, color: schema.primary),
-              label: const Text('Togli i filtri'),
-            ),
-          ),
-      ],
+          ],
+          onChanged: (id) => cambia(() {
+            f.portafoglioId = id;
+            f.portafoglioNome = id == null
+                ? ''
+                : portafogli
+                      .firstWhere((p) => p.portafoglio.id == id)
+                      .portafoglio
+                      .nome;
+          }),
+        );
+      },
     );
+    return [
+      TextField(
+        controller: ricerca,
+        onChanged: onTesto,
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.search),
+          hintText: 'Cerca: descrizione, categoria, portafoglio o importo',
+          suffixIcon: ricerca.text.isEmpty
+              ? null
+              : IconButton(
+                  tooltip: 'Cancella la ricerca',
+                  icon: const Icon(Icons.clear),
+                  onPressed: () => cambia(() {
+                    ricerca.clear();
+                    f.testo = '';
+                  }),
+                ),
+        ),
+      ),
+      const SizedBox(height: 12),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (final p in _Periodo.values)
+            ChoiceChip(
+              label: Text(p.etichetta),
+              selected: f.periodo == p,
+              onSelected: (_) => cambia(() {
+                f.periodo = p;
+                if (p == _Periodo.date && f.dal == null) {
+                  final oggi = DateUtils.dateOnly(DateTime.now());
+                  f.dal = DateTime(oggi.year, oggi.month);
+                  f.al = oggi;
+                }
+              }),
+            ),
+        ],
+      ),
+      if (f.periodo == _Periodo.date) ...[
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: CampoData(
+                etichetta: 'Dal',
+                valore: f.dal,
+                ultimo: f.al,
+                onChanged: (d) => cambia(() => f.dal = d),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: CampoData(
+                etichetta: 'Al',
+                valore: f.al,
+                primo: f.dal,
+                onChanged: (d) => cambia(() => f.al = d),
+              ),
+            ),
+          ],
+        ),
+      ],
+      const SizedBox(height: 12),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          tipo(null, 'Tutti'),
+          tipo(EffettoSaldo.entrata, 'Entrate'),
+          tipo(EffettoSaldo.uscita, 'Uscite'),
+          tipo(EffettoSaldo.trasferimento, 'Trasferimenti'),
+        ],
+      ),
+      const SizedBox(height: 12),
+      LayoutBuilder(
+        builder: (context, vincoli) => vincoli.maxWidth < Larghezze.media
+            ? Column(
+                children: [categoria, const SizedBox(height: 12), portafoglio],
+              )
+            : Row(
+                children: [
+                  Expanded(child: categoria),
+                  const SizedBox(width: 12),
+                  Expanded(child: portafoglio),
+                ],
+              ),
+      ),
+    ];
   }
 }
 

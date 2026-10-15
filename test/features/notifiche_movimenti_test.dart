@@ -266,4 +266,46 @@ void main() {
     await attendi(tester, find.textContaining('3 movimenti'));
     await chiudi(tester);
   });
+  testWidgets('telefono: filtri nel pannello, valgono solo con "Applica"', (
+    tester,
+  ) async {
+    await apri(tester, (conto, tipi) async {
+      for (final (tipo, descrizione) in [
+        ('Entrata', 'Stipendio HD'),
+        ('Spesa', 'Spesa Lidl'),
+      ]) {
+        await sessione.contabilita.registraMovimento(
+          tipoId: tipi[tipo]!,
+          portafoglioId: conto,
+          importo: 1000,
+          valuta: 'EUR',
+          data: DateTime.now(),
+          descrizione: descrizione,
+        );
+      }
+    });
+    await tester.binding.setSurfaceSize(const Size(400, 800));
+    await tester.pump();
+    await tocca(tester, find.text('Movimenti').hitTestable().last);
+    await attendi(tester, find.text('Tutti i movimenti'));
+    expect(find.textContaining('Cerca:'), findsNothing); // nel pannello
+
+    // "Annulla": niente cambia.
+    await tocca(tester, find.text('Filtri'));
+    await tocca(tester, find.text('Uscite'));
+    await tocca(tester, find.text('Annulla'));
+    await attendi(tester, find.textContaining('2 movimenti'));
+
+    // "Applica": solo le uscite.
+    await tocca(tester, find.text('Filtri'));
+    await tocca(tester, find.text('Uscite'));
+    await tocca(tester, find.text('Applica'));
+    await attendi(tester, find.text('Filtri (1)'));
+    await attendi(tester, find.textContaining('1 movimento ·'));
+    expect(find.text('Uscite'), findsOneWidget); // nel riepilogo dei filtri
+
+    await tocca(tester, find.byTooltip('Togli i filtri'));
+    await attendi(tester, find.textContaining('2 movimenti'));
+    await chiudi(tester);
+  });
 }

@@ -324,9 +324,18 @@ void main() {
 
       // Movimenti, anche con le date a scelta.
       await vaiA(tester, 'Movimenti');
+      if (find.text('Scegli le date').hitTestable().evaluate().isEmpty) {
+        // Telefono e tablet: ricerca e opzioni sono nel pannello "Filtri".
+        await tocca(tester, find.text('Filtri'));
+      }
       await tocca(tester, find.text('Scegli le date'));
       await attendi(tester, find.text('Dal'));
       await scorriTutto(tester);
+      if (find.text('Applica').evaluate().isNotEmpty) {
+        await tocca(tester, find.text('Applica'));
+        await assestamento(tester);
+        await scorriTutto(tester);
+      }
 
       for (final sezione in [
         'Costo della vita',
@@ -337,12 +346,18 @@ void main() {
         await vaiA(tester, sezione);
         await scorriTutto(tester);
       }
+      // Prestiti: "Mostra meno" (una riga per prestito) e ritorno.
+      await scorriInCima(tester);
+      await tocca(tester, find.text('Mostra meno').hitTestable().first);
+      await attendi(tester, find.text('Mostra di più'));
+      await scorriTutto(tester);
+      await scorriInCima(tester);
+      await tocca(tester, find.text('Mostra di più').hitTestable().first);
+      await assestamento(tester);
       // Dettaglio del prestito e suo modulo.
       await scorriInCima(tester);
-      await tocca(
-        tester,
-        find.text('Finanziamento auto con maxi rata').hitTestable().last,
-      );
+      // (tocca lo porta in vista: con "Mostra meno" in cima sta più in basso)
+      await tocca(tester, find.text('Finanziamento auto con maxi rata').first);
       await attendi(tester, find.text('Importo finanziato'));
       await scorriTutto(tester);
       await tocca(tester, find.byTooltip('Modifica'));
@@ -357,8 +372,15 @@ void main() {
         await vaiA(tester, sezione);
         await scorriTutto(tester);
       }
-      // Un report creato e mostrato a schermo.
+      // Un report creato e mostrato a schermo (sul telefono, prima le opzioni).
       await scorriInCima(tester);
+      if (find.text('Opzioni').hitTestable().evaluate().isNotEmpty) {
+        await tocca(tester, find.text('Opzioni'));
+        await attendi(tester, find.text('Opzioni del report'));
+        await scorriTutto(tester);
+        await tocca(tester, find.text('Applica'));
+        await assestamento(tester);
+      }
       await tocca(tester, find.text('Crea il report'));
       await attendi(tester, find.text('Report del gestionale'));
       await scorriTutto(tester);

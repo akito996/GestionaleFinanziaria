@@ -5,9 +5,9 @@ import '../../core/db/carte_credito.dart';
 import '../../core/db/contabilita.dart';
 import '../../core/importo.dart';
 import '../../core/sessione.dart';
+import '../comuni/sezioni.dart';
 import '../comuni/errori.dart';
 import '../comuni/navigazione.dart';
-import '../comuni/layout.dart';
 import '../movimenti/movimento_modulo.dart';
 import '../movimenti/riga_movimento.dart';
 import '../portafogli/portafoglio_pagina.dart';
@@ -50,10 +50,24 @@ class _CartePaginaState extends State<CartePagina> {
           if (carte.isEmpty) {
             return const _NessunaCarta();
           }
-          return ElencoSchede(
-            schede: [
+          return ElencoRipiegabile(
+            sessione: widget.sessione,
+            chiave: 'carte',
+            voci: [
               for (final c in carte)
-                _SchedaCarta(sessione: widget.sessione, stato: c),
+                VoceRipiegabile(
+                  id: c.carta.id,
+                  titolo: c.portafoglio.nome,
+                  sottotitolo:
+                      'Addebito ${dataLeggibile(context, c.prossimoAddebito)} '
+                      'su ${c.conto.nome}',
+                  valore: Importo.formatta(
+                    -c.debitoTotale,
+                    c.portafoglio.valuta,
+                  ),
+                  icona: Icons.credit_card,
+                  completa: _SchedaCarta(sessione: widget.sessione, stato: c),
+                ),
             ],
           );
         },

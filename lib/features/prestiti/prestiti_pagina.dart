@@ -4,6 +4,7 @@ import '../../core/db/prestiti.dart';
 import '../../core/db/tabelle.dart';
 import '../../core/importo.dart';
 import '../../core/sessione.dart';
+import '../comuni/sezioni.dart';
 import '../comuni/navigazione.dart';
 import '../comuni/layout.dart';
 import '../movimenti/riga_movimento.dart';
@@ -56,7 +57,9 @@ class _PrestitiPaginaState extends State<PrestitiPagina> {
             return const _NessunPrestito();
           }
           final residuo = prestiti.fold<int>(0, (t, p) => t + p.debitoResiduo);
-          return ElencoSchede(
+          return ElencoRipiegabile(
+            sessione: widget.sessione,
+            chiave: 'prestiti',
             intestazione: [
               Card(
                 child: ListTile(
@@ -68,9 +71,20 @@ class _PrestitiPaginaState extends State<PrestitiPagina> {
                 ),
               ),
             ],
-            schede: [
+            voci: [
               for (final p in prestiti)
-                _SchedaPrestito(sessione: widget.sessione, stato: p),
+                VoceRipiegabile(
+                  id: p.prestito.id,
+                  titolo: p.prestito.nome,
+                  sottotitolo:
+                      'Rate pagate ${p.ratePagate} di ${p.prestito.numeroRate}',
+                  valore: Importo.formatta(p.debitoResiduo, p.prestito.valuta),
+                  icona: Icons.request_quote_outlined,
+                  completa: _SchedaPrestito(
+                    sessione: widget.sessione,
+                    stato: p,
+                  ),
+                ),
             ],
           );
         },

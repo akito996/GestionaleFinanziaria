@@ -232,11 +232,19 @@ class _MovimentoModuloState extends State<_MovimentoModulo> {
     final valuta = _portafoglioDa(_portafoglio)?.valuta ?? 'EUR';
     final colore = coloreEffetto(context, _tipo?.effetto);
 
+    // Sul telefono il modulo usa quasi tutta la larghezza dello schermo.
+    final stretto = MediaQuery.sizeOf(context).width < 600;
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.enter, control: true): _salva,
       },
       child: AlertDialog(
+        insetPadding: stretto
+            ? const EdgeInsets.symmetric(horizontal: 12, vertical: 24)
+            : const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+        contentPadding: stretto
+            ? const EdgeInsets.fromLTRB(16, 16, 16, 0)
+            : null,
         title: Row(
           children: [
             Expanded(
@@ -264,22 +272,10 @@ class _MovimentoModuloState extends State<_MovimentoModulo> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        SegmentedButton<String>(
-                          segments: [
-                            for (final t in _tipi)
-                              ButtonSegment(
-                                value: t.id,
-                                label: Text(t.nome),
-                                icon: Icon(iconaEffetto(t.effetto)),
-                              ),
-                          ],
-                          selected: {_tipo!.id},
-                          showSelectedIcon: false,
-                          onSelectionChanged: (s) => setState(
-                            () => _tipo = _tipi.firstWhere(
-                              (t) => t.id == s.first,
-                            ),
-                          ),
+                        SceltaTipoMovimento(
+                          tipi: _tipi,
+                          selezionato: _tipo!,
+                          onChanged: (t) => setState(() => _tipo = t),
                         ),
                         const SizedBox(height: 16),
                         CampoImporto(
@@ -384,6 +380,68 @@ class _MovimentoModuloState extends State<_MovimentoModulo> {
       ],
       onChanged: onChanged,
       validator: (v) => v == null ? 'Scegli un portafoglio' : null,
+    );
+  }
+}
+
+/// Spesa / Entrata / Trasferimento. Sugli schermi stretti l'icona sta sopra
+/// il nome, su una riga sola (niente parole spezzate lettera per lettera).
+class SceltaTipoMovimento extends StatelessWidget {
+  const SceltaTipoMovimento({
+    super.key,
+    required this.tipi,
+    required this.selezionato,
+    required this.onChanged,
+  });
+
+  final List<DefinizioneTipo> tipi;
+  final DefinizioneTipo selezionato;
+  final ValueChanged<DefinizioneTipo> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, vincoli) {
+        final stretto = vincoli.maxWidth < 420;
+        return SegmentedButton<String>(
+          style: stretto
+              ? const ButtonStyle(
+                  visualDensity: VisualDensity.comfortable,
+                  padding: WidgetStatePropertyAll(
+                    EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  ),
+                )
+              : null,
+          segments: [
+            for (final t in tipi)
+              stretto
+                  ? ButtonSegment(
+                      value: t.id,
+                      tooltip: t.nome,
+                      label: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(iconaEffetto(t.effetto), size: 20),
+                          const SizedBox(height: 2),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(t.nome, maxLines: 1, softWrap: false),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ButtonSegment(
+                      value: t.id,
+                      label: Text(t.nome, maxLines: 1, softWrap: false),
+                      icon: Icon(iconaEffetto(t.effetto)),
+                    ),
+          ],
+          selected: {selezionato.id},
+          showSelectedIcon: false,
+          onSelectionChanged: (s) =>
+              onChanged(tipi.firstWhere((t) => t.id == s.first)),
+        );
+      },
     );
   }
 }

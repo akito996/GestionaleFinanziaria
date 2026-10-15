@@ -7,6 +7,7 @@ import '../../core/importo.dart';
 import '../../core/ricorrenza.dart';
 import '../../core/sessione.dart';
 import '../comuni/layout.dart';
+import '../comuni/sezioni.dart';
 import '../comuni/navigazione.dart';
 import '../grafici/grafici.dart';
 import '../grafici/grafici_avanzati.dart';
@@ -84,6 +85,9 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
     }
   }
 
+  /// Prefisso delle preferenze delle sezioni (aperte o chiuse).
+  String get _sezione => _t.entrate ? 'entrate' : 'costo_vita';
+
   @override
   Widget build(BuildContext context) {
     final cv = widget.sessione.costoVita;
@@ -121,78 +125,90 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
                 else ...[
                   _Riepilogo(mese: mese, testi: _t),
                   const SizedBox(height: 16),
-                  SchedaGrafico(
+                  SezioneRipiegabile.costruita(
                     sessione: widget.sessione,
-                    chiave: _t.entrate
-                        ? 'entrate.storico'
-                        : 'costo_vita.storico',
+                    chiave: '$_sezione.grafico',
                     titolo: 'Ultimi 6 mesi',
-                    tipi: const [
-                      TipoGrafico.barreImpilate,
-                      TipoGrafico.colonne,
-                      TipoGrafico.linee,
-                      TipoGrafico.tabella,
-                    ],
-                    costruisci: (context, tipo) => switch (tipo) {
-                      TipoGrafico.colonne => ColonneRaggruppate(
-                        etichette: [
-                          for (final m in storico) meseBreve(context, m.mese),
-                        ],
-                        valuta: 'EUR',
-                        serie: [
-                          SerieTempo('Fisse', [
-                            for (final m in storico) m.fisse,
-                          ]),
-                          SerieTempo('Variabili previste', [
-                            for (final m in storico) m.variabiliPreviste,
-                          ]),
-                          SerieTempo('Variabili reali', [
-                            for (final m in storico) m.variabiliReali,
-                          ]),
-                        ],
+                    costruisci: (context, _, alterna) => SchedaGrafico(
+                      sessione: widget.sessione,
+                      chiave: _t.entrate
+                          ? 'entrate.storico'
+                          : 'costo_vita.storico',
+                      titolo: 'Ultimi 6 mesi',
+                      azione: IconButton(
+                        tooltip: 'Mostra meno',
+                        icon: const Icon(Icons.expand_less),
+                        onPressed: alterna,
                       ),
-                      TipoGrafico.linee => GraficoLinee(
-                        etichette: [
-                          for (final m in storico) meseBreve(context, m.mese),
-                        ],
-                        valuta: 'EUR',
-                        serie: [
-                          SerieTempo('Previsto', [
-                            for (final m in storico) m.totalePrevisto,
-                          ]),
-                          SerieTempo(_t.realiDavvero, [
-                            for (final m in storico) m.fisse + m.variabiliReali,
-                          ]),
-                        ],
-                      ),
-                      TipoGrafico.tabella => TabellaDati(
-                        colonne: const [
-                          'Mese',
-                          'Fisse',
-                          'Variabili previste',
-                          'Variabili reali',
-                          'Totale previsto',
-                        ],
-                        righe: [
-                          for (final m in storico)
-                            [
-                              meseLeggibile(context, m.mese),
-                              Importo.formatta(m.fisse, 'EUR'),
-                              Importo.formatta(m.variabiliPreviste, 'EUR'),
-                              Importo.formatta(m.variabiliReali, 'EUR'),
-                              Importo.formatta(m.totalePrevisto, 'EUR'),
-                            ],
-                        ],
-                      ),
-                      _ => GraficoCostoVita(
-                        mesi: storico,
-                        nomeMese: (m) => meseBreve(context, m),
-                        testoReale: _t.reale,
-                      ),
-                    },
+                      tipi: const [
+                        TipoGrafico.barreImpilate,
+                        TipoGrafico.colonne,
+                        TipoGrafico.linee,
+                        TipoGrafico.tabella,
+                      ],
+                      costruisci: (context, tipo) => switch (tipo) {
+                        TipoGrafico.colonne => ColonneRaggruppate(
+                          etichette: [
+                            for (final m in storico) meseBreve(context, m.mese),
+                          ],
+                          valuta: 'EUR',
+                          serie: [
+                            SerieTempo('Fisse', [
+                              for (final m in storico) m.fisse,
+                            ]),
+                            SerieTempo('Variabili previste', [
+                              for (final m in storico) m.variabiliPreviste,
+                            ]),
+                            SerieTempo('Variabili reali', [
+                              for (final m in storico) m.variabiliReali,
+                            ]),
+                          ],
+                        ),
+                        TipoGrafico.linee => GraficoLinee(
+                          etichette: [
+                            for (final m in storico) meseBreve(context, m.mese),
+                          ],
+                          valuta: 'EUR',
+                          serie: [
+                            SerieTempo('Previsto', [
+                              for (final m in storico) m.totalePrevisto,
+                            ]),
+                            SerieTempo(_t.realiDavvero, [
+                              for (final m in storico)
+                                m.fisse + m.variabiliReali,
+                            ]),
+                          ],
+                        ),
+                        TipoGrafico.tabella => TabellaDati(
+                          colonne: const [
+                            'Mese',
+                            'Fisse',
+                            'Variabili previste',
+                            'Variabili reali',
+                            'Totale previsto',
+                          ],
+                          righe: [
+                            for (final m in storico)
+                              [
+                                meseLeggibile(context, m.mese),
+                                Importo.formatta(m.fisse, 'EUR'),
+                                Importo.formatta(m.variabiliPreviste, 'EUR'),
+                                Importo.formatta(m.variabiliReali, 'EUR'),
+                                Importo.formatta(m.totalePrevisto, 'EUR'),
+                              ],
+                          ],
+                        ),
+                        _ => GraficoCostoVita(
+                          mesi: storico,
+                          nomeMese: (m) => meseBreve(context, m),
+                          testoReale: _t.reale,
+                        ),
+                      },
+                    ),
                   ),
                   const SizedBox(height: 16),
                   _ElencoVoci(
+                    chiave: '$_sezione.fisse',
                     titolo: _t.fisse,
                     voci: mese.voci.where((v) => v.fissa).toList(),
                     sessione: widget.sessione,
@@ -204,10 +220,15 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
                   ),
                   if (mese.rate.isNotEmpty) ...[
                     const SizedBox(height: 16),
-                    _ElencoRate(rate: mese.rate, sessione: widget.sessione),
+                    _ElencoRate(
+                      rate: mese.rate,
+                      sessione: widget.sessione,
+                      chiave: '$_sezione.rate',
+                    ),
                   ],
                   const SizedBox(height: 16),
                   _ElencoVoci(
+                    chiave: '$_sezione.variabili',
                     titolo: _t.variabili,
                     voci: mese.voci.where((v) => !v.fissa).toList(),
                     sessione: widget.sessione,
@@ -337,82 +358,86 @@ class _Riepilogo extends StatelessWidget {
 /// Rate dei prestiti del mese: contano tra le spese fisse fino
 /// all'estinzione. Si modificano dalla sezione Prestiti.
 class _ElencoRate extends StatelessWidget {
-  const _ElencoRate({required this.rate, required this.sessione});
+  const _ElencoRate({
+    required this.rate,
+    required this.sessione,
+    required this.chiave,
+  });
 
   final List<RataDelMese> rate;
   final Sessione sessione;
+  final String chiave;
 
   @override
   Widget build(BuildContext context) {
     final testo = Theme.of(context).textTheme;
     final totale = rate.fold<int>(0, (t, r) => t + r.importo);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text('Prestiti e rate', style: testo.titleMedium),
-              ),
-              Text(Importo.formatta(totale, 'EUR'), style: testo.titleMedium),
-            ],
-          ),
-        ),
-        Card(
-          child: Column(
-            children: [
-              for (final r in rate)
-                ListTile(
-                  leading: Icon(
-                    r.maxi ? Icons.flag_outlined : Icons.request_quote_outlined,
-                  ),
-                  title: Text(r.prestito.nome),
-                  subtitle: Text(
-                    [
+    return SezioneRipiegabile(
+      sessione: sessione,
+      chiave: chiave,
+      titolo: 'Prestiti e rate',
+      dettaglio: Importo.formatta(totale, 'EUR'),
+      inScheda: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Card(
+            child: Column(
+              children: [
+                for (final r in rate)
+                  ListTile(
+                    leading: Icon(
                       r.maxi
-                          ? 'Maxi rata finale'
-                          : 'Rata ${r.numero} di ${r.prestito.numeroRate}',
-                      'addebito il ${dataLeggibile(context, r.date.first)}',
-                      if ((r.prestito.speseRataMinimo ?? 0) > 0)
-                        'con ${Importo.formatta(r.prestito.speseRataMinimo!, 'EUR')} di spese',
-                    ].join(' · '),
-                  ),
-                  trailing: Text(
-                    Importo.formatta(r.importo, 'EUR'),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontFeatures: [FontFeature.tabularFigures()],
+                          ? Icons.flag_outlined
+                          : Icons.request_quote_outlined,
                     ),
-                  ),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => PrestitoPagina(
-                        sessione: sessione,
-                        prestitoId: r.prestito.id,
+                    title: Text(r.prestito.nome),
+                    subtitle: Text(
+                      [
+                        r.maxi
+                            ? 'Maxi rata finale'
+                            : 'Rata ${r.numero} di ${r.prestito.numeroRate}',
+                        'addebito il ${dataLeggibile(context, r.date.first)}',
+                        if ((r.prestito.speseRataMinimo ?? 0) > 0)
+                          'con ${Importo.formatta(r.prestito.speseRataMinimo!, 'EUR')} di spese',
+                      ].join(' · '),
+                    ),
+                    trailing: Text(
+                      Importo.formatta(r.importo, 'EUR'),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontFeatures: [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => PrestitoPagina(
+                          sessione: sessione,
+                          prestitoId: r.prestito.id,
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
-          child: Text(
-            "Contano tra le spese fisse fino all'ultima rata. Si modificano "
-            'nella sezione Prestiti.',
-            style: testo.bodySmall,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
+            child: Text(
+              "Contano tra le spese fisse fino all'ultima rata. Si modificano "
+              'nella sezione Prestiti.',
+              style: testo.bodySmall,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
 class _ElencoVoci extends StatelessWidget {
   const _ElencoVoci({
+    required this.chiave,
     required this.titolo,
     required this.voci,
     required this.sessione,
@@ -423,6 +448,7 @@ class _ElencoVoci extends StatelessWidget {
     required this.onSuggerita,
   });
 
+  final String chiave;
   final String titolo;
   final List<VoceDelMese> voci;
   final Sessione sessione;
@@ -435,25 +461,21 @@ class _ElencoVoci extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final testo = Theme.of(context).textTheme;
     final schema = Theme.of(context).colorScheme;
     final totale = voci.fold<int>(0, (t, v) => t + v.previsto);
     final nomiPresenti = voci.map((v) => v.voce.nome).toSet();
     final mancanti = suggerite.where((s) => !nomiPresenti.contains(s.$1));
 
-    return Card(
+    return SezioneRipiegabile(
+      sessione: sessione,
+      chiave: chiave,
+      titolo: titolo,
+      dettaglio: Importo.formatta(totale, 'EUR'),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.only(bottom: 4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ListTile(
-              title: Text(titolo, style: testo.titleMedium),
-              trailing: Text(
-                Importo.formatta(totale, 'EUR'),
-                style: testo.titleMedium,
-              ),
-            ),
             for (final v in voci)
               _RigaVoce(voce: v, sessione: sessione, mese: mese, testi: testi),
             Padding(

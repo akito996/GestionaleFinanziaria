@@ -7,6 +7,7 @@ import '../../core/db/obiettivi.dart';
 import '../../core/db/tabelle.dart';
 import '../../core/importo.dart';
 import '../../core/sessione.dart';
+import '../comuni/sezioni.dart';
 import '../comuni/campi.dart';
 import '../comuni/errori.dart';
 import '../comuni/layout.dart';
@@ -53,10 +54,27 @@ class _ObiettiviPaginaState extends State<ObiettiviPagina> {
           if (obiettivi.isEmpty) {
             return const _Vuoto();
           }
-          return ElencoSchede(
-            schede: [
+          return ElencoRipiegabile(
+            sessione: widget.sessione,
+            chiave: 'obiettivi',
+            voci: [
               for (final o in obiettivi)
-                _SchedaObiettivo(sessione: widget.sessione, stato: o),
+                VoceRipiegabile(
+                  id: o.obiettivo.id,
+                  titolo: o.obiettivo.nome,
+                  sottotitolo: o.raggiunto
+                      ? 'Raggiunto'
+                      : '${(o.avanzamento * 100).round()}% · mancano '
+                            '${Importo.formatta(o.mancante, o.obiettivo.valuta)}',
+                  valore: Importo.formatta(o.versato, o.obiettivo.valuta),
+                  icona: o.colletta
+                      ? Icons.groups_outlined
+                      : Icons.savings_outlined,
+                  completa: _SchedaObiettivo(
+                    sessione: widget.sessione,
+                    stato: o,
+                  ),
+                ),
             ],
           );
         },
