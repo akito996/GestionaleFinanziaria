@@ -27,16 +27,14 @@ Copy-Item -Path $Build -Destination $layout -Recurse
 $cartellaLoghi = Join-Path $layout 'Assets'
 New-Item -ItemType Directory -Path $cartellaLoghi | Out-Null
 
-# Loghi dall'icona dell'app, centrati su fondo trasparente.
-$icona = New-Object System.Drawing.Icon(
-  (Join-Path $radice 'windows/runner/resources/app_icon.ico'), 256, 256)
-$sorgente = $icona.ToBitmap()
+# Loghi dall'icona dell'app (tool/icona.ps1), centrati su fondo trasparente.
+$sorgente = [System.Drawing.Image]::FromFile((Join-Path $radice 'windows/msix/icona.png'))
 function Scrivi-Logo([string] $nome, [int] $larghezza, [int] $altezza) {
   $immagine = New-Object System.Drawing.Bitmap($larghezza, $altezza)
   $grafica = [System.Drawing.Graphics]::FromImage($immagine)
   $grafica.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
   $grafica.Clear([System.Drawing.Color]::Transparent)
-  $lato = [int]([Math]::Min($larghezza, $altezza) * 0.8)
+  $lato = [int]([Math]::Min($larghezza, $altezza) * 0.9)
   $x = [int](($larghezza - $lato) / 2)
   $y = [int](($altezza - $lato) / 2)
   $grafica.DrawImage($sorgente, $x, $y, $lato, $lato)
@@ -48,6 +46,7 @@ Scrivi-Logo 'Square44x44Logo.png' 44 44
 Scrivi-Logo 'Square150x150Logo.png' 150 150
 Scrivi-Logo 'Wide310x150Logo.png' 310 150
 Scrivi-Logo 'StoreLogo.png' 50 50
+$sorgente.Dispose()
 
 # Manifesto con i dati dello Store (testo XML protetto).
 $valori = @{

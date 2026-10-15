@@ -101,7 +101,9 @@ jobs:
       - name: Motivo dell'errore
         if: failure()
         run: |
-          motivo="$( (grep -E 'SCHERMO:|FINESTRA:|PULSANTE:|SBLOCCO:|Warning: A call to tap' "$RUNNER_TEMP/integration.log"; grep -v -E '^\s*$' "$RUNNER_TEMP/integration.log" | grep -E -A25 'EXCEPTION CAUGHT|Expected:|\[E\]|Error') | head -70)"
+          # Prima gli errori di compilazione C++ (MSBuild, in minuscolo), poi
+          # quelli dei test.
+          motivo="$( (grep -E -m15 'error [A-Z]+[0-9]+|fatal error|: error' "$RUNNER_TEMP/integration.log"; grep -E 'SCHERMO:|FINESTRA:|PULSANTE:|SBLOCCO:|Warning: A call to tap' "$RUNNER_TEMP/integration.log"; grep -v -E '^\s*$' "$RUNNER_TEMP/integration.log" | grep -E -A25 'EXCEPTION CAUGHT|Expected:|\[E\]|Error') | head -70)"
           motivo="${motivo//'%'/'%25'}"
           motivo="${motivo//$'\n'/'%0A'}"
           motivo="${motivo//$'\r'/}"
