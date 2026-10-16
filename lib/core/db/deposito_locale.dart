@@ -73,6 +73,9 @@ class DepositoLocale {
   File get fileKeyring => File(_unisci(cartella.path, 'keyring.bin'));
   File get fileArchivio => File(_unisci(cartella.path, 'archivio.db'));
 
+  /// Preferenze del dispositivo valide anche ad archivio bloccato (es. tema).
+  File get filePreferenze => File(_unisci(cartella.path, 'preferenze.json'));
+
   /// Sblocco rapido e blocco automatico di questo dispositivo (mai sincronizzato).
   File get fileSicurezza => File(_unisci(cartella.path, 'sicurezza.json'));
 

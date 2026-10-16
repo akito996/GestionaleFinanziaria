@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/db/notifiche.dart';
 import '../../core/db/tabelle.dart';
 import '../../core/sessione.dart';
 import '../../core/sync/sincronizzazione.dart';
@@ -24,14 +25,32 @@ import 'icone.dart';
 import 'layout.dart';
 import 'avvisi.dart';
 
-/// Pulsante "blocca" presente in ogni sezione: lucchetto aperto = archivio
-/// aperto. Accanto, la campanella delle notifiche.
+/// Uno strumento del menu ☰ accanto al lucchetto, con la sua descrizione.
+class Strumento {
+  const Strumento({
+    required this.icona,
+    required this.titolo,
+    required this.descrizione,
+    required this.azione,
+  });
+
+  final Widget icona;
+  final String titolo;
+  final String descrizione;
+  final VoidCallback azione;
+}
+
+/// In alto a destra in ogni sezione: la nuvola della sincronizzazione, la
+/// campanella (solo se c'è una notifica da vedere), il lucchetto (archivio
+/// aperto: tocca per bloccarlo) e il menu ☰ con gli altri strumenti
+/// (notifiche e quelli della pagina, es. Esporta e Personalizza).
 class PulsanteBlocca extends StatelessWidget {
   const PulsanteBlocca({
     super.key,
     required this.sessione,
     this.campanella = true,
     this.sincronizzazione = true,
+    this.strumenti = const [],
   });
 
   final Sessione sessione;
@@ -41,6 +60,9 @@ class PulsanteBlocca extends StatelessWidget {
 
   /// `false` nella pagina della sincronizzazione (ci sei già).
   final bool sincronizzazione;
+
+  /// Strumenti della pagina, nel menu dopo "Notifiche".
+  final List<Strumento> strumenti;
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +81,87 @@ class PulsanteBlocca extends StatelessWidget {
           // Tocco lungo: versione, licenza e codice sorgente.
           onLongPress: () => apriInformazioni(context),
         ),
+        if (campanella || strumenti.isNotEmpty)
+          MenuStrumenti(
+            sessione: sessione,
+            notifiche: campanella,
+            strumenti: strumenti,
+          ),
       ],
+    );
+  }
+}
+
+/// Il menu ☰: "Notifiche" (con quante sono da vedere) e gli strumenti della
+/// pagina, ognuno con una riga che spiega a cosa serve.
+class MenuStrumenti extends StatefulWidget {
+  const MenuStrumenti({
+    super.key,
+    required this.sessione,
+    required this.notifiche,
+    required this.strumenti,
+  });
+
+  final Sessione sessione;
+  final bool notifiche;
+  final List<Strumento> strumenti;
+
+  @override
+  State<MenuStrumenti> createState() => _MenuStrumentiState();
+}
+
+class _MenuStrumentiState extends State<MenuStrumenti> {
+  // Creato una volta sola: dopo il blocco non tocca più l'archivio.
+  late final Stream<List<Notifica>> _notifiche = widget.sessione.notifiche
+      .osserva();
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<Notifica>>(
+      stream: widget.notifiche ? _notifiche : const Stream.empty(),
+      builder: (context, snapshot) {
+        final attive = (snapshot.data ?? const <Notifica>[])
+            .where((n) => n.attiva)
+            .length;
+        Widget riga(Widget icona, String titolo, String descrizione) =>
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: icona,
+              title: Text(titolo),
+              subtitle: Text(descrizione),
+            );
+        return PopupMenuButton<int>(
+          tooltip: 'Altri strumenti',
+          icon: const Icon(Icons.menu),
+          onSelected: (i) => i < 0
+              ? apriPannelloNotifiche(context, widget.sessione)
+              : widget.strumenti[i].azione(),
+          itemBuilder: (context) => [
+            if (widget.notifiche)
+              PopupMenuItem(
+                value: -1,
+                child: riga(
+                  Badge(
+                    isLabelVisible: attive > 0,
+                    label: Text('$attive'),
+                    child: const Icon(Icons.notifications_none),
+                  ),
+                  'Notifiche',
+                  attive == 0
+                      ? 'Scadenze, conferme e avvisi'
+                      : attive == 1
+                      ? '1 da vedere'
+                      : '$attive da vedere',
+                ),
+              ),
+            for (final (i, s) in widget.strumenti.indexed)
+              PopupMenuItem(
+                value: i,
+                child: riga(s.icona, s.titolo, s.descrizione),
+              ),
+          ],
+        );
+      },
     );
   }
 }

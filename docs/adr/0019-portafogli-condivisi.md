@@ -65,6 +65,15 @@ L'utente vuole portafogli condivisi fra account diversi, per simulare i conti co
   - nel totale personale conta la quota.
 - **Notifiche**: dopo ogni sincronizzazione, una notifica per le voci nuove degli altri. Su Android anche in background (WorkManager); su Windows con l'app aperta.
 
+## Richieste aggiunte il 16/10/2026
+- **Condiviso già alla creazione**:
+  - nel modulo "Nuovo portafoglio" c'è la scelta "Condiviso"; se attiva, si invitano i membri **via email**;
+  - un portafoglio esistente si può condividere anche dopo, dal suo dettaglio.
+- **Ripartizione**:
+  - per un portafoglio condiviso si indica la **quota del totale** di ogni membro (es. 50% / 50%) e a chi è assegnata **ogni singola voce**;
+  - vale sia alla creazione sia quando il portafoglio diventa condiviso dopo.
+- **Membri in attesa**: finché un invitato non accetta, le sue quote e le sue voci compaiono come "**nome (da confermare)**".
+
 ## Consegne
 0. **Prova tecnica** (Laboratorio):
    - il proprietario crea una cartella, scrive un file e la condivide;

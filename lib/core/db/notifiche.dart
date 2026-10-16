@@ -116,6 +116,13 @@ class NotificheServizio {
   /// Per quanti giorni resta l'avviso "registrata da sola" non letta.
   static const giorniRegistrate = 7;
 
+  /// Chiavi delle notifiche già lette o gestite (confermate, spostate,
+  /// annullate), aggiornate quando cambiano.
+  Stream<Set<String>> osservaLette() =>
+      (_db.select(_db.notificheLette)..where((l) => l.eliminato.equals(false)))
+          .watch()
+          .map((righe) => {for (final l in righe) l.id});
+
   static String chiaveScadenza(
     String pianificazioneId,
     DateTime dataPrevista,

@@ -222,7 +222,8 @@ void main() {
     await attendi(tester, find.text('Entrate e uscite'));
     await attendi(tester, find.text('Patrimonio'));
 
-    await tocca(tester, find.byTooltip('Personalizza la Panoramica'));
+    await tocca(tester, find.byTooltip('Altri strumenti').hitTestable().first);
+    await tocca(tester, find.text('Personalizza').hitTestable());
     await attendi(tester, find.text('Ripristina'));
     final dialogo = find.byType(AlertDialog);
     await tocca(

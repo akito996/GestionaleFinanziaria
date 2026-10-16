@@ -4,6 +4,7 @@ import '../../core/db/archivio.dart';
 import '../../core/db/tabelle.dart';
 import '../../core/importo.dart';
 import '../../core/sessione.dart';
+import '../comuni/campi.dart';
 import '../comuni/errori.dart';
 
 /// Nuovo portafoglio (o modifica di uno [esistente]). [nomeSuggerito] e [tipoSuggerito]
@@ -43,7 +44,7 @@ class _PortafoglioModulo extends StatefulWidget {
 class _PortafoglioModuloState extends State<_PortafoglioModulo> {
   final _form = GlobalKey<FormState>();
   final _nome = TextEditingController();
-  final _saldo = TextEditingController();
+  final _saldo = ControllerImporto();
 
   List<DefinizioneTipo> _tipi = const [];
   bool _preferito = false;
@@ -184,6 +185,27 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
                   onChanged: (v) => setState(() => _valuta = v ?? 'EUR'),
                 ),
                 const SizedBox(height: 16),
+                // Saldo di partenza grande e centrato, come l'importo di un
+                // nuovo movimento.
+                CampoImporto(
+                  controller: _saldo,
+                  etichetta: "Quanto c'è adesso? (facoltativo)",
+                  valuta: _valuta,
+                  obbligatorio: false,
+                  ammettiZero: true,
+                  ammettiNegativo: true,
+                  textInputAction: TextInputAction.done,
+                  onInvio: _salva,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Il saldo di partenza: da qui in poi contano i movimenti.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   value: _preferito,
@@ -193,29 +215,6 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
                   subtitle: const Text(
                     'Sempre in evidenza in cima alla Panoramica',
                   ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _saldo,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                    signed: true,
-                  ),
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _salva(),
-                  decoration: InputDecoration(
-                    labelText: 'Quanto c\'è adesso? (facoltativo)',
-                    hintText: '0,00',
-                    helperText: 'Il saldo di partenza: da qui in poi conta i movimenti.',
-                    helperMaxLines: 2,
-                    suffixText: Importo.simbolo(_valuta),
-                  ),
-                  validator: (v) =>
-                      (v != null &&
-                          v.trim().isNotEmpty &&
-                          Importo.leggi(v) == null)
-                      ? 'Scrivi un importo, per esempio 150,00'
-                      : null,
                 ),
               ],
             ),

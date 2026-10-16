@@ -49,10 +49,19 @@ class _GestionaleAppState extends State<GestionaleApp> {
   @override
   Widget build(BuildContext context) {
     final sessione = widget.sessione;
+    return ListenableBuilder(
+      listenable: sessione.preferenze,
+      builder: (context, _) => _app(sessione),
+    );
+  }
+
+  Widget _app(Sessione sessione) {
     return MaterialApp(
       navigatorKey: _navigatore,
       title: Identita.nome,
       debugShowCheckedModeBanner: false,
+      // Chiaro, scuro o come il sistema (Impostazioni › Aspetto).
+      themeMode: sessione.preferenze.tema,
       locale: const Locale('it', 'IT'),
       supportedLocales: const [Locale('it', 'IT')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,

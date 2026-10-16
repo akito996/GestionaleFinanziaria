@@ -148,18 +148,25 @@ class _HomePaginaState extends State<HomePagina> {
               appBar: AppBar(
                 title: const Text(Identita.nome),
                 actions: [
-                  if (portafogli != null && !vuoto)
-                    IconButton(
-                      tooltip: 'Personalizza la Panoramica',
-                      icon: const Icon(Icons.dashboard_customize_outlined),
-                      onPressed: _personalizza,
-                    ),
-                  IconButton(
-                    tooltip: 'Esporta (PDF o Excel)',
-                    icon: const IconaEsporta(),
-                    onPressed: () => apriExport(context, _sessione),
+                  PulsanteBlocca(
+                    sessione: _sessione,
+                    strumenti: [
+                      Strumento(
+                        icona: const IconaEsporta(),
+                        titolo: 'Esporta',
+                        descrizione: 'PDF o Excel, scegli cosa e quale periodo',
+                        azione: () => apriExport(context, _sessione),
+                      ),
+                      if (portafogli != null && !vuoto)
+                        Strumento(
+                          icona: const Icon(Icons.dashboard_customize_outlined),
+                          titolo: 'Personalizza',
+                          descrizione:
+                              'Scegli e ordina le schede della Panoramica',
+                          azione: _personalizza,
+                        ),
+                    ],
                   ),
-                  PulsanteBlocca(sessione: _sessione),
                 ],
               ),
               floatingActionButton: portafogli == null || vuoto

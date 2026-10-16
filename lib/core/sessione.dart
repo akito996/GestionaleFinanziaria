@@ -17,6 +17,7 @@ import 'db/pianificatore.dart';
 import 'db/prestiti.dart';
 import 'db/statistiche.dart';
 import 'db/orologio.dart';
+import 'preferenze_dispositivo.dart';
 import 'report/report_automatici.dart';
 import 'report/report_personalizzati.dart';
 import 'sicurezza/cassaforte.dart';
@@ -54,6 +55,11 @@ class Sessione extends ChangeNotifier {
     sodium: sodium,
     file: deposito.fileSicurezza,
     cassaforte: _cassaforte ?? CassaforteDiPiattaforma(),
+  );
+
+  /// Preferenze del dispositivo valide in ogni fase (es. tema chiaro/scuro).
+  late final PreferenzeDispositivo preferenze = PreferenzeDispositivo(
+    deposito.filePreferenze,
   );
 
   /// Archivio bloccato all'avvio o dal blocco automatico: lo sblocco rapido
@@ -175,6 +181,7 @@ class Sessione extends ChangeNotifier {
     // L'avvio non aspetta il dispositivo: per lo sblocco rapido basta il
     // file; cosa offre il dispositivo serve dopo (proposta, Impostazioni).
     try {
+      preferenze.leggi();
       sicurezza.leggi();
     } catch (e) {
       // Senza sblocco rapido si entra comunque con la password.

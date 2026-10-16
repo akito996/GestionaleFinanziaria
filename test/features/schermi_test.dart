@@ -301,10 +301,19 @@ void main() {
       await tocca(tester, find.text('Annulla').last);
       await assestamento(tester);
       await chiudiDialogo(tester);
-      await tocca(tester, find.byTooltip('Personalizza la Panoramica'));
+      // Esporta e Personalizza sono nel menu ☰.
+      await tocca(
+        tester,
+        find.byTooltip('Altri strumenti').hitTestable().first,
+      );
+      await tocca(tester, find.text('Personalizza').hitTestable());
       await attendi(tester, find.text('Ripristina'));
       await chiudiDialogo(tester);
-      await tocca(tester, find.byTooltip('Esporta (PDF o Excel)'));
+      await tocca(
+        tester,
+        find.byTooltip('Altri strumenti').hitTestable().first,
+      );
+      await tocca(tester, find.text('Esporta').hitTestable());
       await assestamento(tester);
       await chiudiDialogo(tester);
 

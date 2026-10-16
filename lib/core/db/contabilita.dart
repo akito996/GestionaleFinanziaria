@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../importo.dart';
 import 'archivio.dart';
+import 'eliminazione_portafoglio.dart';
 import 'id.dart';
 import 'orologio.dart';
 import 'osservazione.dart';
@@ -133,9 +134,14 @@ class Contabilita {
 
   // ---------------------------------------------------------- portafogli
 
-  /// Portafogli non archiviati, con saldo, in ordine.
-  Stream<List<PortafoglioConSaldo>> osservaPortafogli() {
-    const sql = '''
+  /// Portafogli con saldo, in ordine: quelli in uso o, con [archiviati],
+  /// quelli archiviati (Impostazioni › Portafogli archiviati).
+  Stream<List<PortafoglioConSaldo>> osservaPortafogli({
+    bool archiviati = false,
+  }) {
+    // Testi diversi per le due viste: drift condivide le query uguali.
+    final sql =
+        '''
       SELECT p.id AS id,
         p.saldo_iniziale_minimo
         + COALESCE((SELECT SUM(CASE t.effetto
@@ -150,7 +156,7 @@ class Contabilita {
             WHERE m.portafoglio_destinazione_id = p.id AND m.eliminato = 0
               AND t.effetto = 'trasferimento'), 0) AS saldo
       FROM portafogli p
-      WHERE p.eliminato = 0 AND p.archiviato = 0
+      WHERE p.eliminato = 0 AND p.archiviato = ${archiviati ? 1 : 0}
     ''';
     final saldi = _db
         .customSelect(
@@ -171,7 +177,7 @@ class Contabilita {
             ])
             ..where(
               _db.portafogli.eliminato.equals(false) &
-                  _db.portafogli.archiviato.equals(false),
+                  _db.portafogli.archiviato.equals(archiviati),
             )
             ..orderBy([
               OrderingTerm(expression: _db.portafogli.ordine),
@@ -236,6 +242,10 @@ class Contabilita {
           preferito: Value(preferito),
         ),
       );
+
+  /// Eliminazione di un portafoglio con le scelte sui suoi movimenti.
+  EliminazionePortafoglio get eliminazione =>
+      EliminazionePortafoglio(_db, orologio);
 
   /// Archiviato = nascosto dagli elenchi, movimenti conservati. Reversibile.
   Future<void> archiviaPortafoglio(String id, {bool archiviato = true}) =>

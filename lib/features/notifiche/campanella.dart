@@ -6,9 +6,9 @@ import '../comuni/layout.dart';
 import 'notifiche_pagina.dart';
 import 'riga_notifica.dart';
 
-/// Campanella vicino al lucchetto, come le notifiche del telefono: il numero
-/// dice quante sono da vedere (da decidere o non lette). Un tocco apre il
-/// pannello, che si chiude quando vuoi.
+/// Campanella vicino al lucchetto, come le notifiche del telefono: compare
+/// solo se c'è qualcosa da vedere (da decidere o non letto) e il numero dice
+/// quante sono. Un tocco apre il pannello. Senza notifiche resta nel menu ☰.
 class CampanellaNotifiche extends StatefulWidget {
   const CampanellaNotifiche({super.key, required this.sessione});
 
@@ -31,6 +31,9 @@ class _CampanellaNotificheState extends State<CampanellaNotifiche> {
         final attive = (snapshot.data ?? const <Notifica>[])
             .where((n) => n.attiva)
             .length;
+        if (attive == 0) {
+          return const SizedBox.shrink();
+        }
         return IconButton(
           tooltip: attive == 0
               ? 'Notifiche'

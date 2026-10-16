@@ -7,6 +7,7 @@ import '../condivisi/prova_condivisione_pagina.dart';
 import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
 import '../movimenti/riga_movimento.dart';
+import '../portafogli/portafogli_archiviati_pagina.dart';
 import '../sblocco/sblocco_rapido.dart';
 import '../sync/sync_pagina.dart';
 
@@ -160,11 +161,72 @@ class _ImpostazioniPaginaState extends State<ImpostazioniPagina> {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 24),
+                Text('Aspetto', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text('Tema'),
+                        const SizedBox(height: 8),
+                        ListenableBuilder(
+                          listenable: widget.sessione.preferenze,
+                          builder: (context, _) => SegmentedButton<ThemeMode>(
+                            segments: const [
+                              ButtonSegment(
+                                value: ThemeMode.system,
+                                icon: Icon(Icons.brightness_auto_outlined),
+                                label: Text('Sistema'),
+                              ),
+                              ButtonSegment(
+                                value: ThemeMode.light,
+                                icon: Icon(Icons.light_mode_outlined),
+                                label: Text('Chiaro'),
+                              ),
+                              ButtonSegment(
+                                value: ThemeMode.dark,
+                                icon: Icon(Icons.dark_mode_outlined),
+                                label: Text('Scuro'),
+                              ),
+                            ],
+                            selected: {widget.sessione.preferenze.tema},
+                            showSelectedIcon: false,
+                            onSelectionChanged: (s) =>
+                                widget.sessione.preferenze.impostaTema(s.first),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '«Sistema» segue il tema chiaro o scuro del telefono '
+                          'o del PC.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
                 Text('App', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
                 Card(
                   child: Column(
                     children: [
+                      ListTile(
+                        leading: const Icon(Icons.inventory_2_outlined),
+                        title: const Text('Portafogli archiviati'),
+                        subtitle: const Text('Ripristinali o eliminali'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => PortafogliArchiviatiPagina(
+                              sessione: widget.sessione,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const Divider(height: 1),
                       ListTile(
                         leading: const Icon(Icons.cloud_outlined),
                         title: const Text('Sincronizzazione'),

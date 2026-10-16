@@ -14,6 +14,7 @@ import '../grafici/grafici_avanzati.dart';
 import '../movimenti/movimento_modulo.dart';
 import '../movimenti/riga_movimento.dart';
 import 'avviso_obiettivi.dart';
+import 'elimina_portafoglio.dart';
 import 'portafoglio_modulo.dart';
 import '../comuni/avvisi.dart';
 
@@ -35,7 +36,8 @@ class PortafoglioPagina extends StatelessWidget {
         title: Text('Archiviare "${p.portafoglio.nome}"?'),
         content: const Text(
           'Il portafoglio sparisce dagli elenchi, ma i suoi movimenti restano '
-          'salvati. Potrai ripristinarlo in qualsiasi momento.',
+          'salvati. Lo ritrovi in Impostazioni › Portafogli archiviati, da '
+          'dove puoi ripristinarlo quando vuoi.',
         ),
         actions: [
           TextButton(
@@ -107,6 +109,12 @@ class PortafoglioPagina extends StatelessWidget {
                 icon: const Icon(Icons.archive_outlined),
                 onPressed: () => _archivia(context, p),
               ),
+              IconButton(
+                tooltip: 'Elimina portafoglio',
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () =>
+                    apriEliminaPortafoglio(context, sessione, p.portafoglio),
+              ),
             ],
           ),
           floatingActionButton: FloatingActionButton.extended(
@@ -169,7 +177,8 @@ class PortafoglioPagina extends StatelessWidget {
                             sessione: sessione,
                             portafoglioId: portafoglioId,
                             giorni: 30,
-                            titolo: 'Addebiti in arrivo su questo portafoglio',
+                            titolo: 'Prossimi movimenti su questo portafoglio',
+                            chiave: 'inarrivo.$portafoglioId',
                             escludiOrigini: const {'carta'},
                           ),
                         ],
