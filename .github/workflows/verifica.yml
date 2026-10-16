@@ -149,8 +149,10 @@ jobs:
             echo "::error title=Build Windows::La build non contiene il commit $breve"
             exit 1
           fi
+          # Ora italiana: sul PC Windows della CI "TZ=Europe/Rome" non vale.
+          ora="$(pwsh -NoProfile -Command "[TimeZoneInfo]::ConvertTimeBySystemTimeZoneId([DateTime]::UtcNow, 'W. Europe Standard Time').ToString('dd/MM/yyyy HH:mm')")"
           printf 'WalleCy per Windows\r\nCommit: %s\r\nBuild n. %s del %s\r\n' \
-            "$breve" "${{ github.run_number }}" "$(TZ=Europe/Rome date '+%d/%m/%Y %H:%M')" \
+            "$breve" "${{ github.run_number }}" "$ora" \
             > build/windows/x64/runner/Release/VERSIONE.txt
           echo "::notice title=Build Windows::Commit $breve verificato nella build"
       # Firma del programma (Authenticode): senza, Windows mostra "PC

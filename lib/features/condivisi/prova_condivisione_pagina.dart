@@ -107,6 +107,9 @@ class _ProvaCondivisionePaginaState extends State<ProvaCondivisionePagina> {
         Origine.spostata =>
           'Cartella "$_nomeCartella" già presente: spostata dentro '
               '"${DriveCondiviso.cartellaApp}".',
+        Origine.altrove =>
+          'Cartella "$_nomeCartella" già presente nella cartella dove '
+              'l\'hai spostata: resta lì.',
       });
       // La stessa persona non si invita due volte.
       final ruolo = (await drive.condivisoCon(

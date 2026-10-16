@@ -226,6 +226,16 @@ void main() {
     expect(nuova.origine, Origine.creata);
     expect(drive.conNome('WalleCy'), hasLength(1));
 
+    // Spostata dall'utente in un'altra cartella: resta lì.
+    final famiglia = await d.creaCartella('Famiglia');
+    final mia = await d.cartellaDentroWalleCy('wallecy_share_GF-C');
+    await d.sposta(mia.id, famiglia, [walleCy]);
+    expect(await d.cartellaDentroWalleCy('wallecy_share_GF-C'), (
+      id: mia.id,
+      origine: Origine.altrove,
+    ));
+    expect(drive.elementi[mia.id]!.padre, famiglia);
+
     final file = await d.scrivi(vecchia, 'a.txt', 'ciao');
     expect(await d.scrivi(vecchia, 'a.txt', 'ciao di nuovo'), file);
     expect((await d.elenca(vecchia)).map((f) => f.nome), ['a.txt']);

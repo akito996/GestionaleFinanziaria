@@ -14,7 +14,19 @@ typedef InfoDrive = ({
 });
 
 /// Come è stata ottenuta una cartella dentro «WalleCy».
-enum Origine { trovata, spostata, creata }
+enum Origine {
+  /// Già dentro «WalleCy».
+  trovata,
+
+  /// Era nella radice del Drive (versioni precedenti): spostata dentro.
+  spostata,
+
+  /// L'utente l'ha messa in un'altra cartella: resta lì.
+  altrove,
+
+  /// Non c'era: creata dentro «WalleCy».
+  creata,
+}
 
 /// Errore di Drive con lo stato HTTP (es. 403 = permesso mancante).
 final class ErroreDriveCondiviso implements Exception {
@@ -114,8 +126,10 @@ class DriveCondiviso {
           .firstOrNull
           ?.id;
 
-  /// La cartella [nome] dentro «WalleCy»: la riusa se c'è già (e ce la
-  /// sposta se era altrove), altrimenti la crea.
+  /// La cartella [nome] dentro «WalleCy»: la riusa se c'è già, altrimenti
+  /// la crea. Se è nella radice del Drive (versioni precedenti) la sposta
+  /// dentro; se l'utente l'ha messa in un'altra cartella, resta lì (spostarla
+  /// non interrompe la condivisione).
   Future<({String id, Origine origine})> cartellaDentroWalleCy(
     String nome,
   ) async {
@@ -127,10 +141,17 @@ class DriveCondiviso {
     if (dentro != null) {
       return (id: dentro.id, origine: Origine.trovata);
     }
-    final fuori = trovate.firstOrNull;
-    if (fuori != null) {
-      await sposta(fuori.id, padre, fuori.padri);
-      return (id: fuori.id, origine: Origine.spostata);
+    final nellaRadice = (await _cerca(
+      "name = '${_testo(nome)}' and mimeType = '$_cartella' "
+      "and 'root' in parents",
+    )).firstOrNull;
+    if (nellaRadice != null) {
+      await sposta(nellaRadice.id, padre, nellaRadice.padri);
+      return (id: nellaRadice.id, origine: Origine.spostata);
+    }
+    final altrove = trovate.firstOrNull;
+    if (altrove != null) {
+      return (id: altrove.id, origine: Origine.altrove);
     }
     return (
       id: await creaCartella(nome, padre: padre),
