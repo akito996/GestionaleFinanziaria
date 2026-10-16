@@ -103,6 +103,9 @@ dependencies {
     implementation(tesseract)
     // Sblocco con impronta, viso o PIN (AndroidX, Apache-2.0).
     implementation("androidx.biometric:biometric:1.1.0")
+    // Selettore di Google Drive (portafogli condivisi): stessa versione di
+    // google_sign_in_android.
+    implementation("com.google.android.gms:play-services-auth:21.6.0")
 }
 
 fun sha256(file: File): String =

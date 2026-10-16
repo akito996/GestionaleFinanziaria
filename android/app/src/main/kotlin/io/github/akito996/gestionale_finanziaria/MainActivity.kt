@@ -21,6 +21,11 @@ class MainActivity : FlutterFragmentActivity() {
             flutterEngine.dartExecutor.binaryMessenger,
             "gestionale/sblocco_rapido",
         ).setMethodCallHandler(SbloccoRapido(this))
+        // Selettore di Google Drive (portafogli condivisi, ADR-019).
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "gestionale/drive_file",
+        ).setMethodCallHandler(DriveFile(this))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

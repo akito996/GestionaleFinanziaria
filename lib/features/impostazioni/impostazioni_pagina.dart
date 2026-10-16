@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/sessione.dart';
 import '../../core/sicurezza/sicurezza_dispositivo.dart';
 import '../comuni/firma_versione.dart';
+import '../condivisi/prova_condivisione_pagina.dart';
 import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
 import '../movimenti/riga_movimento.dart';
@@ -176,6 +177,21 @@ class _ImpostazioniPaginaState extends State<ImpostazioniPagina> {
                             builder: (_) => SincronizzazionePagina(
                               sessione: widget.sessione,
                             ),
+                          ),
+                        ),
+                      ),
+                      const Divider(height: 1),
+                      // Temporaneo (ADR-019, consegna 0).
+                      ListTile(
+                        leading: const Icon(Icons.science_outlined),
+                        title: const Text('Laboratorio: prova di condivisione'),
+                        subtitle: const Text(
+                          'Prova tecnica per i portafogli condivisi',
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const ProvaCondivisionePagina(),
                           ),
                         ),
                       ),

@@ -82,7 +82,7 @@ class AccessoGoogleAndroid implements AccessoGoogle {
       return null;
     }
     _ultimo = esito.accessToken;
-    return _ClientConToken(esito.accessToken);
+    return ClientConToken(esito.accessToken);
   }
 
   @override
@@ -175,8 +175,8 @@ class AccessoGoogleDesktop implements AccessoGoogle {
 }
 
 /// Aggiunge il token di accesso a ogni richiesta.
-class _ClientConToken extends http.BaseClient {
-  _ClientConToken(this._token);
+class ClientConToken extends http.BaseClient {
+  ClientConToken(this._token);
 
   final String _token;
   final _base = http.Client();
