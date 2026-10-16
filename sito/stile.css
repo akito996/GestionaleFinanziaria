@@ -1,17 +1,17 @@
 :root {
-  --sfondo: #f7faf8;
-  --testo: #18211e;
-  --tenue: #4d5b56;
-  --accento: #1b6e5a;
+  --sfondo: #f6fafe;
+  --testo: #0b1d2b;
+  --tenue: #4a6375;
+  --accento: #01579b;
   color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --sfondo: #111614;
-    --testo: #e3ebe7;
-    --tenue: #a9b8b2;
-    --accento: #7fd3b8;
+    --sfondo: #0e1a24;
+    --testo: #e3eef7;
+    --tenue: #a9c0d2;
+    --accento: #54c5f8;
   }
 }
 

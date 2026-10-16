@@ -6,6 +6,7 @@ import 'features/comuni/navigazione.dart';
 import 'features/primo_avvio/primo_avvio_pagina.dart';
 import 'features/sblocco/sblocco_pagina.dart';
 import 'features/comuni/firma_versione.dart';
+import 'features/comuni/tema.dart';
 import 'core/identita.dart';
 
 /// Radice dell'app: tema, lingua italiana e schermata in base allo stato della [sessione].
@@ -19,7 +20,6 @@ class GestionaleApp extends StatefulWidget {
 }
 
 class _GestionaleAppState extends State<GestionaleApp> {
-  static const _colore = Color(0xFF1B6E5A);
   final _navigatore = GlobalKey<NavigatorState>();
 
   @override
@@ -42,10 +42,6 @@ class _GestionaleAppState extends State<GestionaleApp> {
     }
   }
 
-  /// Ogni avviso in basso si può chiudere a mano con la "x" (accanto ad
-  /// "Annulla", se c'è).
-  static const _avvisi = SnackBarThemeData(showCloseIcon: true);
-
   @override
   Widget build(BuildContext context) {
     final sessione = widget.sessione;
@@ -65,17 +61,9 @@ class _GestionaleAppState extends State<GestionaleApp> {
       locale: const Locale('it', 'IT'),
       supportedLocales: const [Locale('it', 'IT')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: ThemeData(
-        colorSchemeSeed: _colore,
-        useMaterial3: true,
-        snackBarTheme: _avvisi,
-      ),
-      darkTheme: ThemeData(
-        colorSchemeSeed: _colore,
-        brightness: Brightness.dark,
-        useMaterial3: true,
-        snackBarTheme: _avvisi,
-      ),
+      // Tema "Blu fedele all'icona" (scelta dell'utente).
+      theme: TemaWalleCy.chiaro(),
+      darkTheme: TemaWalleCy.scuro(),
       // La versione, come una firma, solo all'apertura (poi sfuma).
       builder: (context, child) => Stack(
         children: [
