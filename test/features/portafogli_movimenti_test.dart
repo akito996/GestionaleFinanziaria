@@ -94,12 +94,13 @@ void main() {
     await attendi(tester, nelDialogo(find.text('Tipo')));
     expect(
       tester
-          .widget<TextField>(nelDialogo(find.byType(TextField)).first)
+          .widget<TextField>(nelDialogo(find.widgetWithText(TextField, 'Nome')))
           .controller!
           .text,
       'Contanti',
     );
-    await tester.enterText(nelDialogo(find.byType(TextFormField)).last, '50');
+    // L'importo è il primo campo.
+    await tester.enterText(nelDialogo(find.byType(TextFormField)).first, '50');
     await tocca(tester, find.text('Crea'));
     await attendi(tester, find.text('50,00 €'));
     expect(find.text('Ultimi movimenti'), findsOneWidget);
@@ -141,6 +142,47 @@ void main() {
     await tocca(tester, find.text('Annulla'));
     await attendi(tester, find.text('Pizzeria'));
     await attendi(tester, find.text('37,50 €'));
+
+    await tocca(tester, find.byTooltip('Archivio aperto: tocca per bloccarlo'));
+    await attendi(tester, find.text('Archivio bloccato'));
+  });
+
+  testWidgets('senza importo: chiede; si torna al modulo e poi 0 voluto', (
+    tester,
+  ) async {
+    await archivioAperto(tester);
+    await tocca(tester, find.text('Contanti'));
+    await attendi(tester, nelDialogo(find.text('Tipo')));
+
+    // Dimenticanza: si torna al modulo.
+    await tocca(tester, find.text('Crea'));
+    await attendi(tester, find.text('Nessun importo'));
+    await tocca(tester, find.text("Inserisci l'importo"));
+    expect(find.text('Nessun importo'), findsNothing);
+    expect(find.text('Nuovo portafoglio'), findsOneWidget);
+
+    // Uno "0" scritto apposta è una scelta: niente domanda.
+    await tester.enterText(nelDialogo(find.byType(TextFormField)).first, '0');
+    await tocca(tester, find.text('Crea'));
+    expect(find.text('Nessun importo'), findsNothing);
+    await attendi(tester, find.text('Ultimi movimenti'));
+
+    await tocca(tester, find.byTooltip('Archivio aperto: tocca per bloccarlo'));
+    await attendi(tester, find.text('Archivio bloccato'));
+  });
+
+  testWidgets('senza importo: "Procedi lo stesso" lo crea da zero', (
+    tester,
+  ) async {
+    await archivioAperto(tester);
+    await tocca(tester, find.text('Contanti'));
+    await attendi(tester, nelDialogo(find.text('Tipo')));
+    await tocca(tester, find.text('Crea'));
+    await attendi(tester, find.text('Nessun importo'));
+    await tocca(tester, find.text('Procedi lo stesso'));
+    await attendi(tester, find.text('Ultimi movimenti'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(AlertDialog), findsNothing);
 
     await tocca(tester, find.byTooltip('Archivio aperto: tocca per bloccarlo'));
     await attendi(tester, find.text('Archivio bloccato'));

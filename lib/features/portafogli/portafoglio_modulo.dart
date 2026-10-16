@@ -94,6 +94,13 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
     if (_salvataggio || !_form.currentState!.validate()) {
       return;
     }
+    // Nuovo portafoglio senza importo: dimenticanza o scelta? (Uno "0"
+    // scritto apposta vale come scelta.)
+    if (widget.esistente == null &&
+        _saldo.text.trim().isEmpty &&
+        !await _confermaSenzaImporto()) {
+      return;
+    }
     final saldo = _saldo.text.trim().isEmpty ? 0 : Importo.leggi(_saldo.text)!;
     final contabilita = widget.sessione.contabilita;
     setState(() => _salvataggio = true);
@@ -132,6 +139,31 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
     }
   }
 
+  Future<bool> _confermaSenzaImporto() async {
+    final procedi = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.help_outline),
+        title: const Text('Nessun importo'),
+        content: const Text(
+          'Non hai inserito alcun importo: il portafoglio partirà da zero. '
+          'Vuoi procedere lo stesso?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Inserisci l\'importo'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Procedi lo stesso'),
+          ),
+        ],
+      ),
+    );
+    return procedi ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final modifica = widget.esistente != null;
@@ -149,10 +181,30 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Per prima cosa quanto c'è adesso: grande e centrato, come
+                // l'importo di un nuovo movimento.
+                CampoImporto(
+                  controller: _saldo,
+                  etichetta: "Quanto c'è adesso?",
+                  valuta: _valuta,
+                  autofocus: !modifica,
+                  obbligatorio: false,
+                  ammettiZero: true,
+                  ammettiNegativo: true,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Il saldo di partenza: da qui in poi contano i movimenti.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
                 TextFormField(
                   controller: _nome,
-                  autofocus: true,
-                  textInputAction: TextInputAction.next,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _salva(),
                   decoration: const InputDecoration(
                     labelText: 'Nome',
                     hintText: 'Es. Contanti, Conto BancaX, Carta Visa',
@@ -186,27 +238,6 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
                       ),
                   ],
                   onChanged: (v) => setState(() => _valuta = v ?? 'EUR'),
-                ),
-                const SizedBox(height: 16),
-                // Saldo di partenza grande e centrato, come l'importo di un
-                // nuovo movimento.
-                CampoImporto(
-                  controller: _saldo,
-                  etichetta: "Quanto c'è adesso? (facoltativo)",
-                  valuta: _valuta,
-                  obbligatorio: false,
-                  ammettiZero: true,
-                  ammettiNegativo: true,
-                  textInputAction: TextInputAction.done,
-                  onInvio: _salva,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Il saldo di partenza: da qui in poi contano i movimenti.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
                 ),
                 const SizedBox(height: 16),
                 SwitchListTile(

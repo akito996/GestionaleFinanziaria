@@ -159,7 +159,7 @@ void main() {
         find.descendant(of: find.byType(AlertDialog), matching: f);
     await tocca(tester, find.text('Contanti'));
     await attendi(tester, nelDialogo(find.text('Tipo')));
-    await tester.enterText(nelDialogo(find.byType(TextFormField)).last, '50');
+    await tester.enterText(nelDialogo(find.byType(TextFormField)).first, '50');
     await tocca(tester, find.text('Crea'));
     await attendi(tester, find.text('50,00 €'));
     await tocca(tester, find.byTooltip('Nuovo movimento (Ctrl+N)'));
