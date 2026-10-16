@@ -253,7 +253,9 @@ class _ImpostazioniPaginaState extends State<ImpostazioniPagina> {
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                            builder: (_) => const ProvaCondivisionePagina(),
+                            builder: (_) => ProvaCondivisionePagina(
+                              codice: widget.sessione.idArchivio ?? 'GF',
+                            ),
                           ),
                         ),
                       ),

@@ -9,7 +9,15 @@ import '../comuni/layout.dart';
 /// di Google Drive fra due account, prima di costruire i portafogli
 /// condivisi. Nessun dato dell'archivio: solo file di testo di prova.
 class ProvaCondivisionePagina extends StatefulWidget {
-  const ProvaCondivisionePagina({super.key, this.accesso});
+  const ProvaCondivisionePagina({
+    super.key,
+    required this.codice,
+    this.accesso,
+  });
+
+  /// Chi sei (l'ID del tuo archivio, es. GF-7K3P-Q9XW): entra nei nomi della
+  /// cartella e dei file, così si capisce chi li ha creati.
+  final String codice;
 
   /// Sostituibile nei test.
   final AccessoDriveFile? accesso;
@@ -58,6 +66,11 @@ class _ProvaCondivisionePaginaState extends State<ProvaCondivisionePagina> {
 
   String get _ora => TimeOfDay.now().format(context);
 
+  /// Nomi chiari: la cartella del proprietario e un file per ogni persona.
+  String get _nomeCartella => 'wallecy_share_${widget.codice}';
+  String _nomeFile(String codice) => 'wallecy_$codice.txt';
+  bool _mio(FileCondiviso f) => f.nome == _nomeFile(widget.codice);
+
   /// 1. Proprietario: crea la cartella, scrive un file e la condivide.
   Future<void> _creaECondividi() => _passo(() async {
     final email = _email.text.trim();
@@ -72,15 +85,15 @@ class _ProvaCondivisionePaginaState extends State<ProvaCondivisionePagina> {
     }
     final drive = DriveCondiviso(client);
     try {
-      final id = await drive.creaCartella('WalleCy · prova condivisione');
+      final id = await drive.creaCartella(_nomeCartella);
       _cartella = id;
-      _scrivi(true, 'Cartella creata nel tuo Drive.');
+      _scrivi(true, 'Cartella "$_nomeCartella" creata nel tuo Drive.');
       await drive.scrivi(
         id,
-        'proprietario.txt',
-        'Ciao dal proprietario, $_ora',
+        _nomeFile(widget.codice),
+        'Ciao dal proprietario ${widget.codice}, $_ora',
       );
-      _scrivi(true, 'File "proprietario.txt" scritto.');
+      _scrivi(true, 'File "${_nomeFile(widget.codice)}" scritto.');
       await drive.condividi(id, email);
       _scrivi(true, 'Cartella condivisa con $email (riceverà un\'email).');
     } finally {
@@ -98,10 +111,16 @@ class _ProvaCondivisionePaginaState extends State<ProvaCondivisionePagina> {
         return;
       }
       final id = scelta.scelti.first;
-      _scrivi(
-        true,
-        'Cartella scelta (id ${id.length > 6 ? id.substring(0, 6) : id}…).',
-      );
+      final scelto = await drive.info(id);
+      if (!scelto.cartella) {
+        _scrivi(
+          false,
+          'Hai scelto il file "${scelto.nome}". Scegli invece la cartella '
+          '"wallecy_share_…" (la cartella, non i file al suo interno).',
+        );
+        return;
+      }
+      _scrivi(true, 'Cartella scelta: "${scelto.nome}".');
       final file = await drive.elenca(id);
       _scrivi(
         file.isNotEmpty,
@@ -110,12 +129,19 @@ class _ProvaCondivisionePaginaState extends State<ProvaCondivisionePagina> {
             : 'Vedo ${file.length} file: '
                   '${file.map((f) => '${f.nome} (${f.autore})').join(', ')}.',
       );
-      for (final f in file.where((f) => f.nome == 'proprietario.txt')) {
+      for (final f in file.where((f) => !_mio(f))) {
         final testo = await drive.leggi(f.id);
-        _scrivi(true, 'Letto "proprietario.txt": $testo');
+        _scrivi(true, 'Letto "${f.nome}": $testo');
       }
-      await drive.scrivi(id, 'membro.txt', 'Ciao dal membro, $_ora');
-      _scrivi(true, 'File "membro.txt" scritto nella cartella condivisa.');
+      await drive.scrivi(
+        id,
+        _nomeFile(widget.codice),
+        'Ciao dal membro ${widget.codice}, $_ora',
+      );
+      _scrivi(
+        true,
+        'File "${_nomeFile(widget.codice)}" scritto nella cartella condivisa.',
+      );
     } finally {
       drive.chiudi();
     }
@@ -135,16 +161,16 @@ class _ProvaCondivisionePaginaState extends State<ProvaCondivisionePagina> {
     final drive = DriveCondiviso(client);
     try {
       final file = await drive.elenca(id);
-      final membro = file.where((f) => f.nome == 'membro.txt');
+      final membri = file.where((f) => !_mio(f));
       _scrivi(
-        membro.isNotEmpty,
-        membro.isEmpty
+        membri.isNotEmpty,
+        membri.isEmpty
             ? 'Il file del membro non c\'è ancora (file visti: '
                   '${file.map((f) => f.nome).join(', ')}).'
             : 'Vedo il file del membro.',
       );
-      for (final f in membro) {
-        _scrivi(true, 'Letto "membro.txt": ${await drive.leggi(f.id)}');
+      for (final f in membri) {
+        _scrivi(true, 'Letto "${f.nome}": ${await drive.leggi(f.id)}');
       }
     } finally {
       drive.chiudi();
@@ -210,8 +236,9 @@ class _ProvaCondivisionePaginaState extends State<ProvaCondivisionePagina> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Scegli la cartella «WalleCy · prova condivisione» '
-                      'in «Condivisi con me».',
+                      'Nella finestra di Google apri «Condivisi con me» e '
+                      'scegli la cartella «wallecy_share_…» (si vedono solo '
+                      'le cartelle).',
                     ),
                     const SizedBox(height: 12),
                     FilledButton(

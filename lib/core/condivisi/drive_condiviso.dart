@@ -116,6 +116,20 @@ class DriveCondiviso {
     ];
   }
 
+  /// Nome e tipo di un elemento (es. per controllare che sia una cartella).
+  Future<({String nome, bool cartella})> info(String id) async {
+    final r = await _client.get(
+      _api
+          .resolve('files/$id')
+          .replace(queryParameters: {'fields': 'name,mimeType'}),
+    );
+    final json = await _json(r);
+    return (
+      nome: json['name'] as String? ?? '',
+      cartella: json['mimeType'] == _cartella,
+    );
+  }
+
   /// Contenuto di un file di testo.
   Future<String> leggi(String fileId) async {
     final r = await _client.get(

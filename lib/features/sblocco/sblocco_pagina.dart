@@ -284,6 +284,9 @@ class _RecuperoPaginaState extends State<RecuperoPagina> {
               ),
               const SizedBox(height: 24),
               Form(
+                // Dopo il primo errore il campo si ricontrolla a ogni modifica:
+                // il messaggio sparisce appena il valore è giusto.
+                autovalidateMode: AutovalidateMode.onUserInteractionIfError,
                 key: _form,
                 child: AutofillGroup(
                   child: CampiNuovaPassword(

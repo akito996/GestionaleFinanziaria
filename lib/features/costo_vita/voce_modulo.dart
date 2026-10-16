@@ -184,6 +184,9 @@ class _NuovaVoceState extends State<_NuovaVoce> {
       azione: 'Aggiungi',
       onAzione: _salvataggio ? null : _salva,
       contenuto: Form(
+        // Dopo il primo errore il campo si ricontrolla a ogni modifica:
+        // il messaggio sparisce appena il valore è giusto.
+        autovalidateMode: AutovalidateMode.onUserInteractionIfError,
         key: _form,
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -442,6 +445,9 @@ class _ModificaVoceState extends State<_ModificaVoce> {
       onElimina: _salvataggio ? null : _elimina,
       larghezza: 460,
       contenuto: Form(
+        // Dopo il primo errore il campo si ricontrolla a ogni modifica:
+        // il messaggio sparisce appena il valore è giusto.
+        autovalidateMode: AutovalidateMode.onUserInteractionIfError,
         key: _form,
         child: Column(
           mainAxisSize: MainAxisSize.min,

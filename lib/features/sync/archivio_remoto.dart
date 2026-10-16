@@ -104,6 +104,9 @@ class _ModuloArchivioRemotoState extends State<ModuloArchivioRemoto> {
   Widget build(BuildContext context) {
     final schema = Theme.of(context).colorScheme;
     return Form(
+      // Dopo il primo errore il campo si ricontrolla a ogni modifica:
+      // il messaggio sparisce appena il valore è giusto.
+      autovalidateMode: AutovalidateMode.onUserInteractionIfError,
       key: _form,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

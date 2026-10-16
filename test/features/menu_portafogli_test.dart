@@ -158,6 +158,47 @@ void main() {
     await chiudi(tester);
   });
 
+  testWidgets('gesto Indietro: sezione di prima, poi due volte per uscire', (
+    tester,
+  ) async {
+    await avvia(tester);
+    final chiamate = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (c) async {
+        chiamate.add(c.method);
+        return null;
+      },
+    );
+    await tocca(tester, find.text('Movimenti').hitTestable());
+    await tocca(tester, find.text('Impostazioni').hitTestable());
+    await attendi(tester, find.text('Portafogli archiviati'));
+
+    Future<void> indietro() async {
+      await tester.binding.handlePopRoute();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    Finder titolo(String testo) => find
+        .descendant(of: find.byType(AppBar), matching: find.text(testo))
+        .hitTestable();
+
+    expect(titolo('Impostazioni'), findsOneWidget);
+    await indietro();
+    expect(titolo('Movimenti'), findsOneWidget);
+    await indietro();
+    expect(titolo('WalleCy'), findsOneWidget);
+    await indietro();
+    expect(
+      find.text('Torna indietro ancora una volta per uscire'),
+      findsOneWidget,
+    );
+    expect(chiamate, isNot(contains('SystemNavigator.pop')));
+    await indietro();
+    expect(chiamate, contains('SystemNavigator.pop'));
+    await chiudi(tester);
+  });
+
   testWidgets('archivia, ritrova in Impostazioni ed elimina con Annulla', (
     tester,
   ) async {
@@ -166,7 +207,17 @@ void main() {
     await attendi(tester, find.byTooltip('Archivia portafoglio'));
     await tocca(tester, find.byTooltip('Archivia portafoglio'));
     await tocca(tester, find.widgetWithText(FilledButton, 'Archivia'));
-    await attendi(tester, find.textContaining('archiviato'));
+    // Si aspetta l'archivio, non il messaggio (sparisce da solo).
+    for (var i = 0; i < 100; i++) {
+      final archiviati = await tester.runAsync(
+        () => sessione.contabilita.osservaPortafogli(archiviati: true).first,
+      );
+      if (archiviati!.isNotEmpty) {
+        break;
+      }
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    await tester.pump(const Duration(milliseconds: 300));
 
     await tocca(tester, find.text('Impostazioni').hitTestable());
     await tocca(tester, find.text('Portafogli archiviati'));

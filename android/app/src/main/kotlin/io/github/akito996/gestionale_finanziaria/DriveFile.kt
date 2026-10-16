@@ -22,6 +22,7 @@ class DriveFile(private val attivita: FragmentActivity) :
     MethodChannel.MethodCallHandler {
     companion object {
         private const val DRIVE_FILE = "https://www.googleapis.com/auth/drive.file"
+        private const val CARTELLA = "application/vnd.google-apps.folder"
         private val richieste = AtomicInteger()
     }
 
@@ -44,6 +45,12 @@ class DriveFile(private val attivita: FragmentActivity) :
             .addResourceParameter(
                 AuthorizationRequest.ResourceParameter.PICKER_ALLOW_FOLDER_SELECTION,
                 "true",
+            )
+            // Solo cartelle: il membro sceglie la cartella condivisa, non i
+            // file al suo interno.
+            .addResourceParameter(
+                AuthorizationRequest.ResourceParameter.PICKER_MIMETYPES,
+                CARTELLA,
             )
             .build()
         val client = Identity.getAuthorizationClient(attivita)

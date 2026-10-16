@@ -244,6 +244,9 @@ class _PrimoAvvioPaginaState extends State<PrimoAvvioPagina> {
         ),
         const SizedBox(height: 24),
         Form(
+          // Dopo il primo errore il campo si ricontrolla a ogni modifica:
+          // il messaggio sparisce appena il valore è giusto.
+          autovalidateMode: AutovalidateMode.onUserInteractionIfError,
           key: _formPassword,
           child: AutofillGroup(
             child: CampiNuovaPassword(

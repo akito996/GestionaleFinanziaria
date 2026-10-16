@@ -140,6 +140,9 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
       content: SizedBox(
         width: 420,
         child: Form(
+          // Dopo il primo errore il campo si ricontrolla a ogni modifica:
+          // il messaggio sparisce appena il valore è giusto.
+          autovalidateMode: AutovalidateMode.onUserInteractionIfError,
           key: _form,
           child: SingleChildScrollView(
             child: Column(

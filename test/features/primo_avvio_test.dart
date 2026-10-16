@@ -100,10 +100,18 @@ void main() {
     await tocca(tester, find.text('Continua'));
     expect(find.text('Servono almeno 12 caratteri.'), findsOneWidget);
 
+    // Appena la password è abbastanza lunga l'errore sparisce, senza
+    // premere di nuovo "Continua".
     await tester.enterText(campi.at(0), 'Password-Lunga-1');
+    await tester.pump();
+    expect(find.text('Servono almeno 12 caratteri.'), findsNothing);
+
     await tester.enterText(campi.at(1), 'Password-Lunga-2');
     await tocca(tester, find.text('Continua'));
     expect(find.text('Le due password non coincidono.'), findsOneWidget);
+    await tester.enterText(campi.at(1), 'Password-Lunga-1');
+    await tester.pump();
+    expect(find.text('Le due password non coincidono.'), findsNothing);
   });
 
   testWidgets('percorso completo: crea, blocca, sblocca, recupera', (

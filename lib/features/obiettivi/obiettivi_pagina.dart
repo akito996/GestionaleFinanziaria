@@ -555,6 +555,9 @@ class _VersamentoState extends State<_Versamento> {
       content: SizedBox(
         width: 420,
         child: Form(
+          // Dopo il primo errore il campo si ricontrolla a ogni modifica:
+          // il messaggio sparisce appena il valore è giusto.
+          autovalidateMode: AutovalidateMode.onUserInteractionIfError,
           key: _form,
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -751,6 +754,9 @@ class _ModuloObiettivoState extends State<_ModuloObiettivo> {
       content: SizedBox(
         width: 460,
         child: Form(
+          // Dopo il primo errore il campo si ricontrolla a ogni modifica:
+          // il messaggio sparisce appena il valore è giusto.
+          autovalidateMode: AutovalidateMode.onUserInteractionIfError,
           key: _form,
           child: SingleChildScrollView(
             child: Column(

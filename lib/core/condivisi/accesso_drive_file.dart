@@ -126,6 +126,8 @@ class AccessoDriveFileDesktop implements AccessoDriveFile {
         'prompt': 'consent',
         'trigger_onepick': 'true',
         'allow_folder_selection': 'true',
+        // Solo cartelle: niente file scelti per sbaglio.
+        'mimetypes': 'application/vnd.google-apps.folder',
         'code_challenge': sfida,
         'code_challenge_method': 'S256',
         'state': stato,

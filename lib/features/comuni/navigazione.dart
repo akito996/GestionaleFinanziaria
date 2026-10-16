@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/db/notifiche.dart';
 import '../../core/db/tabelle.dart';
@@ -279,7 +280,45 @@ class _GuscioState extends State<Guscio> {
     (Icons.settings_outlined, Icons.settings, 'Impostazioni'),
   ];
 
-  void _vaiA(int sezione) => setState(() => _sezione = sezione);
+  /// Sezioni visitate, per tornare indietro con il gesto (o il tasto) Indietro.
+  final _storia = <int>[];
+
+  /// Ultimo "indietro" sulla Panoramica: un secondo entro 2 secondi esce.
+  DateTime? _ultimoIndietro;
+
+  void _vaiA(int sezione) => setState(() {
+    if (sezione != _sezione) {
+      _storia
+        ..remove(sezione)
+        ..add(_sezione);
+    }
+    _sezione = sezione;
+  });
+
+  /// Indietro (gesto su Android): torna alla sezione di prima; dalla
+  /// Panoramica, la prima volta avvisa e la seconda (entro 2 secondi) esce.
+  void _indietro() {
+    if (_storia.isNotEmpty || _sezione != 0) {
+      setState(() => _sezione = _storia.isEmpty ? 0 : _storia.removeLast());
+      return;
+    }
+    final adesso = DateTime.now();
+    final prima = _ultimoIndietro;
+    if (prima != null &&
+        adesso.difference(prima) < const Duration(seconds: 2)) {
+      SystemNavigator.pop();
+      return;
+    }
+    _ultimoIndietro = adesso;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        avviso(
+          content: const Text('Torna indietro ancora una volta per uscire'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+  }
 
   /// Sezioni visibili nella barra in basso del telefono (le altre in "Altro").
   static const _inBarra = 4;
@@ -329,6 +368,18 @@ class _GuscioState extends State<Guscio> {
     ];
     final corpo = IndexedStack(index: _sezione, children: pagine);
 
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (fatto, _) {
+        if (!fatto) {
+          _indietro();
+        }
+      },
+      child: _struttura(corpo),
+    );
+  }
+
+  Widget _struttura(Widget corpo) {
     return LayoutBuilder(
       builder: (context, vincoli) {
         if (vincoli.maxWidth >= larghezzaBarraLaterale) {

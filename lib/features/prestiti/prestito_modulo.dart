@@ -489,6 +489,9 @@ class _ModuloPrestitoState extends State<_ModuloPrestito> {
       content: SizedBox(
         width: 520,
         child: Form(
+          // Dopo il primo errore il campo si ricontrolla a ogni modifica:
+          // il messaggio sparisce appena il valore è giusto.
+          autovalidateMode: AutovalidateMode.onUserInteractionIfError,
           key: _form,
           child: SingleChildScrollView(
             child: Column(
