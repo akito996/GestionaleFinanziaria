@@ -28,8 +28,9 @@ class CassaforteFinta implements CassaforteDispositivo {
   Future<MaterialeCassaforte> attiva(Uint8List sfida) async {
     _verifica();
     _segreto = Uint8List.fromList(List.generate(32, (i) => (i * 7 + 3) % 256));
+    // Sola lettura, come i byte che arrivano dal sistema vero.
     return (
-      materiale: Uint8List.fromList(_segreto!),
+      materiale: Uint8List.fromList(_segreto!).asUnmodifiableView(),
       dati: Uint8List.fromList([1, 2, 3]),
     );
   }
@@ -41,7 +42,7 @@ class CassaforteFinta implements CassaforteDispositivo {
       throw const ChiaveDispositivoAnnullata();
     }
     _verifica();
-    return Uint8List.fromList(_segreto!);
+    return Uint8List.fromList(_segreto!).asUnmodifiableView();
   }
 
   @override

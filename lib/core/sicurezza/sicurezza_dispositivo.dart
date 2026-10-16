@@ -220,9 +220,16 @@ class SicurezzaDispositivo extends ChangeNotifier {
 
   /// Chiave da 256 bit dal segreto della cassaforte (32 byte su Android, la
   /// firma di Windows Hello sul PC).
+  ///
+  /// I byte arrivati dal sistema sono di sola lettura (canale della
+  /// piattaforma): si cancellano solo se si può, senza mai fermarsi.
   SecureKey _chiave(Uint8List materiale) {
     final impronta = _sodium.crypto.genericHash(message: materiale, outLen: 32);
-    materiale.fillRange(0, materiale.length, 0);
+    try {
+      materiale.fillRange(0, materiale.length, 0);
+    } on UnsupportedError {
+      // Sola lettura: lo libera il sistema.
+    }
     final master = SecureKey.fromList(_sodium, impronta);
     impronta.fillRange(0, impronta.length, 0);
     try {

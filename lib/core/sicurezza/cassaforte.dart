@@ -107,19 +107,21 @@ class CassaforteDiPiattaforma implements CassaforteDispositivo {
     }
   }
 
+  // I byte che arrivano dal canale sono di sola lettura: se ne fa una copia
+  // normale, che chi la usa può cancellare dopo l'uso.
   @override
   Future<MaterialeCassaforte> attiva(Uint8List sfida) async {
     final risposta = await _chiama('attiva', {'sfida': sfida});
     return (
-      materiale: risposta['materiale']! as Uint8List,
-      dati: risposta['dati']! as Uint8List,
+      materiale: Uint8List.fromList(risposta['materiale']! as Uint8List),
+      dati: Uint8List.fromList(risposta['dati']! as Uint8List),
     );
   }
 
   @override
   Future<Uint8List> leggi(Uint8List sfida, Uint8List dati) async {
     final risposta = await _chiama('leggi', {'sfida': sfida, 'dati': dati});
-    return risposta['materiale']! as Uint8List;
+    return Uint8List.fromList(risposta['materiale']! as Uint8List);
   }
 
   @override
