@@ -351,17 +351,19 @@ jobs:
               exit 1
             fi
           done
-      # Il file da installare per provare (telefoni e tablet a 64 bit), con un
-      # nome chiaro. Lo zip con tutti gli APK resta per i casi particolari.
+      # Il file da installare (telefoni e tablet a 64 bit): la variante
+      # UFFICIALE, la stessa della release, così ogni aggiornamento si
+      # installa sopra e tiene i dati (scelta dell'utente del 16/10/2026).
+      # La variante "prova" resta nello zip con tutti gli APK.
       - name: APK da installare
         run: |
           mkdir -p build/da-installare
           # Il commit nel nome: si vede subito quale versione si installa.
-          cp build/app/outputs/flutter-apk/app-arm64-v8a-prova-release.apk "build/da-installare/WalleCy-prova-${GITHUB_SHA::7}.apk"
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-ufficiale-release.apk "build/da-installare/WalleCy-${GITHUB_SHA::7}.apk"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: android-da-installare-${{ github.sha }}
-          path: build/da-installare/WalleCy-prova-*.apk
+          path: build/da-installare/WalleCy-*.apk
           if-no-files-found: error
           retention-days: 14
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

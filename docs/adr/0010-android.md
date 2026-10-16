@@ -14,6 +14,7 @@ Si comincia a provare l'app su Android. Sul PC la build Android non è possibile
 - **Due varianti** (scelta dell'utente: opzione "Prestazione"), installabili insieme:
   - **ufficiale** (`io.github.akito996.gestionale_finanziaria`, "GestionaleFinanziaria"): quella con i dati veri;
   - **prova** (suffisso `.prova`, "GF Prova"): per provare le novità senza toccare i dati veri; la firma della versione mostra "· prova".
+  - Dal 16/10/2026 (scelta dell'utente) l'artifact **"android-da-installare"** contiene la variante **ufficiale** (`WalleCy-<commit>.apk`), la stessa della release: ogni aggiornamento si installa sopra e tiene i dati. Per passare i dati dalla variante prova a quella ufficiale si usa la sincronizzazione: "Ho già un archivio su un altro dispositivo" (ADR-015). La prova resta nello zip con tutti gli APK.
 - **Firma definitiva**:
   - keystore generato dall'utente sul proprio PC (le password non passano da Claude);
   - caricato come secret di GitHub Actions (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`);
