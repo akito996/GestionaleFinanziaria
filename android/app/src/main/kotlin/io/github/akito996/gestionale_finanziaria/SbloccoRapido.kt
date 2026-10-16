@@ -170,7 +170,7 @@ class SbloccoRapido(private val attivita: FragmentActivity) :
         )
         val info = BiometricPrompt.PromptInfo.Builder()
             .setTitle(titolo)
-            .setSubtitle("GestionaleFinanziaria")
+            .setSubtitle("WalleCy")
             .setAllowedAuthenticators(autenticatori)
             .setConfirmationRequired(false)
             .apply { if (!conPin) setNegativeButtonText("Usa la password") }

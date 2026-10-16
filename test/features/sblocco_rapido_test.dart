@@ -221,6 +221,57 @@ void main() {
     await chiudi(tester, sessione);
   });
 
+  /// Archivio nuovo e bloccato; poi si entra con la password e compare la
+  /// proposta.
+  Future<Sessione> allaProposta(WidgetTester tester) async {
+    final sessione = nuovaSessione();
+    await tester.runAsync(() async {
+      await sessione.avvia();
+      await sessione.preparaNuovoArchivio('Password-Lunga-1');
+      await sessione.confermaNuovoArchivio();
+      await sessione.blocca();
+    });
+    await avvia(tester, sessione);
+    await tester.enterText(find.byType(TextField), 'Password-Lunga-1');
+    await tocca(tester, find.text('Sblocca'));
+    await attendi(tester, find.text('Sblocco più veloce'));
+    return sessione;
+  }
+
+  /// Di nuovo dentro con la password: la proposta non deve ricomparire.
+  Future<void> nessunaNuovaProposta(
+    WidgetTester tester,
+    Sessione sessione,
+  ) async {
+    sessione.blocca().ignore();
+    await attendi(tester, find.text('Archivio bloccato'));
+    await tester.enterText(find.byType(TextField), 'Password-Lunga-1');
+    await tocca(tester, find.text('Sblocca'));
+    await attendi(tester, find.text('Panoramica'));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('Sblocco più veloce'), findsNothing);
+  }
+
+  testWidgets('proposta chiusa con Indietro: non ricompare', (tester) async {
+    final sessione = await allaProposta(tester);
+    await tester.binding.handlePopRoute();
+    await attendi(tester, find.textContaining('Impostazioni › Sicurezza'));
+    expect(find.text('Sblocco più veloce'), findsNothing);
+    expect(sessione.sicurezza.rapidoAttivo, isFalse);
+    await nessunaNuovaProposta(tester, sessione);
+    await chiudi(tester, sessione);
+  });
+
+  testWidgets('"Attiva" e verifica annullata: non ricompare', (tester) async {
+    final sessione = await allaProposta(tester);
+    cassaforte.annulla = true;
+    await tocca(tester, find.text('Attiva'));
+    await attendi(tester, find.textContaining('Impostazioni › Sicurezza'));
+    expect(sessione.sicurezza.rapidoAttivo, isFalse);
+    await nessunaNuovaProposta(tester, sessione);
+    await chiudi(tester, sessione);
+  });
+
   group('blocco automatico', () {
     /// Archivio con sblocco rapido e il blocco automatico scelto, aperto
     /// all'avvio con la verifica automatica.

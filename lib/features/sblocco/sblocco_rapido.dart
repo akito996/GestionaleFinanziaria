@@ -38,11 +38,16 @@ String? mancaPerSbloccoRapido(SicurezzaDispositivo sicurezza) =>
     };
 
 /// Attiva lo sblocco rapido (chiede subito la verifica). `true` se attivo.
+///
+/// [dallaProposta]: se non si attiva, l'avviso ricorda che si può fare dalle
+/// Impostazioni (la proposta non ricompare).
 Future<bool> attivaSbloccoRapido(
   BuildContext context,
-  Sessione sessione,
-) async {
+  Sessione sessione, {
+  bool dallaProposta = false,
+}) async {
   final messaggi = ScaffoldMessenger.of(context);
+  final dopo = dallaProposta ? ' $_quandoVuoi' : '';
   String? esito;
   var riuscito = false;
   try {
@@ -53,11 +58,11 @@ Future<bool> attivaSbloccoRapido(
         'Sblocco con ${nomeSbloccoRapido(sessione.sicurezza)} attivo. Ogni '
         '14 giorni ti chiediamo la password, così non la dimentichi.';
   } on VerificaAnnullata {
-    esito = null;
+    esito = dallaProposta ? _quandoVuoi : null;
   } on VerificaBloccata {
-    esito = 'Troppi tentativi: riprova tra poco.';
+    esito = 'Troppi tentativi: riprova tra poco.$dopo';
   } on ErroreCassaforte catch (e) {
-    esito = 'Sblocco rapido non attivato (${e.dettaglio}).';
+    esito = 'Sblocco rapido non attivato (${e.dettaglio}).$dopo';
   }
   if (esito != null) {
     messaggi
@@ -67,12 +72,21 @@ Future<bool> attivaSbloccoRapido(
   return riuscito;
 }
 
+const _quandoVuoi = 'Puoi attivarlo quando vuoi da Impostazioni › Sicurezza.';
+
 /// Dopo la password, una volta sola: "Vuoi sbloccare più in fretta?".
+///
+/// La proposta conta come fatta appena compare: chiusa con Indietro, con
+/// "Non ora" o con la verifica annullata non ricompare a ogni sblocco.
 Future<void> proponiSbloccoRapido(
   BuildContext context,
   Sessione sessione,
 ) async {
   final sicurezza = sessione.sicurezza;
+  await sicurezza.segnaPropostaFatta();
+  if (!context.mounted) {
+    return;
+  }
   final nome = nomeSbloccoRapido(sicurezza);
   final scelta = await showDialog<bool>(
     context: context,
@@ -97,23 +111,15 @@ Future<void> proponiSbloccoRapido(
       ],
     ),
   );
-  if (!context.mounted || scelta == null) {
+  if (!context.mounted || sessione.fase != FaseSessione.sbloccata) {
     return;
   }
-  if (scelta) {
-    await attivaSbloccoRapido(context, sessione);
+  if (scelta ?? false) {
+    await attivaSbloccoRapido(context, sessione, dallaProposta: true);
     return;
   }
-  await sicurezza.rifiutaProposta();
-  if (context.mounted) {
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(
-        avviso(
-          content: const Text(
-            'Puoi attivarlo quando vuoi da Impostazioni › Sicurezza.',
-          ),
-        ),
-      );
-  }
+  // "Non ora" o Indietro.
+  ScaffoldMessenger.of(context)
+    ..clearSnackBars()
+    ..showSnackBar(avviso(content: const Text(_quandoVuoi)));
 }

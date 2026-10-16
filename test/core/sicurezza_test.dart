@@ -145,10 +145,10 @@ void main() {
       expect(sicurezza.rapidoAttivo, isFalse);
     });
 
-    test('"Non ora": non si propone più', () async {
+    test('proposta fatta: non si propone più', () async {
       final sicurezza = nuova();
       await sicurezza.carica();
-      await sicurezza.rifiutaProposta();
+      await sicurezza.segnaPropostaFatta();
       final dopo = nuova();
       await dopo.carica();
       expect(dopo.proponibile, isFalse);

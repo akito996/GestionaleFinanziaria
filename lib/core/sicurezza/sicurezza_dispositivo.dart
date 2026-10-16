@@ -51,7 +51,7 @@ class SicurezzaDispositivo extends ChangeNotifier {
       DisponibilitaCassaforte.nonSupportata;
   _Rapido? _rapido;
   DateTime? _ultimaPassword;
-  bool _propostaRifiutata = false;
+  bool _propostaFatta = false;
   Duration? _bloccoAutomatico = bloccoPredefinito;
   String? _avviso;
 
@@ -82,7 +82,7 @@ class SicurezzaDispositivo extends ChangeNotifier {
   bool get proponibile =>
       _disponibilita == DisponibilitaCassaforte.pronta &&
       _rapido == null &&
-      !_propostaRifiutata;
+      !_propostaFatta;
 
   /// Dopo quanto tempo in secondo piano l'archivio si blocca (`null` = mai).
   Duration? get bloccoAutomatico => _bloccoAutomatico;
@@ -190,9 +190,11 @@ class SicurezzaDispositivo extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// "Non ora": non lo si propone più (resta attivabile dalle Impostazioni).
-  Future<void> rifiutaProposta() async {
-    _propostaRifiutata = true;
+  /// La proposta è comparsa: non si ripete, qualunque sia la risposta
+  /// ("Non ora", Indietro, verifica annullata o non riuscita). Lo sblocco
+  /// rapido resta attivabile dalle Impostazioni.
+  Future<void> segnaPropostaFatta() async {
+    _propostaFatta = true;
     await _salva();
     notifyListeners();
   }
@@ -254,7 +256,8 @@ class SicurezzaDispositivo extends ChangeNotifier {
         final int s => Duration(seconds: s),
         _ => bloccoPredefinito,
       };
-      _propostaRifiutata = json['propostaRifiutata'] == true;
+      // Nome storico della chiave: vale per ogni proposta già fatta.
+      _propostaFatta = json['propostaRifiutata'] == true;
       final ultima = json['ultimaPassword'];
       _ultimaPassword = ultima is String ? DateTime.tryParse(ultima) : null;
       final avviso = json['avviso'];
@@ -272,7 +275,7 @@ class SicurezzaDispositivo extends ChangeNotifier {
     final json = jsonEncode({
       'v': _versione,
       'bloccoAutomatico': _bloccoAutomatico?.inSeconds ?? -1,
-      'propostaRifiutata': _propostaRifiutata,
+      'propostaRifiutata': _propostaFatta,
       'ultimaPassword': _ultimaPassword?.toUtc().toIso8601String(),
       'avviso': _avviso,
       'rapido': _rapido?.toJson(),
