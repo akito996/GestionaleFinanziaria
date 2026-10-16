@@ -105,6 +105,11 @@ Scelta dell'utente: **Qualità/Prezzo** (le altre: proprietario come "centro" ch
 - **Nuovo membro**: gli altri membri vedono «nuovo membro da confermare» e con un tocco aprono il suo file.
 - **Contenuto dei file**: pacchetti cifrati con la chiave del portafoglio (XChaCha20-Poly1305) e firmati dall'autore (Ed25519); unione riga per riga come nell'ADR-015.
 
+**Consegna della chiave del portafoglio** (scelta dell'utente: **Prestazione, con QR**; le altre: codice d'invito di 8 caratteri mandato per messaggio, oppure codice nell'email di Google):
+- nessun codice da scrivere: ogni persona pubblica la propria chiave pubblica (X25519 per ricevere, Ed25519 per firmare) nel proprio file;
+- il proprietario cifra la chiave del portafoglio per la chiave pubblica del membro e la scrive nel file del membro;
+- **verifica facoltativa** contro chi controlla Drive: ognuno vede un **codice di sicurezza** (impronta delle due chiavi pubbliche) e lo confronta con l'altro **inquadrando il QR** sul suo schermo, oppure leggendo le cifre. Finché non è verificato, il membro resta segnato come "non verificato".
+
 **Consegna 1, in quattro passi**:
 - 1a. Fondamenta locali: chiavi della persona, tabelle dei portafogli condivisi e dei membri, voci con l'autore.
 - 1b. Invito: "Condiviso" nel modulo del portafoglio, email, cartella e file preparati, consegna della chiave.
