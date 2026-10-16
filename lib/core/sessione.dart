@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:sodium/sodium_sumo.dart';
 
+import 'condivisi/identita_persona.dart';
 import 'crypto/keyring.dart';
 import 'crypto/operazioni_chiavi.dart';
 import 'crypto/secret_key.dart';
@@ -165,6 +166,14 @@ class Sessione extends ChangeNotifier {
   );
 
   SecureKey? _dek;
+
+  IdentitaPersona? _identita;
+
+  /// Chiavi della persona per i portafogli condivisi (ADR-019), ricavate
+  /// dalla chiave dei dati: le stesse su tutti i dispositivi dell'archivio.
+  /// Solo ad archivio aperto.
+  IdentitaPersona get identita =>
+      _identita ??= IdentitaPersona.daChiaveDati(sodium, _dek!);
 
   String? _idArchivio;
 
@@ -337,6 +346,8 @@ class Sessione extends ChangeNotifier {
     _sync = null;
     _archivio = null;
     _dek = null;
+    _identita?.chiudi();
+    _identita = null;
     await archivio?.close();
     dek?.dispose();
   }
@@ -345,6 +356,7 @@ class Sessione extends ChangeNotifier {
   void dispose() {
     annullaNuovoArchivio();
     _archivio?.close();
+    _identita?.chiudi();
     _dek?.dispose();
     super.dispose();
   }

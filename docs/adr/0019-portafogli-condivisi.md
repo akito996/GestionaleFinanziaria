@@ -112,6 +112,7 @@ Scelta dell'utente: **Qualità/Prezzo** (le altre: proprietario come "centro" ch
 
 **Consegna 1, in quattro passi**:
 - 1a. Fondamenta locali: chiavi della persona, tabelle dei portafogli condivisi e dei membri, voci con l'autore.
+  **Fatto (16/10/2026)**: `IdentitaPersona` (chiavi ricavate dalla chiave dei dati, codice di sicurezza), tabelle `portafogli_condivisi` e `membri`, colonne `inserito_da` e `modificato_da` nei movimenti, database alla versione 14.
 - 1b. Invito: "Condiviso" nel modulo del portafoglio, email, cartella e file preparati, consegna della chiave.
 - 1c. Ingresso del membro: "Unisciti a un portafoglio condiviso", scelta dei file, il portafoglio compare.
 - 1d. Sincronizzazione condivisa: scrittura e lettura dei file, firme, unione, "nuovo membro da confermare".

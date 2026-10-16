@@ -3323,6 +3323,28 @@ class $MovimentiTable extends Movimenti
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _inseritoDaMeta = const VerificationMeta(
+    'inseritoDa',
+  );
+  @override
+  late final GeneratedColumn<String> inseritoDa = GeneratedColumn<String>(
+    'inserito_da',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _modificatoDaMeta = const VerificationMeta(
+    'modificatoDa',
+  );
+  @override
+  late final GeneratedColumn<String> modificatoDa = GeneratedColumn<String>(
+    'modificato_da',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3339,6 +3361,8 @@ class $MovimentiTable extends Movimenti
     campi,
     pianificazioneId,
     dataPrevista,
+    inseritoDa,
+    modificatoDa,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3471,6 +3495,21 @@ class $MovimentiTable extends Movimenti
         ),
       );
     }
+    if (data.containsKey('inserito_da')) {
+      context.handle(
+        _inseritoDaMeta,
+        inseritoDa.isAcceptableOrUnknown(data['inserito_da']!, _inseritoDaMeta),
+      );
+    }
+    if (data.containsKey('modificato_da')) {
+      context.handle(
+        _modificatoDaMeta,
+        modificatoDa.isAcceptableOrUnknown(
+          data['modificato_da']!,
+          _modificatoDaMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3536,6 +3575,14 @@ class $MovimentiTable extends Movimenti
         DriftSqlType.string,
         data['${effectivePrefix}data_prevista'],
       ),
+      inseritoDa: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}inserito_da'],
+      ),
+      modificatoDa: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}modificato_da'],
+      ),
     );
   }
 
@@ -3569,6 +3616,11 @@ class Movimento extends DataClass implements Insertable<Movimento> {
   /// la coppia (pianificazione, data prevista) è unica, così non si registra due volte.
   final String? pianificazioneId;
   final String? dataPrevista;
+
+  /// Nei portafogli condivisi (ADR-019): chi l'ha inserito e chi l'ha
+  /// modificato per ultimo (id in [Membri]). Vuoti negli altri portafogli.
+  final String? inseritoDa;
+  final String? modificatoDa;
   const Movimento({
     required this.id,
     required this.aggiornatoIl,
@@ -3584,6 +3636,8 @@ class Movimento extends DataClass implements Insertable<Movimento> {
     required this.campi,
     this.pianificazioneId,
     this.dataPrevista,
+    this.inseritoDa,
+    this.modificatoDa,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3611,6 +3665,12 @@ class Movimento extends DataClass implements Insertable<Movimento> {
     }
     if (!nullToAbsent || dataPrevista != null) {
       map['data_prevista'] = Variable<String>(dataPrevista);
+    }
+    if (!nullToAbsent || inseritoDa != null) {
+      map['inserito_da'] = Variable<String>(inseritoDa);
+    }
+    if (!nullToAbsent || modificatoDa != null) {
+      map['modificato_da'] = Variable<String>(modificatoDa);
     }
     return map;
   }
@@ -3640,6 +3700,12 @@ class Movimento extends DataClass implements Insertable<Movimento> {
       dataPrevista: dataPrevista == null && nullToAbsent
           ? const Value.absent()
           : Value(dataPrevista),
+      inseritoDa: inseritoDa == null && nullToAbsent
+          ? const Value.absent()
+          : Value(inseritoDa),
+      modificatoDa: modificatoDa == null && nullToAbsent
+          ? const Value.absent()
+          : Value(modificatoDa),
     );
   }
 
@@ -3665,6 +3731,8 @@ class Movimento extends DataClass implements Insertable<Movimento> {
       campi: serializer.fromJson<String>(json['campi']),
       pianificazioneId: serializer.fromJson<String?>(json['pianificazioneId']),
       dataPrevista: serializer.fromJson<String?>(json['dataPrevista']),
+      inseritoDa: serializer.fromJson<String?>(json['inseritoDa']),
+      modificatoDa: serializer.fromJson<String?>(json['modificatoDa']),
     );
   }
   @override
@@ -3687,6 +3755,8 @@ class Movimento extends DataClass implements Insertable<Movimento> {
       'campi': serializer.toJson<String>(campi),
       'pianificazioneId': serializer.toJson<String?>(pianificazioneId),
       'dataPrevista': serializer.toJson<String?>(dataPrevista),
+      'inseritoDa': serializer.toJson<String?>(inseritoDa),
+      'modificatoDa': serializer.toJson<String?>(modificatoDa),
     };
   }
 
@@ -3705,6 +3775,8 @@ class Movimento extends DataClass implements Insertable<Movimento> {
     String? campi,
     Value<String?> pianificazioneId = const Value.absent(),
     Value<String?> dataPrevista = const Value.absent(),
+    Value<String?> inseritoDa = const Value.absent(),
+    Value<String?> modificatoDa = const Value.absent(),
   }) => Movimento(
     id: id ?? this.id,
     aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
@@ -3724,6 +3796,8 @@ class Movimento extends DataClass implements Insertable<Movimento> {
         ? pianificazioneId.value
         : this.pianificazioneId,
     dataPrevista: dataPrevista.present ? dataPrevista.value : this.dataPrevista,
+    inseritoDa: inseritoDa.present ? inseritoDa.value : this.inseritoDa,
+    modificatoDa: modificatoDa.present ? modificatoDa.value : this.modificatoDa,
   );
   Movimento copyWithCompanion(MovimentiCompanion data) {
     return Movimento(
@@ -3757,6 +3831,12 @@ class Movimento extends DataClass implements Insertable<Movimento> {
       dataPrevista: data.dataPrevista.present
           ? data.dataPrevista.value
           : this.dataPrevista,
+      inseritoDa: data.inseritoDa.present
+          ? data.inseritoDa.value
+          : this.inseritoDa,
+      modificatoDa: data.modificatoDa.present
+          ? data.modificatoDa.value
+          : this.modificatoDa,
     );
   }
 
@@ -3776,7 +3856,9 @@ class Movimento extends DataClass implements Insertable<Movimento> {
           ..write('descrizione: $descrizione, ')
           ..write('campi: $campi, ')
           ..write('pianificazioneId: $pianificazioneId, ')
-          ..write('dataPrevista: $dataPrevista')
+          ..write('dataPrevista: $dataPrevista, ')
+          ..write('inseritoDa: $inseritoDa, ')
+          ..write('modificatoDa: $modificatoDa')
           ..write(')'))
         .toString();
   }
@@ -3797,6 +3879,8 @@ class Movimento extends DataClass implements Insertable<Movimento> {
     campi,
     pianificazioneId,
     dataPrevista,
+    inseritoDa,
+    modificatoDa,
   );
   @override
   bool operator ==(Object other) =>
@@ -3815,7 +3899,9 @@ class Movimento extends DataClass implements Insertable<Movimento> {
           other.descrizione == this.descrizione &&
           other.campi == this.campi &&
           other.pianificazioneId == this.pianificazioneId &&
-          other.dataPrevista == this.dataPrevista);
+          other.dataPrevista == this.dataPrevista &&
+          other.inseritoDa == this.inseritoDa &&
+          other.modificatoDa == this.modificatoDa);
 }
 
 class MovimentiCompanion extends UpdateCompanion<Movimento> {
@@ -3833,6 +3919,8 @@ class MovimentiCompanion extends UpdateCompanion<Movimento> {
   final Value<String> campi;
   final Value<String?> pianificazioneId;
   final Value<String?> dataPrevista;
+  final Value<String?> inseritoDa;
+  final Value<String?> modificatoDa;
   final Value<int> rowid;
   const MovimentiCompanion({
     this.id = const Value.absent(),
@@ -3849,6 +3937,8 @@ class MovimentiCompanion extends UpdateCompanion<Movimento> {
     this.campi = const Value.absent(),
     this.pianificazioneId = const Value.absent(),
     this.dataPrevista = const Value.absent(),
+    this.inseritoDa = const Value.absent(),
+    this.modificatoDa = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   MovimentiCompanion.insert({
@@ -3866,6 +3956,8 @@ class MovimentiCompanion extends UpdateCompanion<Movimento> {
     this.campi = const Value.absent(),
     this.pianificazioneId = const Value.absent(),
     this.dataPrevista = const Value.absent(),
+    this.inseritoDa = const Value.absent(),
+    this.modificatoDa = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        aggiornatoIl = Value(aggiornatoIl),
@@ -3889,6 +3981,8 @@ class MovimentiCompanion extends UpdateCompanion<Movimento> {
     Expression<String>? campi,
     Expression<String>? pianificazioneId,
     Expression<String>? dataPrevista,
+    Expression<String>? inseritoDa,
+    Expression<String>? modificatoDa,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3907,6 +4001,8 @@ class MovimentiCompanion extends UpdateCompanion<Movimento> {
       if (campi != null) 'campi': campi,
       if (pianificazioneId != null) 'pianificazione_id': pianificazioneId,
       if (dataPrevista != null) 'data_prevista': dataPrevista,
+      if (inseritoDa != null) 'inserito_da': inseritoDa,
+      if (modificatoDa != null) 'modificato_da': modificatoDa,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3926,6 +4022,8 @@ class MovimentiCompanion extends UpdateCompanion<Movimento> {
     Value<String>? campi,
     Value<String?>? pianificazioneId,
     Value<String?>? dataPrevista,
+    Value<String?>? inseritoDa,
+    Value<String?>? modificatoDa,
     Value<int>? rowid,
   }) {
     return MovimentiCompanion(
@@ -3944,6 +4042,8 @@ class MovimentiCompanion extends UpdateCompanion<Movimento> {
       campi: campi ?? this.campi,
       pianificazioneId: pianificazioneId ?? this.pianificazioneId,
       dataPrevista: dataPrevista ?? this.dataPrevista,
+      inseritoDa: inseritoDa ?? this.inseritoDa,
+      modificatoDa: modificatoDa ?? this.modificatoDa,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3995,6 +4095,12 @@ class MovimentiCompanion extends UpdateCompanion<Movimento> {
     if (dataPrevista.present) {
       map['data_prevista'] = Variable<String>(dataPrevista.value);
     }
+    if (inseritoDa.present) {
+      map['inserito_da'] = Variable<String>(inseritoDa.value);
+    }
+    if (modificatoDa.present) {
+      map['modificato_da'] = Variable<String>(modificatoDa.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -4018,6 +4124,8 @@ class MovimentiCompanion extends UpdateCompanion<Movimento> {
           ..write('campi: $campi, ')
           ..write('pianificazioneId: $pianificazioneId, ')
           ..write('dataPrevista: $dataPrevista, ')
+          ..write('inseritoDa: $inseritoDa, ')
+          ..write('modificatoDa: $modificatoDa, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -11184,6 +11292,1380 @@ class ReportCompanion extends UpdateCompanion<ReportSalvato> {
   }
 }
 
+class $PortafogliCondivisiTable extends PortafogliCondivisi
+    with TableInfo<$PortafogliCondivisiTable, PortafoglioCondiviso> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PortafogliCondivisiTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _aggiornatoIlMeta = const VerificationMeta(
+    'aggiornatoIl',
+  );
+  @override
+  late final GeneratedColumn<String> aggiornatoIl = GeneratedColumn<String>(
+    'aggiornato_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eliminatoMeta = const VerificationMeta(
+    'eliminato',
+  );
+  @override
+  late final GeneratedColumn<bool> eliminato = GeneratedColumn<bool>(
+    'eliminato',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("eliminato" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _portafoglioIdMeta = const VerificationMeta(
+    'portafoglioId',
+  );
+  @override
+  late final GeneratedColumn<String> portafoglioId = GeneratedColumn<String>(
+    'portafoglio_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES portafogli (id)',
+    ),
+  );
+  static const VerificationMeta _ruoloMeta = const VerificationMeta('ruolo');
+  @override
+  late final GeneratedColumn<String> ruolo = GeneratedColumn<String>(
+    'ruolo',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cartellaIdMeta = const VerificationMeta(
+    'cartellaId',
+  );
+  @override
+  late final GeneratedColumn<String> cartellaId = GeneratedColumn<String>(
+    'cartella_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _registroIdMeta = const VerificationMeta(
+    'registroId',
+  );
+  @override
+  late final GeneratedColumn<String> registroId = GeneratedColumn<String>(
+    'registro_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _mioFileIdMeta = const VerificationMeta(
+    'mioFileId',
+  );
+  @override
+  late final GeneratedColumn<String> mioFileId = GeneratedColumn<String>(
+    'mio_file_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _chiaveMeta = const VerificationMeta('chiave');
+  @override
+  late final GeneratedColumn<String> chiave = GeneratedColumn<String>(
+    'chiave',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    aggiornatoIl,
+    eliminato,
+    portafoglioId,
+    ruolo,
+    cartellaId,
+    registroId,
+    mioFileId,
+    chiave,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'portafogli_condivisi';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PortafoglioCondiviso> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('aggiornato_il')) {
+      context.handle(
+        _aggiornatoIlMeta,
+        aggiornatoIl.isAcceptableOrUnknown(
+          data['aggiornato_il']!,
+          _aggiornatoIlMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_aggiornatoIlMeta);
+    }
+    if (data.containsKey('eliminato')) {
+      context.handle(
+        _eliminatoMeta,
+        eliminato.isAcceptableOrUnknown(data['eliminato']!, _eliminatoMeta),
+      );
+    }
+    if (data.containsKey('portafoglio_id')) {
+      context.handle(
+        _portafoglioIdMeta,
+        portafoglioId.isAcceptableOrUnknown(
+          data['portafoglio_id']!,
+          _portafoglioIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_portafoglioIdMeta);
+    }
+    if (data.containsKey('ruolo')) {
+      context.handle(
+        _ruoloMeta,
+        ruolo.isAcceptableOrUnknown(data['ruolo']!, _ruoloMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ruoloMeta);
+    }
+    if (data.containsKey('cartella_id')) {
+      context.handle(
+        _cartellaIdMeta,
+        cartellaId.isAcceptableOrUnknown(data['cartella_id']!, _cartellaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cartellaIdMeta);
+    }
+    if (data.containsKey('registro_id')) {
+      context.handle(
+        _registroIdMeta,
+        registroId.isAcceptableOrUnknown(data['registro_id']!, _registroIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_registroIdMeta);
+    }
+    if (data.containsKey('mio_file_id')) {
+      context.handle(
+        _mioFileIdMeta,
+        mioFileId.isAcceptableOrUnknown(data['mio_file_id']!, _mioFileIdMeta),
+      );
+    }
+    if (data.containsKey('chiave')) {
+      context.handle(
+        _chiaveMeta,
+        chiave.isAcceptableOrUnknown(data['chiave']!, _chiaveMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_chiaveMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PortafoglioCondiviso map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PortafoglioCondiviso(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      aggiornatoIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}aggiornato_il'],
+      )!,
+      eliminato: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}eliminato'],
+      )!,
+      portafoglioId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}portafoglio_id'],
+      )!,
+      ruolo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ruolo'],
+      )!,
+      cartellaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cartella_id'],
+      )!,
+      registroId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}registro_id'],
+      )!,
+      mioFileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mio_file_id'],
+      ),
+      chiave: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chiave'],
+      )!,
+    );
+  }
+
+  @override
+  $PortafogliCondivisiTable createAlias(String alias) {
+    return $PortafogliCondivisiTable(attachedDatabase, alias);
+  }
+}
+
+class PortafoglioCondiviso extends DataClass
+    implements Insertable<PortafoglioCondiviso> {
+  final String id;
+  final String aggiornatoIl;
+  final bool eliminato;
+  final String portafoglioId;
+
+  /// Ruolo di questo archivio: vedi [RuoloMembro].
+  final String ruolo;
+
+  /// Cartella su Drive (id).
+  final String cartellaId;
+
+  /// Registro del portafoglio (membri, ruoli, quote), scritto dal proprietario.
+  final String registroId;
+
+  /// Il file di questo archivio nella cartella (dove scrive le sue modifiche).
+  final String? mioFileId;
+
+  /// Chiave del portafoglio (32 byte, base64). Sta nell'archivio cifrato e
+  /// viaggia solo nei pacchetti cifrati della sincronizzazione (ADR-015).
+  final String chiave;
+  const PortafoglioCondiviso({
+    required this.id,
+    required this.aggiornatoIl,
+    required this.eliminato,
+    required this.portafoglioId,
+    required this.ruolo,
+    required this.cartellaId,
+    required this.registroId,
+    this.mioFileId,
+    required this.chiave,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['aggiornato_il'] = Variable<String>(aggiornatoIl);
+    map['eliminato'] = Variable<bool>(eliminato);
+    map['portafoglio_id'] = Variable<String>(portafoglioId);
+    map['ruolo'] = Variable<String>(ruolo);
+    map['cartella_id'] = Variable<String>(cartellaId);
+    map['registro_id'] = Variable<String>(registroId);
+    if (!nullToAbsent || mioFileId != null) {
+      map['mio_file_id'] = Variable<String>(mioFileId);
+    }
+    map['chiave'] = Variable<String>(chiave);
+    return map;
+  }
+
+  PortafogliCondivisiCompanion toCompanion(bool nullToAbsent) {
+    return PortafogliCondivisiCompanion(
+      id: Value(id),
+      aggiornatoIl: Value(aggiornatoIl),
+      eliminato: Value(eliminato),
+      portafoglioId: Value(portafoglioId),
+      ruolo: Value(ruolo),
+      cartellaId: Value(cartellaId),
+      registroId: Value(registroId),
+      mioFileId: mioFileId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mioFileId),
+      chiave: Value(chiave),
+    );
+  }
+
+  factory PortafoglioCondiviso.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PortafoglioCondiviso(
+      id: serializer.fromJson<String>(json['id']),
+      aggiornatoIl: serializer.fromJson<String>(json['aggiornatoIl']),
+      eliminato: serializer.fromJson<bool>(json['eliminato']),
+      portafoglioId: serializer.fromJson<String>(json['portafoglioId']),
+      ruolo: serializer.fromJson<String>(json['ruolo']),
+      cartellaId: serializer.fromJson<String>(json['cartellaId']),
+      registroId: serializer.fromJson<String>(json['registroId']),
+      mioFileId: serializer.fromJson<String?>(json['mioFileId']),
+      chiave: serializer.fromJson<String>(json['chiave']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'aggiornatoIl': serializer.toJson<String>(aggiornatoIl),
+      'eliminato': serializer.toJson<bool>(eliminato),
+      'portafoglioId': serializer.toJson<String>(portafoglioId),
+      'ruolo': serializer.toJson<String>(ruolo),
+      'cartellaId': serializer.toJson<String>(cartellaId),
+      'registroId': serializer.toJson<String>(registroId),
+      'mioFileId': serializer.toJson<String?>(mioFileId),
+      'chiave': serializer.toJson<String>(chiave),
+    };
+  }
+
+  PortafoglioCondiviso copyWith({
+    String? id,
+    String? aggiornatoIl,
+    bool? eliminato,
+    String? portafoglioId,
+    String? ruolo,
+    String? cartellaId,
+    String? registroId,
+    Value<String?> mioFileId = const Value.absent(),
+    String? chiave,
+  }) => PortafoglioCondiviso(
+    id: id ?? this.id,
+    aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+    eliminato: eliminato ?? this.eliminato,
+    portafoglioId: portafoglioId ?? this.portafoglioId,
+    ruolo: ruolo ?? this.ruolo,
+    cartellaId: cartellaId ?? this.cartellaId,
+    registroId: registroId ?? this.registroId,
+    mioFileId: mioFileId.present ? mioFileId.value : this.mioFileId,
+    chiave: chiave ?? this.chiave,
+  );
+  PortafoglioCondiviso copyWithCompanion(PortafogliCondivisiCompanion data) {
+    return PortafoglioCondiviso(
+      id: data.id.present ? data.id.value : this.id,
+      aggiornatoIl: data.aggiornatoIl.present
+          ? data.aggiornatoIl.value
+          : this.aggiornatoIl,
+      eliminato: data.eliminato.present ? data.eliminato.value : this.eliminato,
+      portafoglioId: data.portafoglioId.present
+          ? data.portafoglioId.value
+          : this.portafoglioId,
+      ruolo: data.ruolo.present ? data.ruolo.value : this.ruolo,
+      cartellaId: data.cartellaId.present
+          ? data.cartellaId.value
+          : this.cartellaId,
+      registroId: data.registroId.present
+          ? data.registroId.value
+          : this.registroId,
+      mioFileId: data.mioFileId.present ? data.mioFileId.value : this.mioFileId,
+      chiave: data.chiave.present ? data.chiave.value : this.chiave,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PortafoglioCondiviso(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('portafoglioId: $portafoglioId, ')
+          ..write('ruolo: $ruolo, ')
+          ..write('cartellaId: $cartellaId, ')
+          ..write('registroId: $registroId, ')
+          ..write('mioFileId: $mioFileId, ')
+          ..write('chiave: $chiave')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    aggiornatoIl,
+    eliminato,
+    portafoglioId,
+    ruolo,
+    cartellaId,
+    registroId,
+    mioFileId,
+    chiave,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PortafoglioCondiviso &&
+          other.id == this.id &&
+          other.aggiornatoIl == this.aggiornatoIl &&
+          other.eliminato == this.eliminato &&
+          other.portafoglioId == this.portafoglioId &&
+          other.ruolo == this.ruolo &&
+          other.cartellaId == this.cartellaId &&
+          other.registroId == this.registroId &&
+          other.mioFileId == this.mioFileId &&
+          other.chiave == this.chiave);
+}
+
+class PortafogliCondivisiCompanion
+    extends UpdateCompanion<PortafoglioCondiviso> {
+  final Value<String> id;
+  final Value<String> aggiornatoIl;
+  final Value<bool> eliminato;
+  final Value<String> portafoglioId;
+  final Value<String> ruolo;
+  final Value<String> cartellaId;
+  final Value<String> registroId;
+  final Value<String?> mioFileId;
+  final Value<String> chiave;
+  final Value<int> rowid;
+  const PortafogliCondivisiCompanion({
+    this.id = const Value.absent(),
+    this.aggiornatoIl = const Value.absent(),
+    this.eliminato = const Value.absent(),
+    this.portafoglioId = const Value.absent(),
+    this.ruolo = const Value.absent(),
+    this.cartellaId = const Value.absent(),
+    this.registroId = const Value.absent(),
+    this.mioFileId = const Value.absent(),
+    this.chiave = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PortafogliCondivisiCompanion.insert({
+    required String id,
+    required String aggiornatoIl,
+    this.eliminato = const Value.absent(),
+    required String portafoglioId,
+    required String ruolo,
+    required String cartellaId,
+    required String registroId,
+    this.mioFileId = const Value.absent(),
+    required String chiave,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       aggiornatoIl = Value(aggiornatoIl),
+       portafoglioId = Value(portafoglioId),
+       ruolo = Value(ruolo),
+       cartellaId = Value(cartellaId),
+       registroId = Value(registroId),
+       chiave = Value(chiave);
+  static Insertable<PortafoglioCondiviso> custom({
+    Expression<String>? id,
+    Expression<String>? aggiornatoIl,
+    Expression<bool>? eliminato,
+    Expression<String>? portafoglioId,
+    Expression<String>? ruolo,
+    Expression<String>? cartellaId,
+    Expression<String>? registroId,
+    Expression<String>? mioFileId,
+    Expression<String>? chiave,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (aggiornatoIl != null) 'aggiornato_il': aggiornatoIl,
+      if (eliminato != null) 'eliminato': eliminato,
+      if (portafoglioId != null) 'portafoglio_id': portafoglioId,
+      if (ruolo != null) 'ruolo': ruolo,
+      if (cartellaId != null) 'cartella_id': cartellaId,
+      if (registroId != null) 'registro_id': registroId,
+      if (mioFileId != null) 'mio_file_id': mioFileId,
+      if (chiave != null) 'chiave': chiave,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PortafogliCondivisiCompanion copyWith({
+    Value<String>? id,
+    Value<String>? aggiornatoIl,
+    Value<bool>? eliminato,
+    Value<String>? portafoglioId,
+    Value<String>? ruolo,
+    Value<String>? cartellaId,
+    Value<String>? registroId,
+    Value<String?>? mioFileId,
+    Value<String>? chiave,
+    Value<int>? rowid,
+  }) {
+    return PortafogliCondivisiCompanion(
+      id: id ?? this.id,
+      aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+      eliminato: eliminato ?? this.eliminato,
+      portafoglioId: portafoglioId ?? this.portafoglioId,
+      ruolo: ruolo ?? this.ruolo,
+      cartellaId: cartellaId ?? this.cartellaId,
+      registroId: registroId ?? this.registroId,
+      mioFileId: mioFileId ?? this.mioFileId,
+      chiave: chiave ?? this.chiave,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (aggiornatoIl.present) {
+      map['aggiornato_il'] = Variable<String>(aggiornatoIl.value);
+    }
+    if (eliminato.present) {
+      map['eliminato'] = Variable<bool>(eliminato.value);
+    }
+    if (portafoglioId.present) {
+      map['portafoglio_id'] = Variable<String>(portafoglioId.value);
+    }
+    if (ruolo.present) {
+      map['ruolo'] = Variable<String>(ruolo.value);
+    }
+    if (cartellaId.present) {
+      map['cartella_id'] = Variable<String>(cartellaId.value);
+    }
+    if (registroId.present) {
+      map['registro_id'] = Variable<String>(registroId.value);
+    }
+    if (mioFileId.present) {
+      map['mio_file_id'] = Variable<String>(mioFileId.value);
+    }
+    if (chiave.present) {
+      map['chiave'] = Variable<String>(chiave.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PortafogliCondivisiCompanion(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('portafoglioId: $portafoglioId, ')
+          ..write('ruolo: $ruolo, ')
+          ..write('cartellaId: $cartellaId, ')
+          ..write('registroId: $registroId, ')
+          ..write('mioFileId: $mioFileId, ')
+          ..write('chiave: $chiave, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MembriTable extends Membri with TableInfo<$MembriTable, Membro> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MembriTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _aggiornatoIlMeta = const VerificationMeta(
+    'aggiornatoIl',
+  );
+  @override
+  late final GeneratedColumn<String> aggiornatoIl = GeneratedColumn<String>(
+    'aggiornato_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eliminatoMeta = const VerificationMeta(
+    'eliminato',
+  );
+  @override
+  late final GeneratedColumn<bool> eliminato = GeneratedColumn<bool>(
+    'eliminato',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("eliminato" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _portafoglioIdMeta = const VerificationMeta(
+    'portafoglioId',
+  );
+  @override
+  late final GeneratedColumn<String> portafoglioId = GeneratedColumn<String>(
+    'portafoglio_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES portafogli (id)',
+    ),
+  );
+  static const VerificationMeta _emailMeta = const VerificationMeta('email');
+  @override
+  late final GeneratedColumn<String> email = GeneratedColumn<String>(
+    'email',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nomeMeta = const VerificationMeta('nome');
+  @override
+  late final GeneratedColumn<String> nome = GeneratedColumn<String>(
+    'nome',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _ruoloMeta = const VerificationMeta('ruolo');
+  @override
+  late final GeneratedColumn<String> ruolo = GeneratedColumn<String>(
+    'ruolo',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statoMeta = const VerificationMeta('stato');
+  @override
+  late final GeneratedColumn<String> stato = GeneratedColumn<String>(
+    'stato',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fileIdMeta = const VerificationMeta('fileId');
+  @override
+  late final GeneratedColumn<String> fileId = GeneratedColumn<String>(
+    'file_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _chiaveScambioMeta = const VerificationMeta(
+    'chiaveScambio',
+  );
+  @override
+  late final GeneratedColumn<String> chiaveScambio = GeneratedColumn<String>(
+    'chiave_scambio',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _chiaveFirmaMeta = const VerificationMeta(
+    'chiaveFirma',
+  );
+  @override
+  late final GeneratedColumn<String> chiaveFirma = GeneratedColumn<String>(
+    'chiave_firma',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _verificatoMeta = const VerificationMeta(
+    'verificato',
+  );
+  @override
+  late final GeneratedColumn<bool> verificato = GeneratedColumn<bool>(
+    'verificato',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("verificato" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _quotaMeta = const VerificationMeta('quota');
+  @override
+  late final GeneratedColumn<int> quota = GeneratedColumn<int>(
+    'quota',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    aggiornatoIl,
+    eliminato,
+    portafoglioId,
+    email,
+    nome,
+    ruolo,
+    stato,
+    fileId,
+    chiaveScambio,
+    chiaveFirma,
+    verificato,
+    quota,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'membri';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Membro> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('aggiornato_il')) {
+      context.handle(
+        _aggiornatoIlMeta,
+        aggiornatoIl.isAcceptableOrUnknown(
+          data['aggiornato_il']!,
+          _aggiornatoIlMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_aggiornatoIlMeta);
+    }
+    if (data.containsKey('eliminato')) {
+      context.handle(
+        _eliminatoMeta,
+        eliminato.isAcceptableOrUnknown(data['eliminato']!, _eliminatoMeta),
+      );
+    }
+    if (data.containsKey('portafoglio_id')) {
+      context.handle(
+        _portafoglioIdMeta,
+        portafoglioId.isAcceptableOrUnknown(
+          data['portafoglio_id']!,
+          _portafoglioIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_portafoglioIdMeta);
+    }
+    if (data.containsKey('email')) {
+      context.handle(
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_emailMeta);
+    }
+    if (data.containsKey('nome')) {
+      context.handle(
+        _nomeMeta,
+        nome.isAcceptableOrUnknown(data['nome']!, _nomeMeta),
+      );
+    }
+    if (data.containsKey('ruolo')) {
+      context.handle(
+        _ruoloMeta,
+        ruolo.isAcceptableOrUnknown(data['ruolo']!, _ruoloMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ruoloMeta);
+    }
+    if (data.containsKey('stato')) {
+      context.handle(
+        _statoMeta,
+        stato.isAcceptableOrUnknown(data['stato']!, _statoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statoMeta);
+    }
+    if (data.containsKey('file_id')) {
+      context.handle(
+        _fileIdMeta,
+        fileId.isAcceptableOrUnknown(data['file_id']!, _fileIdMeta),
+      );
+    }
+    if (data.containsKey('chiave_scambio')) {
+      context.handle(
+        _chiaveScambioMeta,
+        chiaveScambio.isAcceptableOrUnknown(
+          data['chiave_scambio']!,
+          _chiaveScambioMeta,
+        ),
+      );
+    }
+    if (data.containsKey('chiave_firma')) {
+      context.handle(
+        _chiaveFirmaMeta,
+        chiaveFirma.isAcceptableOrUnknown(
+          data['chiave_firma']!,
+          _chiaveFirmaMeta,
+        ),
+      );
+    }
+    if (data.containsKey('verificato')) {
+      context.handle(
+        _verificatoMeta,
+        verificato.isAcceptableOrUnknown(data['verificato']!, _verificatoMeta),
+      );
+    }
+    if (data.containsKey('quota')) {
+      context.handle(
+        _quotaMeta,
+        quota.isAcceptableOrUnknown(data['quota']!, _quotaMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Membro map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Membro(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      aggiornatoIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}aggiornato_il'],
+      )!,
+      eliminato: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}eliminato'],
+      )!,
+      portafoglioId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}portafoglio_id'],
+      )!,
+      email: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}email'],
+      )!,
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      )!,
+      ruolo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ruolo'],
+      )!,
+      stato: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stato'],
+      )!,
+      fileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_id'],
+      ),
+      chiaveScambio: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chiave_scambio'],
+      ),
+      chiaveFirma: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chiave_firma'],
+      ),
+      verificato: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}verificato'],
+      )!,
+      quota: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}quota'],
+      ),
+    );
+  }
+
+  @override
+  $MembriTable createAlias(String alias) {
+    return $MembriTable(attachedDatabase, alias);
+  }
+}
+
+class Membro extends DataClass implements Insertable<Membro> {
+  final String id;
+  final String aggiornatoIl;
+  final bool eliminato;
+  final String portafoglioId;
+
+  /// Email Google con cui è stato invitato.
+  final String email;
+  final String nome;
+
+  /// Vedi [RuoloMembro].
+  final String ruolo;
+
+  /// Vedi [StatoMembro].
+  final String stato;
+
+  /// Il suo file nella cartella su Drive (id), preparato dal proprietario.
+  final String? fileId;
+
+  /// Chiavi pubbliche (base64): per ricevere la chiave del portafoglio
+  /// (X25519) e per verificare le sue firme (Ed25519).
+  final String? chiaveScambio;
+  final String? chiaveFirma;
+
+  /// Codice di sicurezza confrontato (a voce o con il QR).
+  final bool verificato;
+
+  /// Quota del totale in centesimi di punto (5000 = 50%); vuota = non
+  /// indicata (consegna 2).
+  final int? quota;
+  const Membro({
+    required this.id,
+    required this.aggiornatoIl,
+    required this.eliminato,
+    required this.portafoglioId,
+    required this.email,
+    required this.nome,
+    required this.ruolo,
+    required this.stato,
+    this.fileId,
+    this.chiaveScambio,
+    this.chiaveFirma,
+    required this.verificato,
+    this.quota,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['aggiornato_il'] = Variable<String>(aggiornatoIl);
+    map['eliminato'] = Variable<bool>(eliminato);
+    map['portafoglio_id'] = Variable<String>(portafoglioId);
+    map['email'] = Variable<String>(email);
+    map['nome'] = Variable<String>(nome);
+    map['ruolo'] = Variable<String>(ruolo);
+    map['stato'] = Variable<String>(stato);
+    if (!nullToAbsent || fileId != null) {
+      map['file_id'] = Variable<String>(fileId);
+    }
+    if (!nullToAbsent || chiaveScambio != null) {
+      map['chiave_scambio'] = Variable<String>(chiaveScambio);
+    }
+    if (!nullToAbsent || chiaveFirma != null) {
+      map['chiave_firma'] = Variable<String>(chiaveFirma);
+    }
+    map['verificato'] = Variable<bool>(verificato);
+    if (!nullToAbsent || quota != null) {
+      map['quota'] = Variable<int>(quota);
+    }
+    return map;
+  }
+
+  MembriCompanion toCompanion(bool nullToAbsent) {
+    return MembriCompanion(
+      id: Value(id),
+      aggiornatoIl: Value(aggiornatoIl),
+      eliminato: Value(eliminato),
+      portafoglioId: Value(portafoglioId),
+      email: Value(email),
+      nome: Value(nome),
+      ruolo: Value(ruolo),
+      stato: Value(stato),
+      fileId: fileId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fileId),
+      chiaveScambio: chiaveScambio == null && nullToAbsent
+          ? const Value.absent()
+          : Value(chiaveScambio),
+      chiaveFirma: chiaveFirma == null && nullToAbsent
+          ? const Value.absent()
+          : Value(chiaveFirma),
+      verificato: Value(verificato),
+      quota: quota == null && nullToAbsent
+          ? const Value.absent()
+          : Value(quota),
+    );
+  }
+
+  factory Membro.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Membro(
+      id: serializer.fromJson<String>(json['id']),
+      aggiornatoIl: serializer.fromJson<String>(json['aggiornatoIl']),
+      eliminato: serializer.fromJson<bool>(json['eliminato']),
+      portafoglioId: serializer.fromJson<String>(json['portafoglioId']),
+      email: serializer.fromJson<String>(json['email']),
+      nome: serializer.fromJson<String>(json['nome']),
+      ruolo: serializer.fromJson<String>(json['ruolo']),
+      stato: serializer.fromJson<String>(json['stato']),
+      fileId: serializer.fromJson<String?>(json['fileId']),
+      chiaveScambio: serializer.fromJson<String?>(json['chiaveScambio']),
+      chiaveFirma: serializer.fromJson<String?>(json['chiaveFirma']),
+      verificato: serializer.fromJson<bool>(json['verificato']),
+      quota: serializer.fromJson<int?>(json['quota']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'aggiornatoIl': serializer.toJson<String>(aggiornatoIl),
+      'eliminato': serializer.toJson<bool>(eliminato),
+      'portafoglioId': serializer.toJson<String>(portafoglioId),
+      'email': serializer.toJson<String>(email),
+      'nome': serializer.toJson<String>(nome),
+      'ruolo': serializer.toJson<String>(ruolo),
+      'stato': serializer.toJson<String>(stato),
+      'fileId': serializer.toJson<String?>(fileId),
+      'chiaveScambio': serializer.toJson<String?>(chiaveScambio),
+      'chiaveFirma': serializer.toJson<String?>(chiaveFirma),
+      'verificato': serializer.toJson<bool>(verificato),
+      'quota': serializer.toJson<int?>(quota),
+    };
+  }
+
+  Membro copyWith({
+    String? id,
+    String? aggiornatoIl,
+    bool? eliminato,
+    String? portafoglioId,
+    String? email,
+    String? nome,
+    String? ruolo,
+    String? stato,
+    Value<String?> fileId = const Value.absent(),
+    Value<String?> chiaveScambio = const Value.absent(),
+    Value<String?> chiaveFirma = const Value.absent(),
+    bool? verificato,
+    Value<int?> quota = const Value.absent(),
+  }) => Membro(
+    id: id ?? this.id,
+    aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+    eliminato: eliminato ?? this.eliminato,
+    portafoglioId: portafoglioId ?? this.portafoglioId,
+    email: email ?? this.email,
+    nome: nome ?? this.nome,
+    ruolo: ruolo ?? this.ruolo,
+    stato: stato ?? this.stato,
+    fileId: fileId.present ? fileId.value : this.fileId,
+    chiaveScambio: chiaveScambio.present
+        ? chiaveScambio.value
+        : this.chiaveScambio,
+    chiaveFirma: chiaveFirma.present ? chiaveFirma.value : this.chiaveFirma,
+    verificato: verificato ?? this.verificato,
+    quota: quota.present ? quota.value : this.quota,
+  );
+  Membro copyWithCompanion(MembriCompanion data) {
+    return Membro(
+      id: data.id.present ? data.id.value : this.id,
+      aggiornatoIl: data.aggiornatoIl.present
+          ? data.aggiornatoIl.value
+          : this.aggiornatoIl,
+      eliminato: data.eliminato.present ? data.eliminato.value : this.eliminato,
+      portafoglioId: data.portafoglioId.present
+          ? data.portafoglioId.value
+          : this.portafoglioId,
+      email: data.email.present ? data.email.value : this.email,
+      nome: data.nome.present ? data.nome.value : this.nome,
+      ruolo: data.ruolo.present ? data.ruolo.value : this.ruolo,
+      stato: data.stato.present ? data.stato.value : this.stato,
+      fileId: data.fileId.present ? data.fileId.value : this.fileId,
+      chiaveScambio: data.chiaveScambio.present
+          ? data.chiaveScambio.value
+          : this.chiaveScambio,
+      chiaveFirma: data.chiaveFirma.present
+          ? data.chiaveFirma.value
+          : this.chiaveFirma,
+      verificato: data.verificato.present
+          ? data.verificato.value
+          : this.verificato,
+      quota: data.quota.present ? data.quota.value : this.quota,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Membro(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('portafoglioId: $portafoglioId, ')
+          ..write('email: $email, ')
+          ..write('nome: $nome, ')
+          ..write('ruolo: $ruolo, ')
+          ..write('stato: $stato, ')
+          ..write('fileId: $fileId, ')
+          ..write('chiaveScambio: $chiaveScambio, ')
+          ..write('chiaveFirma: $chiaveFirma, ')
+          ..write('verificato: $verificato, ')
+          ..write('quota: $quota')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    aggiornatoIl,
+    eliminato,
+    portafoglioId,
+    email,
+    nome,
+    ruolo,
+    stato,
+    fileId,
+    chiaveScambio,
+    chiaveFirma,
+    verificato,
+    quota,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Membro &&
+          other.id == this.id &&
+          other.aggiornatoIl == this.aggiornatoIl &&
+          other.eliminato == this.eliminato &&
+          other.portafoglioId == this.portafoglioId &&
+          other.email == this.email &&
+          other.nome == this.nome &&
+          other.ruolo == this.ruolo &&
+          other.stato == this.stato &&
+          other.fileId == this.fileId &&
+          other.chiaveScambio == this.chiaveScambio &&
+          other.chiaveFirma == this.chiaveFirma &&
+          other.verificato == this.verificato &&
+          other.quota == this.quota);
+}
+
+class MembriCompanion extends UpdateCompanion<Membro> {
+  final Value<String> id;
+  final Value<String> aggiornatoIl;
+  final Value<bool> eliminato;
+  final Value<String> portafoglioId;
+  final Value<String> email;
+  final Value<String> nome;
+  final Value<String> ruolo;
+  final Value<String> stato;
+  final Value<String?> fileId;
+  final Value<String?> chiaveScambio;
+  final Value<String?> chiaveFirma;
+  final Value<bool> verificato;
+  final Value<int?> quota;
+  final Value<int> rowid;
+  const MembriCompanion({
+    this.id = const Value.absent(),
+    this.aggiornatoIl = const Value.absent(),
+    this.eliminato = const Value.absent(),
+    this.portafoglioId = const Value.absent(),
+    this.email = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.ruolo = const Value.absent(),
+    this.stato = const Value.absent(),
+    this.fileId = const Value.absent(),
+    this.chiaveScambio = const Value.absent(),
+    this.chiaveFirma = const Value.absent(),
+    this.verificato = const Value.absent(),
+    this.quota = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MembriCompanion.insert({
+    required String id,
+    required String aggiornatoIl,
+    this.eliminato = const Value.absent(),
+    required String portafoglioId,
+    required String email,
+    this.nome = const Value.absent(),
+    required String ruolo,
+    required String stato,
+    this.fileId = const Value.absent(),
+    this.chiaveScambio = const Value.absent(),
+    this.chiaveFirma = const Value.absent(),
+    this.verificato = const Value.absent(),
+    this.quota = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       aggiornatoIl = Value(aggiornatoIl),
+       portafoglioId = Value(portafoglioId),
+       email = Value(email),
+       ruolo = Value(ruolo),
+       stato = Value(stato);
+  static Insertable<Membro> custom({
+    Expression<String>? id,
+    Expression<String>? aggiornatoIl,
+    Expression<bool>? eliminato,
+    Expression<String>? portafoglioId,
+    Expression<String>? email,
+    Expression<String>? nome,
+    Expression<String>? ruolo,
+    Expression<String>? stato,
+    Expression<String>? fileId,
+    Expression<String>? chiaveScambio,
+    Expression<String>? chiaveFirma,
+    Expression<bool>? verificato,
+    Expression<int>? quota,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (aggiornatoIl != null) 'aggiornato_il': aggiornatoIl,
+      if (eliminato != null) 'eliminato': eliminato,
+      if (portafoglioId != null) 'portafoglio_id': portafoglioId,
+      if (email != null) 'email': email,
+      if (nome != null) 'nome': nome,
+      if (ruolo != null) 'ruolo': ruolo,
+      if (stato != null) 'stato': stato,
+      if (fileId != null) 'file_id': fileId,
+      if (chiaveScambio != null) 'chiave_scambio': chiaveScambio,
+      if (chiaveFirma != null) 'chiave_firma': chiaveFirma,
+      if (verificato != null) 'verificato': verificato,
+      if (quota != null) 'quota': quota,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MembriCompanion copyWith({
+    Value<String>? id,
+    Value<String>? aggiornatoIl,
+    Value<bool>? eliminato,
+    Value<String>? portafoglioId,
+    Value<String>? email,
+    Value<String>? nome,
+    Value<String>? ruolo,
+    Value<String>? stato,
+    Value<String?>? fileId,
+    Value<String?>? chiaveScambio,
+    Value<String?>? chiaveFirma,
+    Value<bool>? verificato,
+    Value<int?>? quota,
+    Value<int>? rowid,
+  }) {
+    return MembriCompanion(
+      id: id ?? this.id,
+      aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+      eliminato: eliminato ?? this.eliminato,
+      portafoglioId: portafoglioId ?? this.portafoglioId,
+      email: email ?? this.email,
+      nome: nome ?? this.nome,
+      ruolo: ruolo ?? this.ruolo,
+      stato: stato ?? this.stato,
+      fileId: fileId ?? this.fileId,
+      chiaveScambio: chiaveScambio ?? this.chiaveScambio,
+      chiaveFirma: chiaveFirma ?? this.chiaveFirma,
+      verificato: verificato ?? this.verificato,
+      quota: quota ?? this.quota,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (aggiornatoIl.present) {
+      map['aggiornato_il'] = Variable<String>(aggiornatoIl.value);
+    }
+    if (eliminato.present) {
+      map['eliminato'] = Variable<bool>(eliminato.value);
+    }
+    if (portafoglioId.present) {
+      map['portafoglio_id'] = Variable<String>(portafoglioId.value);
+    }
+    if (email.present) {
+      map['email'] = Variable<String>(email.value);
+    }
+    if (nome.present) {
+      map['nome'] = Variable<String>(nome.value);
+    }
+    if (ruolo.present) {
+      map['ruolo'] = Variable<String>(ruolo.value);
+    }
+    if (stato.present) {
+      map['stato'] = Variable<String>(stato.value);
+    }
+    if (fileId.present) {
+      map['file_id'] = Variable<String>(fileId.value);
+    }
+    if (chiaveScambio.present) {
+      map['chiave_scambio'] = Variable<String>(chiaveScambio.value);
+    }
+    if (chiaveFirma.present) {
+      map['chiave_firma'] = Variable<String>(chiaveFirma.value);
+    }
+    if (verificato.present) {
+      map['verificato'] = Variable<bool>(verificato.value);
+    }
+    if (quota.present) {
+      map['quota'] = Variable<int>(quota.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MembriCompanion(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('portafoglioId: $portafoglioId, ')
+          ..write('email: $email, ')
+          ..write('nome: $nome, ')
+          ..write('ruolo: $ruolo, ')
+          ..write('stato: $stato, ')
+          ..write('fileId: $fileId, ')
+          ..write('chiaveScambio: $chiaveScambio, ')
+          ..write('chiaveFirma: $chiaveFirma, ')
+          ..write('verificato: $verificato, ')
+          ..write('quota: $quota, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ImpostazioniTable extends Impostazioni
     with TableInfo<$ImpostazioniTable, Impostazione> {
   @override
@@ -11418,6 +12900,9 @@ abstract class _$Archivio extends GeneratedDatabase {
   late final $PartecipantiTable partecipanti = $PartecipantiTable(this);
   late final $VersamentiTable versamenti = $VersamentiTable(this);
   late final $ReportTable report = $ReportTable(this);
+  late final $PortafogliCondivisiTable portafogliCondivisi =
+      $PortafogliCondivisiTable(this);
+  late final $MembriTable membri = $MembriTable(this);
   late final $ImpostazioniTable impostazioni = $ImpostazioniTable(this);
   late final Index movimentiPianificatiUnici = Index(
     'movimenti_pianificati_unici',
@@ -11446,6 +12931,8 @@ abstract class _$Archivio extends GeneratedDatabase {
     partecipanti,
     versamenti,
     report,
+    portafogliCondivisi,
+    membri,
     impostazioni,
     movimentiPianificatiUnici,
   ];
@@ -12277,6 +13764,48 @@ final class $$PortafogliTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<
+    $PortafogliCondivisiTable,
+    List<PortafoglioCondiviso>
+  >
+  _portafogliCondivisiRefsTable(_$Archivio db) => MultiTypedResultKey.fromTable(
+    db.portafogliCondivisi,
+    aliasName: 'portafogli__id__portafogli_condivisi__portafoglio_id',
+  );
+
+  $$PortafogliCondivisiTableProcessedTableManager get portafogliCondivisiRefs {
+    final manager = $$PortafogliCondivisiTableTableManager(
+      $_db,
+      $_db.portafogliCondivisi,
+    ).filter((f) => f.portafoglioId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _portafogliCondivisiRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$MembriTable, List<Membro>> _membriRefsTable(
+    _$Archivio db,
+  ) => MultiTypedResultKey.fromTable(
+    db.membri,
+    aliasName: 'portafogli__id__membri__portafoglio_id',
+  );
+
+  $$MembriTableProcessedTableManager get membriRefs {
+    final manager = $$MembriTableTableManager(
+      $_db,
+      $_db.membri,
+    ).filter((f) => f.portafoglioId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_membriRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$PortafogliTableFilterComposer
@@ -12557,6 +14086,56 @@ class $$PortafogliTableFilterComposer
           }) => $$ObiettiviTableFilterComposer(
             $db: $db,
             $table: $db.obiettivi,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> portafogliCondivisiRefs(
+    Expression<bool> Function($$PortafogliCondivisiTableFilterComposer f) f,
+  ) {
+    final $$PortafogliCondivisiTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.portafogliCondivisi,
+      getReferencedColumn: (t) => t.portafoglioId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliCondivisiTableFilterComposer(
+            $db: $db,
+            $table: $db.portafogliCondivisi,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> membriRefs(
+    Expression<bool> Function($$MembriTableFilterComposer f) f,
+  ) {
+    final $$MembriTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.membri,
+      getReferencedColumn: (t) => t.portafoglioId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MembriTableFilterComposer(
+            $db: $db,
+            $table: $db.membri,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -12925,6 +14504,57 @@ class $$PortafogliTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> portafogliCondivisiRefs<T extends Object>(
+    Expression<T> Function($$PortafogliCondivisiTableAnnotationComposer a) f,
+  ) {
+    final $$PortafogliCondivisiTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.portafogliCondivisi,
+          getReferencedColumn: (t) => t.portafoglioId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$PortafogliCondivisiTableAnnotationComposer(
+                $db: $db,
+                $table: $db.portafogliCondivisi,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> membriRefs<T extends Object>(
+    Expression<T> Function($$MembriTableAnnotationComposer a) f,
+  ) {
+    final $$MembriTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.membri,
+      getReferencedColumn: (t) => t.portafoglioId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MembriTableAnnotationComposer(
+            $db: $db,
+            $table: $db.membri,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$PortafogliTableTableManager
@@ -12950,6 +14580,8 @@ class $$PortafogliTableTableManager
             bool carteAddebitate,
             bool prestitiRefs,
             bool obiettiviRefs,
+            bool portafogliCondivisiRefs,
+            bool membriRefs,
           })
         > {
   $$PortafogliTableTableManager(_$Archivio db, $PortafogliTable table)
@@ -13042,6 +14674,8 @@ class $$PortafogliTableTableManager
                 carteAddebitate = false,
                 prestitiRefs = false,
                 obiettiviRefs = false,
+                portafogliCondivisiRefs = false,
+                membriRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -13054,6 +14688,8 @@ class $$PortafogliTableTableManager
                     if (carteAddebitate) db.carteCredito,
                     if (prestitiRefs) db.prestiti,
                     if (obiettiviRefs) db.obiettivi,
+                    if (portafogliCondivisiRefs) db.portafogliCondivisi,
+                    if (membriRefs) db.membri,
                   ],
                   addJoins:
                       <
@@ -13255,6 +14891,48 @@ class $$PortafogliTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (portafogliCondivisiRefs)
+                        await $_getPrefetchedData<
+                          Portafoglio,
+                          $PortafogliTable,
+                          PortafoglioCondiviso
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PortafogliTableReferences
+                              ._portafogliCondivisiRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PortafogliTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).portafogliCondivisiRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.portafoglioId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (membriRefs)
+                        await $_getPrefetchedData<
+                          Portafoglio,
+                          $PortafogliTable,
+                          Membro
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PortafogliTableReferences
+                              ._membriRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PortafogliTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).membriRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.portafoglioId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -13285,6 +14963,8 @@ typedef $$PortafogliTableProcessedTableManager =
         bool carteAddebitate,
         bool prestitiRefs,
         bool obiettiviRefs,
+        bool portafogliCondivisiRefs,
+        bool membriRefs,
       })
     >;
 typedef $$CategorieTableCreateCompanionBuilder = CategorieCompanion Function({
@@ -15149,6 +16829,8 @@ typedef $$MovimentiTableCreateCompanionBuilder = MovimentiCompanion Function({
   Value<String> campi,
   Value<String?> pianificazioneId,
   Value<String?> dataPrevista,
+  Value<String?> inseritoDa,
+  Value<String?> modificatoDa,
   Value<int> rowid,
 });
 typedef $$MovimentiTableUpdateCompanionBuilder = MovimentiCompanion Function({
@@ -15166,6 +16848,8 @@ typedef $$MovimentiTableUpdateCompanionBuilder = MovimentiCompanion Function({
   Value<String> campi,
   Value<String?> pianificazioneId,
   Value<String?> dataPrevista,
+  Value<String?> inseritoDa,
+  Value<String?> modificatoDa,
   Value<int> rowid,
 });
 
@@ -15352,6 +17036,16 @@ class $$MovimentiTableFilterComposer
 
   ColumnFilters<String> get dataPrevista => $composableBuilder(
     column: $table.dataPrevista,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get inseritoDa => $composableBuilder(
+    column: $table.inseritoDa,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get modificatoDa => $composableBuilder(
+    column: $table.modificatoDa,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -15575,6 +17269,16 @@ class $$MovimentiTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get inseritoDa => $composableBuilder(
+    column: $table.inseritoDa,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get modificatoDa => $composableBuilder(
+    column: $table.modificatoDa,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$DefinizioniTipoTableOrderingComposer get tipoId {
     final $$DefinizioniTipoTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -15732,6 +17436,16 @@ class $$MovimentiTableAnnotationComposer
 
   GeneratedColumn<String> get dataPrevista => $composableBuilder(
     column: $table.dataPrevista,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get inseritoDa => $composableBuilder(
+    column: $table.inseritoDa,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get modificatoDa => $composableBuilder(
+    column: $table.modificatoDa,
     builder: (column) => column,
   );
 
@@ -15952,6 +17666,8 @@ class $$MovimentiTableTableManager
                 Value<String> campi = const Value.absent(),
                 Value<String?> pianificazioneId = const Value.absent(),
                 Value<String?> dataPrevista = const Value.absent(),
+                Value<String?> inseritoDa = const Value.absent(),
+                Value<String?> modificatoDa = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MovimentiCompanion(
                 id: id,
@@ -15968,6 +17684,8 @@ class $$MovimentiTableTableManager
                 campi: campi,
                 pianificazioneId: pianificazioneId,
                 dataPrevista: dataPrevista,
+                inseritoDa: inseritoDa,
+                modificatoDa: modificatoDa,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -15986,6 +17704,8 @@ class $$MovimentiTableTableManager
                 Value<String> campi = const Value.absent(),
                 Value<String?> pianificazioneId = const Value.absent(),
                 Value<String?> dataPrevista = const Value.absent(),
+                Value<String?> inseritoDa = const Value.absent(),
+                Value<String?> modificatoDa = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MovimentiCompanion.insert(
                 id: id,
@@ -16002,6 +17722,8 @@ class $$MovimentiTableTableManager
                 campi: campi,
                 pianificazioneId: pianificazioneId,
                 dataPrevista: dataPrevista,
+                inseritoDa: inseritoDa,
+                modificatoDa: modificatoDa,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -21946,6 +23668,893 @@ typedef $$ReportTableProcessedTableManager =
       ReportSalvato,
       PrefetchHooks Function()
     >;
+typedef $$PortafogliCondivisiTableCreateCompanionBuilder =
+    PortafogliCondivisiCompanion Function({
+      required String id,
+      required String aggiornatoIl,
+      Value<bool> eliminato,
+      required String portafoglioId,
+      required String ruolo,
+      required String cartellaId,
+      required String registroId,
+      Value<String?> mioFileId,
+      required String chiave,
+      Value<int> rowid,
+    });
+typedef $$PortafogliCondivisiTableUpdateCompanionBuilder =
+    PortafogliCondivisiCompanion Function({
+      Value<String> id,
+      Value<String> aggiornatoIl,
+      Value<bool> eliminato,
+      Value<String> portafoglioId,
+      Value<String> ruolo,
+      Value<String> cartellaId,
+      Value<String> registroId,
+      Value<String?> mioFileId,
+      Value<String> chiave,
+      Value<int> rowid,
+    });
+
+final class $$PortafogliCondivisiTableReferences
+    extends
+        BaseReferences<
+          _$Archivio,
+          $PortafogliCondivisiTable,
+          PortafoglioCondiviso
+        > {
+  $$PortafogliCondivisiTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $PortafogliTable _portafoglioIdTable(_$Archivio db) => db.portafogli
+      .createAlias('portafogli_condivisi__portafoglio_id__portafogli__id');
+
+  $$PortafogliTableProcessedTableManager get portafoglioId {
+    final $_column = $_itemColumn<String>('portafoglio_id')!;
+
+    final manager = $$PortafogliTableTableManager(
+      $_db,
+      $_db.portafogli,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_portafoglioIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PortafogliCondivisiTableFilterComposer
+    extends Composer<_$Archivio, $PortafogliCondivisiTable> {
+  $$PortafogliCondivisiTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ruolo => $composableBuilder(
+    column: $table.ruolo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cartellaId => $composableBuilder(
+    column: $table.cartellaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get registroId => $composableBuilder(
+    column: $table.registroId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mioFileId => $composableBuilder(
+    column: $table.mioFileId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chiave => $composableBuilder(
+    column: $table.chiave,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PortafogliTableFilterComposer get portafoglioId {
+    final $$PortafogliTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portafoglioId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableFilterComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PortafogliCondivisiTableOrderingComposer
+    extends Composer<_$Archivio, $PortafogliCondivisiTable> {
+  $$PortafogliCondivisiTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ruolo => $composableBuilder(
+    column: $table.ruolo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cartellaId => $composableBuilder(
+    column: $table.cartellaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get registroId => $composableBuilder(
+    column: $table.registroId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mioFileId => $composableBuilder(
+    column: $table.mioFileId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get chiave => $composableBuilder(
+    column: $table.chiave,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PortafogliTableOrderingComposer get portafoglioId {
+    final $$PortafogliTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portafoglioId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableOrderingComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PortafogliCondivisiTableAnnotationComposer
+    extends Composer<_$Archivio, $PortafogliCondivisiTable> {
+  $$PortafogliCondivisiTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get eliminato =>
+      $composableBuilder(column: $table.eliminato, builder: (column) => column);
+
+  GeneratedColumn<String> get ruolo =>
+      $composableBuilder(column: $table.ruolo, builder: (column) => column);
+
+  GeneratedColumn<String> get cartellaId => $composableBuilder(
+    column: $table.cartellaId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get registroId => $composableBuilder(
+    column: $table.registroId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get mioFileId =>
+      $composableBuilder(column: $table.mioFileId, builder: (column) => column);
+
+  GeneratedColumn<String> get chiave =>
+      $composableBuilder(column: $table.chiave, builder: (column) => column);
+
+  $$PortafogliTableAnnotationComposer get portafoglioId {
+    final $$PortafogliTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portafoglioId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableAnnotationComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PortafogliCondivisiTableTableManager
+    extends
+        RootTableManager<
+          _$Archivio,
+          $PortafogliCondivisiTable,
+          PortafoglioCondiviso,
+          $$PortafogliCondivisiTableFilterComposer,
+          $$PortafogliCondivisiTableOrderingComposer,
+          $$PortafogliCondivisiTableAnnotationComposer,
+          $$PortafogliCondivisiTableCreateCompanionBuilder,
+          $$PortafogliCondivisiTableUpdateCompanionBuilder,
+          (PortafoglioCondiviso, $$PortafogliCondivisiTableReferences),
+          PortafoglioCondiviso,
+          PrefetchHooks Function({bool portafoglioId})
+        > {
+  $$PortafogliCondivisiTableTableManager(
+    _$Archivio db,
+    $PortafogliCondivisiTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PortafogliCondivisiTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PortafogliCondivisiTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$PortafogliCondivisiTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> aggiornatoIl = const Value.absent(),
+                Value<bool> eliminato = const Value.absent(),
+                Value<String> portafoglioId = const Value.absent(),
+                Value<String> ruolo = const Value.absent(),
+                Value<String> cartellaId = const Value.absent(),
+                Value<String> registroId = const Value.absent(),
+                Value<String?> mioFileId = const Value.absent(),
+                Value<String> chiave = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PortafogliCondivisiCompanion(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                portafoglioId: portafoglioId,
+                ruolo: ruolo,
+                cartellaId: cartellaId,
+                registroId: registroId,
+                mioFileId: mioFileId,
+                chiave: chiave,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String aggiornatoIl,
+                Value<bool> eliminato = const Value.absent(),
+                required String portafoglioId,
+                required String ruolo,
+                required String cartellaId,
+                required String registroId,
+                Value<String?> mioFileId = const Value.absent(),
+                required String chiave,
+                Value<int> rowid = const Value.absent(),
+              }) => PortafogliCondivisiCompanion.insert(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                portafoglioId: portafoglioId,
+                ruolo: ruolo,
+                cartellaId: cartellaId,
+                registroId: registroId,
+                mioFileId: mioFileId,
+                chiave: chiave,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$PortafogliCondivisiTable, PortafoglioCondiviso>(
+                    table,
+                  ),
+                  $$PortafogliCondivisiTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({portafoglioId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (portafoglioId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.portafoglioId,
+                        referencedTable: $$PortafogliCondivisiTableReferences
+                            ._portafoglioIdTable(db),
+                        referencedColumn: $$PortafogliCondivisiTableReferences
+                            ._portafoglioIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PortafogliCondivisiTableProcessedTableManager =
+    ProcessedTableManager<
+      _$Archivio,
+      $PortafogliCondivisiTable,
+      PortafoglioCondiviso,
+      $$PortafogliCondivisiTableFilterComposer,
+      $$PortafogliCondivisiTableOrderingComposer,
+      $$PortafogliCondivisiTableAnnotationComposer,
+      $$PortafogliCondivisiTableCreateCompanionBuilder,
+      $$PortafogliCondivisiTableUpdateCompanionBuilder,
+      (PortafoglioCondiviso, $$PortafogliCondivisiTableReferences),
+      PortafoglioCondiviso,
+      PrefetchHooks Function({bool portafoglioId})
+    >;
+typedef $$MembriTableCreateCompanionBuilder = MembriCompanion Function({
+  required String id,
+  required String aggiornatoIl,
+  Value<bool> eliminato,
+  required String portafoglioId,
+  required String email,
+  Value<String> nome,
+  required String ruolo,
+  required String stato,
+  Value<String?> fileId,
+  Value<String?> chiaveScambio,
+  Value<String?> chiaveFirma,
+  Value<bool> verificato,
+  Value<int?> quota,
+  Value<int> rowid,
+});
+typedef $$MembriTableUpdateCompanionBuilder = MembriCompanion Function({
+  Value<String> id,
+  Value<String> aggiornatoIl,
+  Value<bool> eliminato,
+  Value<String> portafoglioId,
+  Value<String> email,
+  Value<String> nome,
+  Value<String> ruolo,
+  Value<String> stato,
+  Value<String?> fileId,
+  Value<String?> chiaveScambio,
+  Value<String?> chiaveFirma,
+  Value<bool> verificato,
+  Value<int?> quota,
+  Value<int> rowid,
+});
+
+final class $$MembriTableReferences
+    extends BaseReferences<_$Archivio, $MembriTable, Membro> {
+  $$MembriTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $PortafogliTable _portafoglioIdTable(_$Archivio db) =>
+      db.portafogli.createAlias('membri__portafoglio_id__portafogli__id');
+
+  $$PortafogliTableProcessedTableManager get portafoglioId {
+    final $_column = $_itemColumn<String>('portafoglio_id')!;
+
+    final manager = $$PortafogliTableTableManager(
+      $_db,
+      $_db.portafogli,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_portafoglioIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$MembriTableFilterComposer extends Composer<_$Archivio, $MembriTable> {
+  $$MembriTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ruolo => $composableBuilder(
+    column: $table.ruolo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stato => $composableBuilder(
+    column: $table.stato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fileId => $composableBuilder(
+    column: $table.fileId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chiaveScambio => $composableBuilder(
+    column: $table.chiaveScambio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chiaveFirma => $composableBuilder(
+    column: $table.chiaveFirma,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get verificato => $composableBuilder(
+    column: $table.verificato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get quota => $composableBuilder(
+    column: $table.quota,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PortafogliTableFilterComposer get portafoglioId {
+    final $$PortafogliTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portafoglioId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableFilterComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MembriTableOrderingComposer extends Composer<_$Archivio, $MembriTable> {
+  $$MembriTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ruolo => $composableBuilder(
+    column: $table.ruolo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stato => $composableBuilder(
+    column: $table.stato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fileId => $composableBuilder(
+    column: $table.fileId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get chiaveScambio => $composableBuilder(
+    column: $table.chiaveScambio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get chiaveFirma => $composableBuilder(
+    column: $table.chiaveFirma,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get verificato => $composableBuilder(
+    column: $table.verificato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get quota => $composableBuilder(
+    column: $table.quota,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PortafogliTableOrderingComposer get portafoglioId {
+    final $$PortafogliTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portafoglioId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableOrderingComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MembriTableAnnotationComposer
+    extends Composer<_$Archivio, $MembriTable> {
+  $$MembriTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get eliminato =>
+      $composableBuilder(column: $table.eliminato, builder: (column) => column);
+
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<String> get nome =>
+      $composableBuilder(column: $table.nome, builder: (column) => column);
+
+  GeneratedColumn<String> get ruolo =>
+      $composableBuilder(column: $table.ruolo, builder: (column) => column);
+
+  GeneratedColumn<String> get stato =>
+      $composableBuilder(column: $table.stato, builder: (column) => column);
+
+  GeneratedColumn<String> get fileId =>
+      $composableBuilder(column: $table.fileId, builder: (column) => column);
+
+  GeneratedColumn<String> get chiaveScambio => $composableBuilder(
+    column: $table.chiaveScambio,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get chiaveFirma => $composableBuilder(
+    column: $table.chiaveFirma,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get verificato => $composableBuilder(
+    column: $table.verificato,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get quota =>
+      $composableBuilder(column: $table.quota, builder: (column) => column);
+
+  $$PortafogliTableAnnotationComposer get portafoglioId {
+    final $$PortafogliTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.portafoglioId,
+      referencedTable: $db.portafogli,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PortafogliTableAnnotationComposer(
+            $db: $db,
+            $table: $db.portafogli,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MembriTableTableManager
+    extends
+        RootTableManager<
+          _$Archivio,
+          $MembriTable,
+          Membro,
+          $$MembriTableFilterComposer,
+          $$MembriTableOrderingComposer,
+          $$MembriTableAnnotationComposer,
+          $$MembriTableCreateCompanionBuilder,
+          $$MembriTableUpdateCompanionBuilder,
+          (Membro, $$MembriTableReferences),
+          Membro,
+          PrefetchHooks Function({bool portafoglioId})
+        > {
+  $$MembriTableTableManager(_$Archivio db, $MembriTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MembriTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MembriTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MembriTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> aggiornatoIl = const Value.absent(),
+                Value<bool> eliminato = const Value.absent(),
+                Value<String> portafoglioId = const Value.absent(),
+                Value<String> email = const Value.absent(),
+                Value<String> nome = const Value.absent(),
+                Value<String> ruolo = const Value.absent(),
+                Value<String> stato = const Value.absent(),
+                Value<String?> fileId = const Value.absent(),
+                Value<String?> chiaveScambio = const Value.absent(),
+                Value<String?> chiaveFirma = const Value.absent(),
+                Value<bool> verificato = const Value.absent(),
+                Value<int?> quota = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MembriCompanion(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                portafoglioId: portafoglioId,
+                email: email,
+                nome: nome,
+                ruolo: ruolo,
+                stato: stato,
+                fileId: fileId,
+                chiaveScambio: chiaveScambio,
+                chiaveFirma: chiaveFirma,
+                verificato: verificato,
+                quota: quota,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String aggiornatoIl,
+                Value<bool> eliminato = const Value.absent(),
+                required String portafoglioId,
+                required String email,
+                Value<String> nome = const Value.absent(),
+                required String ruolo,
+                required String stato,
+                Value<String?> fileId = const Value.absent(),
+                Value<String?> chiaveScambio = const Value.absent(),
+                Value<String?> chiaveFirma = const Value.absent(),
+                Value<bool> verificato = const Value.absent(),
+                Value<int?> quota = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MembriCompanion.insert(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                portafoglioId: portafoglioId,
+                email: email,
+                nome: nome,
+                ruolo: ruolo,
+                stato: stato,
+                fileId: fileId,
+                chiaveScambio: chiaveScambio,
+                chiaveFirma: chiaveFirma,
+                verificato: verificato,
+                quota: quota,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$MembriTable, Membro>(table),
+                  $$MembriTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({portafoglioId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (portafoglioId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.portafoglioId,
+                        referencedTable: $$MembriTableReferences
+                            ._portafoglioIdTable(db),
+                        referencedColumn: $$MembriTableReferences
+                            ._portafoglioIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$MembriTableProcessedTableManager =
+    ProcessedTableManager<
+      _$Archivio,
+      $MembriTable,
+      Membro,
+      $$MembriTableFilterComposer,
+      $$MembriTableOrderingComposer,
+      $$MembriTableAnnotationComposer,
+      $$MembriTableCreateCompanionBuilder,
+      $$MembriTableUpdateCompanionBuilder,
+      (Membro, $$MembriTableReferences),
+      Membro,
+      PrefetchHooks Function({bool portafoglioId})
+    >;
 typedef $$ImpostazioniTableCreateCompanionBuilder =
     ImpostazioniCompanion Function({
       required String chiave,
@@ -22138,6 +24747,10 @@ class $ArchivioManager {
       $$VersamentiTableTableManager(_db, _db.versamenti);
   $$ReportTableTableManager get report =>
       $$ReportTableTableManager(_db, _db.report);
+  $$PortafogliCondivisiTableTableManager get portafogliCondivisi =>
+      $$PortafogliCondivisiTableTableManager(_db, _db.portafogliCondivisi);
+  $$MembriTableTableManager get membri =>
+      $$MembriTableTableManager(_db, _db.membri);
   $$ImpostazioniTableTableManager get impostazioni =>
       $$ImpostazioniTableTableManager(_db, _db.impostazioni);
 }

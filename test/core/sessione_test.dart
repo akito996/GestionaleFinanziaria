@@ -53,6 +53,8 @@ void main() {
     expect(sessione.fase, FaseSessione.sbloccata);
     expect(sessione.idArchivio, creata.idArchivio);
     expect(sessione.avviso, 'Archivio creato');
+    // Chiavi della persona (portafogli condivisi): dalla chiave dei dati.
+    final firma = List.of(sessione.identita.pubblicaFirma);
     expect(
       await sessione.archivio.select(sessione.archivio.definizioniTipo).get(),
       isNotEmpty,
@@ -73,6 +75,7 @@ void main() {
     expect(riavvio.fase, FaseSessione.sbloccata);
     expect(riavvio.avviso, 'Archivio sbloccato');
     expect(riavvio.idArchivio, creata.idArchivio);
+    expect(riavvio.identita.pubblicaFirma, firma);
     await riavvio.blocca();
 
     // Password dimenticata: Secret Key (anche il file intero) + nuova password.
@@ -93,6 +96,8 @@ void main() {
     );
     await riavvio.sblocca('Nuova-Password-2');
     expect(riavvio.fase, FaseSessione.sbloccata);
+    // La password nuova non cambia la persona.
+    expect(riavvio.identita.pubblicaFirma, firma);
     await riavvio.blocca();
   });
 

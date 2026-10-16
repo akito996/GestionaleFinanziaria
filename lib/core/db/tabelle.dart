@@ -101,6 +101,11 @@ class Movimenti extends Table with ColonneSincronizzate {
   TextColumn get pianificazioneId =>
       text().nullable().references(Pianificazioni, #id)();
   TextColumn get dataPrevista => text().nullable()();
+
+  /// Nei portafogli condivisi (ADR-019): chi l'ha inserito e chi l'ha
+  /// modificato per ultimo (id in [Membri]). Vuoti negli altri portafogli.
+  TextColumn get inseritoDa => text().nullable()();
+  TextColumn get modificatoDa => text().nullable()();
 }
 
 /// Tag multilivello (anche loro ad albero).
@@ -392,6 +397,77 @@ abstract final class OriginePianificazione {
   static const costoVita = 'costo_vita';
   static const prestito = 'prestito';
   static const carta = 'carta';
+}
+
+/// Portafoglio condiviso (ADR-019): la parte su Google Drive di un
+/// portafoglio. Il proprietario prepara la cartella, il registro e un file per
+/// ogni membro; ognuno scrive solo nel proprio file.
+@DataClassName('PortafoglioCondiviso')
+class PortafogliCondivisi extends Table with ColonneSincronizzate {
+  TextColumn get portafoglioId => text().references(Portafogli, #id)();
+
+  /// Ruolo di questo archivio: vedi [RuoloMembro].
+  TextColumn get ruolo => text()();
+
+  /// Cartella su Drive (id).
+  TextColumn get cartellaId => text()();
+
+  /// Registro del portafoglio (membri, ruoli, quote), scritto dal proprietario.
+  TextColumn get registroId => text()();
+
+  /// Il file di questo archivio nella cartella (dove scrive le sue modifiche).
+  TextColumn get mioFileId => text().nullable()();
+
+  /// Chiave del portafoglio (32 byte, base64). Sta nell'archivio cifrato e
+  /// viaggia solo nei pacchetti cifrati della sincronizzazione (ADR-015).
+  TextColumn get chiave => text()();
+}
+
+/// Una persona di un portafoglio condiviso, proprietario compreso.
+@DataClassName('Membro')
+class Membri extends Table with ColonneSincronizzate {
+  TextColumn get portafoglioId => text().references(Portafogli, #id)();
+
+  /// Email Google con cui è stato invitato.
+  TextColumn get email => text()();
+  TextColumn get nome => text().withDefault(const Constant(''))();
+
+  /// Vedi [RuoloMembro].
+  TextColumn get ruolo => text()();
+
+  /// Vedi [StatoMembro].
+  TextColumn get stato => text()();
+
+  /// Il suo file nella cartella su Drive (id), preparato dal proprietario.
+  TextColumn get fileId => text().nullable()();
+
+  /// Chiavi pubbliche (base64): per ricevere la chiave del portafoglio
+  /// (X25519) e per verificare le sue firme (Ed25519).
+  TextColumn get chiaveScambio => text().nullable()();
+  TextColumn get chiaveFirma => text().nullable()();
+
+  /// Codice di sicurezza confrontato (a voce o con il QR).
+  BoolColumn get verificato => boolean().withDefault(const Constant(false))();
+
+  /// Quota del totale in centesimi di punto (5000 = 50%); vuota = non
+  /// indicata (consegna 2).
+  IntColumn get quota => integer().nullable()();
+}
+
+/// Valori ammessi per [PortafogliCondivisi.ruolo] e [Membri.ruolo].
+abstract final class RuoloMembro {
+  static const proprietario = 'proprietario';
+  static const membro = 'membro';
+}
+
+/// Valori ammessi per [Membri.stato].
+abstract final class StatoMembro {
+  /// Invitato, non ancora entrato: "nome (da confermare)".
+  static const invitato = 'invitato';
+  static const attivo = 'attivo';
+
+  /// Uscito o tolto dal proprietario.
+  static const uscito = 'uscito';
 }
 
 /// Impostazioni locali del dispositivo (non sincronizzate): id dispositivo, contatori, ...

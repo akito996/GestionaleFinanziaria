@@ -58,6 +58,8 @@ const categorieProposte = [
     Partecipanti,
     Versamenti,
     Report,
+    PortafogliCondivisi,
+    Membri,
     Impostazioni,
   ],
 )
@@ -113,7 +115,7 @@ class Archivio extends _$Archivio {
   Archivio.conEsecutore(super.e);
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -206,6 +208,13 @@ class Archivio extends _$Archivio {
       // v13: "Conta dal" (prestiti ed entrate già in corso quando li inserisci).
       if (da < 13 && da >= 3) {
         await m.addColumn(pianificazioni, pianificazioni.registraDal);
+      }
+      // v14: portafogli condivisi (ADR-019) e autore dei movimenti.
+      if (da < 14) {
+        await m.createTable(portafogliCondivisi);
+        await m.createTable(membri);
+        await m.addColumn(movimenti, movimenti.inseritoDa);
+        await m.addColumn(movimenti, movimenti.modificatoDa);
       }
     },
     beforeOpen: (_) async {

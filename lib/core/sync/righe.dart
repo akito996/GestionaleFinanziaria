@@ -29,6 +29,8 @@ class RigheSincronizzate {
   static const tabelle = [
     'definizioni_tipo',
     'portafogli',
+    'portafogli_condivisi',
+    'membri',
     'categorie',
     'etichette',
     'voci_costo',

@@ -8,7 +8,7 @@ import 'package:sqlite3/sqlite3.dart' as sql;
 
 void main() {
   test(
-    'migrazione v1 → v13: dati conservati, nuove tabelle e categorie',
+    'migrazione v1 → v14: dati conservati, nuove tabelle e categorie',
     () async {
       // Lo schema delle tabelle già presenti in v1 non è cambiato: si crea un archivio
       // attuale e lo si riporta com'era in v1 (senza le aggiunte della v2).
@@ -54,6 +54,10 @@ void main() {
         ..execute('DROP TABLE importi_voce')
         ..execute('DROP TABLE voci_costo')
         ..execute('DELETE FROM categorie')
+        ..execute('DROP TABLE membri')
+        ..execute('DROP TABLE portafogli_condivisi')
+        ..execute('ALTER TABLE movimenti DROP COLUMN inserito_da')
+        ..execute('ALTER TABLE movimenti DROP COLUMN modificato_da')
         ..userVersion = 1;
 
       // 2) Riapre con l'app attuale: parte la migrazione.
@@ -80,12 +84,12 @@ void main() {
       expect(await db.select(db.obiettivi).get(), isEmpty);
       expect(portafogli.single.preferito, isFalse);
       expect(portafogli.single.gruppo, isNull);
-      expect(grezzo.userVersion, 13);
+      expect(grezzo.userVersion, 14);
     },
   );
 
   test(
-    'migrazione v7 → v13: spese ripartite, maxi rata, entrate previste, report',
+    'migrazione v7 → v14: spese ripartite, maxi rata, entrate previste, report',
     () async {
       final grezzo = sql.sqlite3.openInMemory();
       final v8 = Archivio.conEsecutore(
@@ -114,6 +118,10 @@ void main() {
         ..execute('ALTER TABLE pianificazioni DROP COLUMN registra_dal')
         ..execute('DROP TABLE occorrenze')
         ..execute('DROP TABLE notifiche_lette')
+        ..execute('DROP TABLE membri')
+        ..execute('DROP TABLE portafogli_condivisi')
+        ..execute('ALTER TABLE movimenti DROP COLUMN inserito_da')
+        ..execute('ALTER TABLE movimenti DROP COLUMN modificato_da')
         ..userVersion = 7;
 
       final db = Archivio.conEsecutore(NativeDatabase.opened(grezzo));
@@ -124,10 +132,10 @@ void main() {
       expect(voce.natura, NaturaVoce.spesa); // le voci esistenti sono spese
       expect(await db.select(db.report).get(), isEmpty);
       expect(await db.select(db.prestiti).get(), isEmpty);
-      expect(grezzo.userVersion, 13);
+      expect(grezzo.userVersion, 14);
     },
   );
-  test('migrazione v11 → v13: le entrate previste chiedono conferma', () async {
+  test('migrazione v11 → v14: le entrate previste chiedono conferma', () async {
     final grezzo = sql.sqlite3.openInMemory();
     final v11 = Archivio.conEsecutore(
       NativeDatabase.opened(grezzo, closeUnderlyingOnClose: false),
@@ -165,6 +173,10 @@ void main() {
       ..execute('ALTER TABLE pianificazioni DROP COLUMN registra_dal')
       ..execute('DROP TABLE occorrenze')
       ..execute('DROP TABLE notifiche_lette')
+      ..execute('DROP TABLE membri')
+      ..execute('DROP TABLE portafogli_condivisi')
+      ..execute('ALTER TABLE movimenti DROP COLUMN inserito_da')
+      ..execute('ALTER TABLE movimenti DROP COLUMN modificato_da')
       ..userVersion = 11;
 
     final db = Archivio.conEsecutore(NativeDatabase.opened(grezzo));
@@ -181,6 +193,63 @@ void main() {
     );
     expect(await db.select(db.occorrenze).get(), isEmpty);
     expect(await db.select(db.notificheLette).get(), isEmpty);
-    expect(grezzo.userVersion, 13);
+    expect(grezzo.userVersion, 14);
   });
+
+  test(
+    'migrazione v13 → v14: portafogli condivisi e autore dei movimenti',
+    () async {
+      final grezzo = sql.sqlite3.openInMemory();
+      final v13 = Archivio.conEsecutore(
+        NativeDatabase.opened(grezzo, closeUnderlyingOnClose: false),
+      );
+      final tipo = (await v13.select(v13.definizioniTipo).get()).firstWhere(
+        (t) => t.ambito == AmbitoTipo.portafoglio,
+      );
+      final spesa = (await v13.select(v13.definizioniTipo).get()).firstWhere(
+        (t) => t.effetto == EffettoSaldo.uscita,
+      );
+      await v13
+          .into(v13.portafogli)
+          .insert(
+            PortafogliCompanion.insert(
+              id: 'p1',
+              aggiornatoIl: '1',
+              tipoId: tipo.id,
+              nome: 'Conto',
+              valuta: 'EUR',
+            ),
+          );
+      await v13
+          .into(v13.movimenti)
+          .insert(
+            MovimentiCompanion.insert(
+              id: 'm1',
+              aggiornatoIl: '1',
+              tipoId: spesa.id,
+              portafoglioId: 'p1',
+              importoMinimo: 1250,
+              valuta: 'EUR',
+              data: '2026-10-16',
+            ),
+          );
+      await v13.close();
+      grezzo
+        ..execute('DROP TABLE membri')
+        ..execute('DROP TABLE portafogli_condivisi')
+        ..execute('ALTER TABLE movimenti DROP COLUMN inserito_da')
+        ..execute('ALTER TABLE movimenti DROP COLUMN modificato_da')
+        ..userVersion = 13;
+
+      final db = Archivio.conEsecutore(NativeDatabase.opened(grezzo));
+      addTearDown(db.close);
+      final movimento = await db.select(db.movimenti).getSingle();
+      expect(movimento.importoMinimo, 1250);
+      expect(movimento.inseritoDa, isNull);
+      expect(movimento.modificatoDa, isNull);
+      expect(await db.select(db.portafogliCondivisi).get(), isEmpty);
+      expect(await db.select(db.membri).get(), isEmpty);
+      expect(grezzo.userVersion, 14);
+    },
+  );
 }
