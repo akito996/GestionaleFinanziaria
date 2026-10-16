@@ -32,7 +32,6 @@ class _ProvaCondivisionePaginaState extends State<ProvaCondivisionePagina> {
       widget.accesso ?? AccessoDriveFile.perPiattaforma();
   final _email = TextEditingController();
   final _righe = <(bool?, String)>[];
-  String? _cartella;
   bool _occupato = false;
 
   @override
@@ -69,9 +68,24 @@ class _ProvaCondivisionePaginaState extends State<ProvaCondivisionePagina> {
   /// Nomi chiari: la cartella del proprietario e un file per ogni persona.
   String get _nomeCartella => 'wallecy_share_${widget.codice}';
   String _nomeFile(String codice) => 'wallecy_$codice.txt';
-  bool _mio(FileCondiviso f) => f.nome == _nomeFile(widget.codice);
+  bool _mio(String nome) => nome == _nomeFile(widget.codice);
 
-  /// 1. Proprietario: crea la cartella, scrive un file e la condivide.
+  /// Nel file del proprietario ogni membro lascia l'id del proprio file.
+  static final _segnalazione = RegExp(
+    r'^membro (\S+): (\S+)$',
+    multiLine: true,
+  );
+
+  /// File dei membri segnalati nel file del proprietario (passo 3).
+  var _segnalati = <String>[];
+
+  static const _invito =
+      'Ti ho invitato a provare la condivisione di WalleCy. Sul tuo '
+      'dispositivo apri WalleCy, Impostazioni, Laboratorio, e premi '
+      '"Scegli la cartella o il file condiviso".';
+
+  /// 1. Proprietario: cartella dentro «WalleCy» (riusata se c'è già), il suo
+  /// file e la condivisione con l'altro account.
   Future<void> _creaECondividi() => _passo(() async {
     final email = _email.text.trim();
     if (!email.contains('@')) {
@@ -85,92 +99,234 @@ class _ProvaCondivisionePaginaState extends State<ProvaCondivisionePagina> {
     }
     final drive = DriveCondiviso(client);
     try {
-      final id = await drive.creaCartella(_nomeCartella);
-      _cartella = id;
-      _scrivi(true, 'Cartella "$_nomeCartella" creata nel tuo Drive.');
+      final cartella = await drive.cartellaDentroWalleCy(_nomeCartella);
+      final percorso = '${DriveCondiviso.cartellaApp}/$_nomeCartella';
+      _scrivi(true, switch (cartella.origine) {
+        Origine.creata => 'Cartella "$percorso" creata nel tuo Drive.',
+        Origine.trovata => 'Cartella "$percorso" già presente: la riuso.',
+        Origine.spostata =>
+          'Cartella "$_nomeCartella" già presente: spostata dentro '
+              '"${DriveCondiviso.cartellaApp}".',
+      });
+      final nome = _nomeFile(widget.codice);
+      final esistente = await drive.trovaFile(cartella.id, nome);
+      // Le segnalazioni dei membri restano anche se il file si riscrive.
+      final segnalazioni = esistente == null
+          ? const <String>[]
+          : [
+              for (final m in _segnalazione.allMatches(
+                await drive.leggi(esistente),
+              ))
+                m[0]!,
+            ];
       await drive.scrivi(
-        id,
-        _nomeFile(widget.codice),
-        'Ciao dal proprietario ${widget.codice}, $_ora',
-      );
-      _scrivi(true, 'File "${_nomeFile(widget.codice)}" scritto.');
-      await drive.condividi(id, email);
-      _scrivi(true, 'Cartella condivisa con $email (riceverà un\'email).');
-    } finally {
-      drive.chiudi();
-    }
-  });
-
-  /// 2. Membro: sceglie la cartella, legge e scrive.
-  Future<void> _scegliELeggi() => _passo(() async {
-    final scelta = await _accesso.scegliCartella();
-    final drive = DriveCondiviso(scelta.client);
-    try {
-      if (scelta.scelti.isEmpty) {
-        _scrivi(false, 'Nessuna cartella scelta.');
-        return;
-      }
-      final id = scelta.scelti.first;
-      final scelto = await drive.info(id);
-      if (!scelto.cartella) {
-        _scrivi(
-          false,
-          'Hai scelto il file "${scelto.nome}". Scegli invece la cartella '
-          '"wallecy_share_…" (la cartella, non i file al suo interno).',
-        );
-        return;
-      }
-      _scrivi(true, 'Cartella scelta: "${scelto.nome}".');
-      final file = await drive.elenca(id);
-      _scrivi(
-        file.isNotEmpty,
-        file.isEmpty
-            ? 'Non vedo i file dentro la cartella.'
-            : 'Vedo ${file.length} file: '
-                  '${file.map((f) => '${f.nome} (${f.autore})').join(', ')}.',
-      );
-      for (final f in file.where((f) => !_mio(f))) {
-        final testo = await drive.leggi(f.id);
-        _scrivi(true, 'Letto "${f.nome}": $testo');
-      }
-      await drive.scrivi(
-        id,
-        _nomeFile(widget.codice),
-        'Ciao dal membro ${widget.codice}, $_ora',
+        cartella.id,
+        nome,
+        [
+          'Ciao dal proprietario ${widget.codice}, $_ora',
+          ...segnalazioni,
+        ].join('\n'),
       );
       _scrivi(
         true,
-        'File "${_nomeFile(widget.codice)}" scritto nella cartella condivisa.',
+        'File "$nome" ${esistente == null ? 'scritto' : 'aggiornato'}.',
+      );
+      await drive.condividi(cartella.id, email, messaggio: _invito);
+      _scrivi(
+        true,
+        'Cartella condivisa con $email: riceverà un\'email da Google con '
+        'le istruzioni.',
       );
     } finally {
       drive.chiudi();
     }
   });
 
-  /// 3. Proprietario: vede il file del membro?
-  Future<void> _controlla() => _passo(() async {
-    final id = _cartella;
-    if (id == null) {
-      _scrivi(false, 'Prima crea la cartella (passo 1) su questo dispositivo.');
-      return;
+  /// 2. Membro: sceglie la cartella (o il file che c'è dentro), legge il file
+  /// del proprietario e scrive il suo. Se non può scrivere nella cartella,
+  /// mette il file nel proprio Drive, lo condivide col proprietario e glielo
+  /// segnala nel file del proprietario.
+  Future<void> _scegliELeggi() => _passo(() async {
+    final scelta = await _accesso.scegli();
+    final drive = DriveCondiviso(scelta.client);
+    try {
+      if (scelta.scelti.isEmpty) {
+        _scrivi(false, 'Non hai scelto niente.');
+        return;
+      }
+      String? cartella;
+      String? emailProprietario;
+      final altrui = <String>[];
+      for (final id in scelta.scelti) {
+        final info = await drive.info(id);
+        if (info.cartella) {
+          cartella ??= id;
+          _scrivi(true, 'Hai scelto la cartella "${info.nome}".');
+        } else {
+          cartella ??= info.padri.firstOrNull;
+          if (!_mio(info.nome)) {
+            altrui.add(id);
+          }
+          _scrivi(true, 'Hai scelto il file "${info.nome}".');
+        }
+        if (!_mio(info.nome)) {
+          emailProprietario ??= info.emailProprietario;
+        }
+      }
+      if (cartella != null) {
+        try {
+          final file = await drive.elenca(cartella);
+          _scrivi(
+            null,
+            file.isEmpty
+                ? 'Nella cartella non vedo file.'
+                : 'Nella cartella vedo ${file.length} file: '
+                      '${file.map((f) => f.nome).join(', ')}.',
+          );
+          for (final f in file) {
+            if (!_mio(f.nome) && !altrui.contains(f.id)) {
+              altrui.add(f.id);
+            }
+          }
+        } on ErroreDriveCondiviso catch (e) {
+          _scrivi(false, 'Non posso elencare la cartella (Drive ${e.stato}).');
+        }
+      }
+      String? fileProprietario;
+      for (final id in altrui) {
+        try {
+          final testo = await drive.leggi(id);
+          fileProprietario ??= id;
+          _scrivi(true, 'Letto: ${testo.split('\n').first}');
+        } on ErroreDriveCondiviso catch (e) {
+          _scrivi(false, 'Non posso leggere un file (Drive ${e.stato}).');
+        }
+      }
+      if (fileProprietario == null) {
+        _scrivi(
+          false,
+          'Non vedo il file del proprietario: riprova scegliendo il file '
+          '"wallecy_….txt" dentro la cartella.',
+        );
+      }
+
+      final nome = _nomeFile(widget.codice);
+      final testo = 'Ciao dal membro ${widget.codice}, $_ora';
+      String? mio;
+      if (cartella != null) {
+        try {
+          mio = await drive.scrivi(cartella, nome, testo);
+          _scrivi(true, 'File "$nome" scritto nella cartella condivisa.');
+        } on ErroreDriveCondiviso catch (e) {
+          _scrivi(
+            false,
+            'Non posso scrivere nella cartella condivisa (Drive ${e.stato}).',
+          );
+        }
+      }
+      if (mio == null) {
+        if (emailProprietario == null) {
+          _scrivi(false, 'Non so chi è il proprietario: non condivido niente.');
+          return;
+        }
+        // Piano B: il file nel mio Drive, condiviso col proprietario.
+        mio = await drive.scrivi(await drive.cartellaWalleCy(), nome, testo);
+        await drive.condividi(mio, emailProprietario);
+        _scrivi(
+          true,
+          'File "$nome" scritto nel tuo Drive (cartella '
+          '"${DriveCondiviso.cartellaApp}") e condiviso con $emailProprietario.',
+        );
+      }
+      if (fileProprietario != null) {
+        try {
+          final vecchio = await drive.leggi(fileProprietario);
+          await drive.aggiorna(
+            fileProprietario,
+            [
+              for (final r in vecchio.split('\n'))
+                if (!r.startsWith('membro ${widget.codice}:')) r,
+              'membro ${widget.codice}: $mio',
+            ].join('\n'),
+          );
+          _scrivi(true, 'Segnalato il tuo file nel file del proprietario.');
+        } on ErroreDriveCondiviso catch (e) {
+          _scrivi(
+            false,
+            'Non posso scrivere nel file del proprietario (Drive ${e.stato}).',
+          );
+        }
+      }
+    } finally {
+      drive.chiudi();
     }
+  });
+
+  /// 3. Proprietario: vede il file del membro? Se no, cerca la segnalazione.
+  Future<void> _controlla() => _passo(() async {
     final client = await _accesso.client();
     if (client == null) {
       return;
     }
     final drive = DriveCondiviso(client);
     try {
-      final file = await drive.elenca(id);
-      final membri = file.where((f) => !_mio(f));
-      _scrivi(
-        membri.isNotEmpty,
-        membri.isEmpty
-            ? 'Il file del membro non c\'è ancora (file visti: '
-                  '${file.map((f) => f.nome).join(', ')}).'
-            : 'Vedo il file del membro.',
-      );
+      final cartella = await drive.trovaCartella(_nomeCartella);
+      if (cartella == null) {
+        _scrivi(false, 'Prima crea la cartella (passo 1).');
+        return;
+      }
+      final file = await drive.elenca(cartella);
+      final membri = file.where((f) => !_mio(f.nome)).toList();
       for (final f in membri) {
         _scrivi(true, 'Letto "${f.nome}": ${await drive.leggi(f.id)}');
+      }
+      final mio = file.where((f) => _mio(f.nome)).firstOrNull;
+      final visti = {for (final f in membri) f.id};
+      _segnalati = mio == null
+          ? []
+          : [
+              for (final m in _segnalazione.allMatches(
+                await drive.leggi(mio.id),
+              ))
+                if (!visti.contains(m[2])) m[2]!,
+            ];
+      if (membri.isNotEmpty) {
+        _scrivi(true, 'Vedo il file del membro nella cartella.');
+      } else if (_segnalati.isNotEmpty) {
+        _scrivi(
+          null,
+          'Il membro ha segnalato il suo file, ma non lo vedo ancora: '
+          'premi «4 · Apri il file del membro».',
+        );
+      } else {
+        _scrivi(
+          false,
+          'Il file del membro non c\'è ancora (file visti: '
+          '${file.map((f) => f.nome).join(', ')}).',
+        );
+      }
+    } finally {
+      drive.chiudi();
+    }
+  });
+
+  /// 4. Proprietario: apre il file del membro con la finestra di Google
+  /// (mostra solo i file segnalati, se ce ne sono).
+  Future<void> _apriFileMembro() => _passo(() async {
+    final scelta = await _accesso.scegli(soloId: _segnalati);
+    final drive = DriveCondiviso(scelta.client);
+    try {
+      var letti = 0;
+      for (final id in scelta.scelti) {
+        final info = await drive.info(id);
+        if (info.cartella || _mio(info.nome)) {
+          continue;
+        }
+        _scrivi(true, 'Letto "${info.nome}": ${await drive.leggi(id)}');
+        letti++;
+      }
+      if (letti == 0) {
+        _scrivi(false, 'Scegli il file "wallecy_….txt" del membro.');
       }
     } finally {
       drive.chiudi();
@@ -189,7 +345,8 @@ class _ProvaCondivisionePaginaState extends State<ProvaCondivisionePagina> {
             const Text(
               'Prova tecnica per i portafogli condivisi, con due account '
               'Google su due dispositivi. Usa solo file di testo di prova, '
-              'nessun dato del tuo archivio.',
+              'nessun dato del tuo archivio, tutti nella cartella «WalleCy» '
+              'del tuo Drive.',
             ),
             const SizedBox(height: 16),
             Card(
@@ -220,6 +377,11 @@ class _ProvaCondivisionePaginaState extends State<ProvaCondivisionePagina> {
                       onPressed: _occupato ? null : _controlla,
                       child: const Text('3 · Controlla il file del membro'),
                     ),
+                    const SizedBox(height: 8),
+                    OutlinedButton(
+                      onPressed: _occupato ? null : _apriFileMembro,
+                      child: const Text('4 · Apri il file del membro'),
+                    ),
                   ],
                 ),
               ),
@@ -237,13 +399,16 @@ class _ProvaCondivisionePaginaState extends State<ProvaCondivisionePagina> {
                     const SizedBox(height: 8),
                     const Text(
                       'Nella finestra di Google apri «Condivisi con me» e '
-                      'scegli la cartella «wallecy_share_…» (si vedono solo '
-                      'le cartelle).',
+                      'scegli la cartella «wallecy_share_…». Se toccandola '
+                      'la cartella si apre, scegli il file «wallecy_….txt» '
+                      'che c\'è dentro: va bene lo stesso.',
                     ),
                     const SizedBox(height: 12),
                     FilledButton(
                       onPressed: _occupato ? null : _scegliELeggi,
-                      child: const Text('Scegli la cartella condivisa'),
+                      child: const Text(
+                        'Scegli la cartella o il file condiviso',
+                      ),
                     ),
                   ],
                 ),

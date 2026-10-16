@@ -15,26 +15,26 @@ import java.util.concurrent.atomic.AtomicInteger
  * Selettore di Google Drive per i portafogli condivisi (ADR-019, prova).
  *
  * Con il permesso `drive.file` l'app vede solo i file che crea lei o che
- * l'utente sceglie qui: il membro sceglie una volta la cartella condivisa
- * dal proprietario.
+ * l'utente sceglie qui: cartelle e file di testo, anche più di uno. Con
+ * `soloId` la finestra mostra solo quei file (es. il file di un membro).
  */
 class DriveFile(private val attivita: FragmentActivity) :
     MethodChannel.MethodCallHandler {
     companion object {
         private const val DRIVE_FILE = "https://www.googleapis.com/auth/drive.file"
-        private const val CARTELLA = "application/vnd.google-apps.folder"
+        private const val TIPI = "application/vnd.google-apps.folder,text/plain"
         private val richieste = AtomicInteger()
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
-            "scegli" -> scegli(result)
+            "scegli" -> scegli(call.argument<String>("soloId") ?: "", result)
             else -> result.notImplemented()
         }
     }
 
-    private fun scegli(result: MethodChannel.Result) {
-        val richiesta = AuthorizationRequest.Builder()
+    private fun scegli(soloId: String, result: MethodChannel.Result) {
+        val costruttore = AuthorizationRequest.Builder()
             .setRequestedScopes(listOf(Scope(DRIVE_FILE)))
             .setOptOutIncludingGrantedScopes(true)
             .setPrompt(AuthorizationRequest.Prompt.CONSENT)
@@ -46,13 +46,23 @@ class DriveFile(private val attivita: FragmentActivity) :
                 AuthorizationRequest.ResourceParameter.PICKER_ALLOW_FOLDER_SELECTION,
                 "true",
             )
-            // Solo cartelle: il membro sceglie la cartella condivisa, non i
-            // file al suo interno.
+            .addResourceParameter(
+                AuthorizationRequest.ResourceParameter.PICKER_ALLOW_MULTIPLE,
+                "true",
+            )
+            // Cartelle e file di testo: se toccando la cartella la finestra
+            // la apre, si può scegliere il file che c'è dentro.
             .addResourceParameter(
                 AuthorizationRequest.ResourceParameter.PICKER_MIMETYPES,
-                CARTELLA,
+                TIPI,
             )
-            .build()
+        if (soloId.isNotEmpty()) {
+            costruttore.addResourceParameter(
+                AuthorizationRequest.ResourceParameter.PICKER_FILE_IDS,
+                soloId,
+            )
+        }
+        val richiesta = costruttore.build()
         val client = Identity.getAuthorizationClient(attivita)
         client.authorize(richiesta)
             .addOnSuccessListener { esito ->
@@ -65,7 +75,7 @@ class DriveFile(private val attivita: FragmentActivity) :
             .addOnFailureListener { e -> result.error("errore", e.message, null) }
     }
 
-    /** La finestra di Google (scelta della cartella) e poi la risposta. */
+    /** La finestra di Google (scelta) e poi la risposta. */
     private fun avviaSelettore(esito: AuthorizationResult, result: MethodChannel.Result) {
         val intento = esito.pendingIntent
         if (intento == null) {

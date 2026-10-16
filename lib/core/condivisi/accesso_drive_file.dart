@@ -18,7 +18,10 @@ import '../sync/accesso_google.dart';
 const ambitoDriveFile = 'https://www.googleapis.com/auth/drive.file';
 
 /// Esito della scelta: client autorizzato e id dei file o cartelle scelti.
-typedef CartellaScelta = ({http.Client client, List<String> scelti});
+typedef ElementiScelti = ({http.Client client, List<String> scelti});
+
+/// Cosa mostra la finestra di Google: cartelle e file di testo.
+const tipiSceglibili = 'application/vnd.google-apps.folder,text/plain';
 
 /// La scelta è stata annullata dall'utente.
 final class SceltaAnnullata implements Exception {
@@ -29,8 +32,9 @@ abstract interface class AccessoDriveFile {
   /// Client autorizzato a creare e leggere i propri file (consenso Google).
   Future<http.Client?> client();
 
-  /// Finestra di Google per scegliere una cartella condivisa da altri.
-  Future<CartellaScelta> scegliCartella();
+  /// Finestra di Google per scegliere cartelle o file condivisi da altri
+  /// (anche più di uno). Con [soloId] mostra solo quei file.
+  Future<ElementiScelti> scegli({List<String> soloId = const []});
 
   static AccessoDriveFile perPiattaforma() => Platform.isAndroid
       ? AccessoDriveFileAndroid()
@@ -58,9 +62,12 @@ class AccessoDriveFileAndroid implements AccessoDriveFile {
   }
 
   @override
-  Future<CartellaScelta> scegliCartella() async {
+  Future<ElementiScelti> scegli({List<String> soloId = const []}) async {
     try {
-      final risposta = await _canale.invokeMapMethod<String, Object?>('scegli');
+      final risposta = await _canale.invokeMapMethod<String, Object?>(
+        'scegli',
+        {'soloId': soloId.join(',')},
+      );
       final token = risposta?['token'];
       if (token is! String) {
         throw const SceltaAnnullata();
@@ -108,7 +115,7 @@ class AccessoDriveFileDesktop implements AccessoDriveFile {
   }
 
   @override
-  Future<CartellaScelta> scegliCartella() async {
+  Future<ElementiScelti> scegli({List<String> soloId = const []}) async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     try {
       final ritorno = 'http://127.0.0.1:${server.port}';
@@ -126,8 +133,9 @@ class AccessoDriveFileDesktop implements AccessoDriveFile {
         'prompt': 'consent',
         'trigger_onepick': 'true',
         'allow_folder_selection': 'true',
-        // Solo cartelle: niente file scelti per sbaglio.
-        'mimetypes': 'application/vnd.google-apps.folder',
+        'allow_multiple': 'true',
+        'mimetypes': tipiSceglibili,
+        if (soloId.isNotEmpty) 'file_ids': soloId.join(','),
         'code_challenge': sfida,
         'code_challenge_method': 'S256',
         'state': stato,

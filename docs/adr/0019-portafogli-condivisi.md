@@ -74,6 +74,17 @@ L'utente vuole portafogli condivisi fra account diversi, per simulare i conti co
   - vale sia alla creazione sia quando il portafoglio diventa condiviso dopo.
 - **Membri in attesa**: finché un invitato non accetta, le sue quote e le sue voci compaiono come "**nome (da confermare)**".
 
+## Prova del 16/10/2026 e piano B
+- **Selettore Android**: con il filtro "solo cartelle", toccando la cartella la finestra la **apre** (mostrando «La cartella è vuota») invece di sceglierla. Ora la finestra mostra cartelle **e** file di testo, con scelta multipla: va bene scegliere la cartella o il file del proprietario che c'è dentro.
+- **Dubbio da chiudere**: la documentazione di Google non dice se scegliere una cartella con `drive.file` dia accesso ai file **dentro**. Fonti non ufficiali dicono di no: l'app vedrebbe solo ciò che ha creato lei o che l'utente ha scelto, file per file.
+- **Piano B** (provato nel Laboratorio, passi 2–4):
+  - il membro sceglie il **file** del proprietario e lo legge;
+  - se non può scrivere nella cartella condivisa, scrive il proprio file nella sua cartella «WalleCy» e lo condivide col proprietario;
+  - nel file del proprietario lascia l'id del suo file (ha il permesso di scrittura);
+  - il proprietario apre il file del membro con un tocco: la finestra di Google mostra **solo** quel file (`PICKER_FILE_IDS` / `file_ids`). È il passo naturale per "conferma il membro" (membri «da confermare»).
+- **Ordine nel Drive**: tutte le cartelle di condivisione stanno dentro un'unica cartella **«WalleCy»** nella radice del Drive. Le cartelle già presenti si riusano (e si spostano dentro «WalleCy» se erano fuori); ogni persona ha un solo file, che si aggiorna invece di duplicarsi.
+- **Invito**: Google manda all'invitato un'email con un messaggio dell'app che spiega cosa fare in WalleCy.
+
 ## Consegne
 0. **Prova tecnica** (Laboratorio):
    - il proprietario crea una cartella, scrive un file e la condivide;
