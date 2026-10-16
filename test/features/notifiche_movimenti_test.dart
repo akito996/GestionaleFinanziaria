@@ -304,6 +304,19 @@ void main() {
     await attendi(tester, find.textContaining('1 movimento ·'));
     expect(find.text('Uscite'), findsOneWidget); // nel riepilogo dei filtri
 
+    // Scelta multipla: uscite + entrate.
+    await tocca(tester, find.text('Filtri (1)'));
+    await tocca(tester, find.widgetWithText(FilterChip, 'Entrate'));
+    expect(
+      tester
+          .widget<FilterChip>(find.widgetWithText(FilterChip, 'Uscite'))
+          .selected,
+      isTrue,
+    );
+    await tocca(tester, find.text('Applica'));
+    await attendi(tester, find.text('Entrate + Uscite'));
+    await attendi(tester, find.textContaining('2 movimenti'));
+
     await tocca(tester, find.byTooltip('Togli i filtri'));
     await attendi(tester, find.textContaining('2 movimenti'));
     await chiudi(tester);

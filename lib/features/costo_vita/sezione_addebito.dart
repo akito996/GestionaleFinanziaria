@@ -238,10 +238,7 @@ class _SezioneAddebitoState extends State<SezioneAddebito> {
           SegmentedButton<TipoFine>(
             segments: const [
               ButtonSegment(value: TipoFine.mai, label: Text('Sempre')),
-              ButtonSegment(
-                value: TipoFine.data,
-                label: Text('Fino a una data'),
-              ),
+              ButtonSegment(value: TipoFine.data, label: Text('Fino a')),
               ButtonSegment(value: TipoFine.occorrenze, label: Text('N volte')),
             ],
             selected: {v.tipoFine},

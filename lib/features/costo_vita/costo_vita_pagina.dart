@@ -68,22 +68,18 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
   void _spostaMese(int delta) =>
       setState(() => _mese = DateTime(_mese.year, _mese.month + delta));
 
-  Future<void> _suggerita(String tipo, String nome, String categoria) async {
-    final categorie = await widget.sessione.contabilita
-        .osservaCategorie()
-        .first;
-    final id = categorie.where((c) => c.nome == categoria).firstOrNull?.id;
-    if (mounted) {
-      await apriNuovaVoce(
-        context,
-        widget.sessione,
-        tipo: tipo,
-        natura: widget.natura,
-        nomeSuggerito: nome,
-        categoriaSuggerita: id,
-      );
-    }
-  }
+  /// Voci del mese mostrato: la finestra "Nuova" non le ripropone tra i
+  /// suggerimenti.
+  Set<String> _nomiPresenti = const {};
+
+  /// Un solo punto per aggiungere: il pulsante "Nuova" (scelta dell'utente).
+  Future<void> _nuova() => apriNuovaVoce(
+    context,
+    widget.sessione,
+    tipo: TipoVoce.fissa,
+    natura: widget.natura,
+    nomiPresenti: _nomiPresenti,
+  );
 
   /// Prefisso delle preferenze delle sezioni (aperte o chiuse).
   String get _sezione => _t.entrate ? 'entrate' : 'costo_vita';
@@ -96,6 +92,12 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
         title: Text(_t.sezione),
         actions: [PulsanteBlocca(sessione: widget.sessione)],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'fab-$_sezione',
+        onPressed: _nuova,
+        icon: const Icon(Icons.add),
+        label: const Text('Nuova'),
+      ),
       body: StreamBuilder<List<RiepilogoMese>>(
         // La chiave fa ripartire il flusso quando cambi mese.
         key: ValueKey(_mese),
@@ -106,10 +108,12 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
             return const Center(child: CircularProgressIndicator());
           }
           final mese = storico.last;
+          _nomiPresenti = {for (final v in mese.voci) v.voce.nome};
           final senzaVoci = storico.every((m) => m.vuoto);
           return LayoutBuilder(
             builder: (context, vincoli) => ListView(
-              padding: marginiPagina(vincoli, sopra: 8, sotto: 32),
+              // In fondo lo spazio per il pulsante "Nuova".
+              padding: marginiPagina(vincoli, sopra: 8),
               children: [
                 _SceltaMese(
                   mese: _mese,
@@ -117,11 +121,7 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
                   onSuccessivo: () => _spostaMese(1),
                 ),
                 if (senzaVoci)
-                  _PrimaConfigurazione(
-                    onSuggerita: _suggerita,
-                    sessione: widget.sessione,
-                    testi: _t,
-                  )
+                  _PrimaConfigurazione(testi: _t)
                 else ...[
                   _Riepilogo(mese: mese, testi: _t),
                   const SizedBox(height: 16),
@@ -213,10 +213,7 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
                     voci: mese.voci.where((v) => v.fissa).toList(),
                     sessione: widget.sessione,
                     mese: _mese,
-                    tipo: TipoVoce.fissa,
                     testi: _t,
-                    suggerite: _t.suggeriteFisse,
-                    onSuggerita: _suggerita,
                   ),
                   if (mese.rate.isNotEmpty) ...[
                     const SizedBox(height: 16),
@@ -233,10 +230,7 @@ class _CostoVitaPaginaState extends State<CostoVitaPagina> {
                     voci: mese.voci.where((v) => !v.fissa).toList(),
                     sessione: widget.sessione,
                     mese: _mese,
-                    tipo: TipoVoce.variabile,
                     testi: _t,
-                    suggerite: _t.suggeriteVariabili,
-                    onSuggerita: _suggerita,
                   ),
                 ],
               ],
@@ -442,10 +436,7 @@ class _ElencoVoci extends StatelessWidget {
     required this.voci,
     required this.sessione,
     required this.mese,
-    required this.tipo,
     required this.testi,
-    required this.suggerite,
-    required this.onSuggerita,
   });
 
   final String chiave;
@@ -453,18 +444,11 @@ class _ElencoVoci extends StatelessWidget {
   final List<VoceDelMese> voci;
   final Sessione sessione;
   final DateTime mese;
-  final String tipo;
   final TestiVoci testi;
-  final List<(String, String)> suggerite;
-  final Future<void> Function(String tipo, String nome, String categoria)
-  onSuggerita;
 
   @override
   Widget build(BuildContext context) {
-    final schema = Theme.of(context).colorScheme;
     final totale = voci.fold<int>(0, (t, v) => t + v.previsto);
-    final nomiPresenti = voci.map((v) => v.voce.nome).toSet();
-    final mancanti = suggerite.where((s) => !nomiPresenti.contains(s.$1));
 
     return SezioneRipiegabile(
       sessione: sessione,
@@ -478,31 +462,16 @@ class _ElencoVoci extends StatelessWidget {
           children: [
             for (final v in voci)
               _RigaVoce(voce: v, sessione: sessione, mese: mese, testi: testi),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  ActionChip(
-                    avatar: const Icon(Icons.add),
-                    label: const Text('Aggiungi'),
-                    onPressed: () => apriNuovaVoce(
-                      context,
-                      sessione,
-                      tipo: tipo,
-                      natura: testi.natura,
-                    ),
+            if (voci.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                child: Text(
+                  'Nessuna voce: aggiungila con «Nuova».',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
-                  for (final (nome, categoria) in mancanti.take(6))
-                    ActionChip(
-                      label: Text(nome),
-                      labelStyle: TextStyle(color: schema.onSurfaceVariant),
-                      onPressed: () => onSuggerita(tipo, nome, categoria),
-                    ),
-                ],
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -655,52 +624,20 @@ class _Avanzamento extends StatelessWidget {
   }
 }
 
-/// Prima volta: spiegazione e suggerimenti a un tocco.
+/// Prima volta: spiegazione e invito a usare "Nuova" (i suggerimenti a un
+/// tocco sono nella finestra di inserimento).
 class _PrimaConfigurazione extends StatelessWidget {
-  const _PrimaConfigurazione({
-    required this.onSuggerita,
-    required this.sessione,
-    required this.testi,
-  });
+  const _PrimaConfigurazione({required this.testi});
 
-  final Future<void> Function(String tipo, String nome, String categoria)
-  onSuggerita;
-  final Sessione sessione;
   final TestiVoci testi;
 
   @override
   Widget build(BuildContext context) {
     final testo = Theme.of(context).textTheme;
-    Widget gruppo(String titolo, String tipo, List<(String, String)> voci) =>
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 16),
-            Text(titolo, style: testo.titleSmall),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final (nome, categoria) in voci)
-                  ActionChip(
-                    label: Text(nome),
-                    onPressed: () => onSuggerita(tipo, nome, categoria),
-                  ),
-                ActionChip(
-                  avatar: const Icon(Icons.add),
-                  label: const Text('Altra'),
-                  onPressed: () => apriNuovaVoce(
-                    context,
-                    sessione,
-                    tipo: tipo,
-                    natura: testi.natura,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        );
+    final esempi = [
+      ...testi.suggeriteFisse.take(2),
+      ...testi.suggeriteVariabili.take(1),
+    ].map((s) => s.$1).join(', ');
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -715,11 +652,18 @@ class _PrimaConfigurazione extends StatelessWidget {
             Text(testi.primaTitolo, style: testo.headlineSmall),
             const SizedBox(height: 8),
             Text(testi.primaTesto),
-            gruppo(testi.fisse, TipoVoce.fissa, testi.suggeriteFisse),
-            gruppo(
-              testi.variabili,
-              TipoVoce.variabile,
-              testi.suggeriteVariabili,
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Icon(Icons.add_circle_outline),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Tocca «Nuova» in basso: trovi suggerimenti pronti '
+                    'come $esempi.',
+                  ),
+                ),
+              ],
             ),
           ],
         ),

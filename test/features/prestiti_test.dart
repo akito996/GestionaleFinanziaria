@@ -145,7 +145,9 @@ void main() {
         await sessione.avvia();
         await sessione.preparaNuovoArchivio('Password-Lunga-1');
         await sessione.confermaNuovoArchivio();
-        // 4 rate da questo mese: la maxi rata è fra 3 mesi (entro i 6).
+        // 4 rate da oggi: la maxi rata è fra 3 mesi (entro i 6). La prima è
+        // oggi, non in un giorno fisso: con "Conta dal" le rate già passate
+        // non contano (il test dipenderebbe dalla data).
         await sessione.prestiti.crea(
           DatiPrestito(
             nome: 'Auto',
@@ -155,7 +157,7 @@ void main() {
             importoRata: 30000,
             maxiRata: 1400000,
             speseRata: 350,
-            primaRata: DateTime(oggi.year, oggi.month, 15),
+            primaRata: DateTime(oggi.year, oggi.month, oggi.day),
           ),
         );
       });

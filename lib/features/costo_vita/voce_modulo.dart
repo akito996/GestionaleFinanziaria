@@ -10,11 +10,13 @@ import '../comuni/campi.dart';
 import '../comuni/errori.dart';
 import '../comuni/navigazione.dart';
 import '../comuni/conta_dal.dart';
+import '../comuni/modulo_adattivo.dart';
 import 'sezione_addebito.dart';
 import 'testi_voci.dart';
 import '../comuni/avvisi.dart';
 
-/// Nuova voce del costo della vita (fissa o variabile), con nome suggerito.
+/// Nuova voce del costo della vita o delle entrate (fissa o variabile). In
+/// cima, i suggerimenti a un tocco (tranne quelli già in [nomiPresenti]).
 Future<void> apriNuovaVoce(
   BuildContext context,
   Sessione sessione, {
@@ -22,6 +24,7 @@ Future<void> apriNuovaVoce(
   String natura = NaturaVoce.spesa,
   String? nomeSuggerito,
   String? categoriaSuggerita,
+  Set<String> nomiPresenti = const {},
 }) => showDialog<void>(
   context: context,
   builder: (_) => _NuovaVoce(
@@ -30,6 +33,7 @@ Future<void> apriNuovaVoce(
     natura: natura,
     nomeSuggerito: nomeSuggerito,
     categoriaSuggerita: categoriaSuggerita,
+    nomiPresenti: nomiPresenti,
   ),
 );
 
@@ -40,6 +44,7 @@ class _NuovaVoce extends StatefulWidget {
     required this.natura,
     this.nomeSuggerito,
     this.categoriaSuggerita,
+    this.nomiPresenti = const {},
   });
 
   final Sessione sessione;
@@ -47,6 +52,7 @@ class _NuovaVoce extends StatefulWidget {
   final String natura;
   final String? nomeSuggerito;
   final String? categoriaSuggerita;
+  final Set<String> nomiPresenti;
 
   @override
   State<_NuovaVoce> createState() => _NuovaVoceState();
@@ -68,12 +74,61 @@ class _NuovaVoceState extends State<_NuovaVoce> {
 
   TestiVoci get _t => TestiVoci.per(widget.natura);
 
+  /// Categorie per nome, per i suggerimenti: lette subito all'apertura.
+  late final Future<Map<String, String>> _categorie;
+
   @override
   void initState() {
     super.initState();
+    _categorie = widget.sessione.contabilita.osservaCategorie().first.then(
+      (c) => {for (final x in c) x.nome: x.id},
+    );
     _categoria = widget.categoriaSuggerita;
     // L'esempio "1.200 € ogni anno → 100 € al mese" segue l'importo scritto.
     _importo.addListener(_aggiornaEsempio);
+  }
+
+  /// Suggerimento a un tocco: il nome subito, la categoria appena letta.
+  void _suggerimento(String nome, String categoria) {
+    setState(() => _nome.text = nome);
+    _categorie.then((mappa) {
+      final id = mappa[categoria];
+      if (mounted && id != null) {
+        setState(() => _categoria = id);
+      }
+    }).ignore();
+  }
+
+  Widget _suggerimenti() {
+    final tutti = _fissa ? _t.suggeriteFisse : _t.suggeriteVariabili;
+    final liberi = tutti
+        .where((s) => !widget.nomiPresenti.contains(s.$1))
+        .take(6)
+        .toList();
+    if (liberi.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Suggerimenti', style: Theme.of(context).textTheme.labelLarge),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final (nome, categoria) in liberi)
+                ActionChip(
+                  label: Text(nome),
+                  onPressed: () => _suggerimento(nome, categoria),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   void _aggiornaEsempio() => setState(() {});
@@ -124,75 +179,61 @@ class _NuovaVoceState extends State<_NuovaVoce> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(_fissa ? _t.nuovaFissa : _t.nuovaVariabile),
-      content: SizedBox(
-        width: 420,
-        child: Form(
-          key: _form,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SceltaTipoVoce(
-                  valore: _tipo,
-                  onChanged: (t) => setState(() => _tipo = t),
-                ),
-                const SizedBox(height: 12),
-                Text(_fissa ? _t.descrizioneFissa : _t.descrizioneVariabile),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _nome,
-                  autofocus: widget.nomeSuggerito == null,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: 'Nome'),
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Dai un nome alla voce'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                CampoImporto(
-                  controller: _importo,
-                  autofocus: widget.nomeSuggerito != null,
-                  textInputAction: TextInputAction.done,
-                  onInvio: _salva,
-                  etichetta: _addebito.nonMensile
-                      ? '${_fissa ? 'Importo' : 'Stima'} ${_t.perData}'
-                      : (_fissa ? 'Importo al mese' : 'Stima al mese'),
-                ),
-                const SizedBox(height: 16),
-                CampoCategoria(
-                  sessione: widget.sessione,
-                  valore: _categoria,
-                  onChanged: (v) => setState(() => _categoria = v),
-                  etichetta: _fissa
-                      ? 'Categoria (facoltativa)'
-                      : _t.categoriaReali,
-                ),
-                const SizedBox(height: 8),
-                SezioneAddebito(
-                  sessione: widget.sessione,
-                  testi: _t,
-                  valore: _addebito,
-                  importo: Importo.leggi(_importo.text),
-                  onChanged: () => setState(() {}),
-                ),
-              ],
+    return ModuloAdattivo(
+      titolo: _fissa ? _t.nuovaFissa : _t.nuovaVariabile,
+      azione: 'Aggiungi',
+      onAzione: _salvataggio ? null : _salva,
+      contenuto: Form(
+        key: _form,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SceltaTipoVoce(
+              valore: _tipo,
+              onChanged: (t) => setState(() => _tipo = t),
             ),
-          ),
+            const SizedBox(height: 12),
+            Text(_fissa ? _t.descrizioneFissa : _t.descrizioneVariabile),
+            const SizedBox(height: 16),
+            if (widget.nomeSuggerito == null) _suggerimenti(),
+            TextFormField(
+              controller: _nome,
+              autofocus: widget.nomeSuggerito == null,
+              textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(labelText: 'Nome'),
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? 'Dai un nome alla voce'
+                  : null,
+            ),
+            const SizedBox(height: 16),
+            CampoImporto(
+              controller: _importo,
+              autofocus: widget.nomeSuggerito != null,
+              textInputAction: TextInputAction.done,
+              onInvio: _salva,
+              etichetta: _addebito.nonMensile
+                  ? '${_fissa ? 'Importo' : 'Stima'} ${_t.perData}'
+                  : (_fissa ? 'Importo al mese' : 'Stima al mese'),
+            ),
+            const SizedBox(height: 16),
+            CampoCategoria(
+              sessione: widget.sessione,
+              valore: _categoria,
+              onChanged: (v) => setState(() => _categoria = v),
+              etichetta: _fissa ? 'Categoria (facoltativa)' : _t.categoriaReali,
+            ),
+            const SizedBox(height: 8),
+            SezioneAddebito(
+              sessione: widget.sessione,
+              testi: _t,
+              valore: _addebito,
+              importo: Importo.leggi(_importo.text),
+              onChanged: () => setState(() {}),
+            ),
+          ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Annulla'),
-        ),
-        FilledButton(
-          onPressed: _salvataggio ? null : _salva,
-          child: const Text('Aggiungi'),
-        ),
-      ],
     );
   }
 }
@@ -394,127 +435,111 @@ class _ModificaVoceState extends State<_ModificaVoce> {
     final v = widget.voce;
     final nomeMese = meseLeggibile(context, widget.mese);
     final schema = Theme.of(context).colorScheme;
-    return AlertDialog(
-      title: Text(v.voce.nome),
-      content: SizedBox(
-        width: 460,
-        child: Form(
-          key: _form,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SceltaTipoVoce(
-                  valore: _tipo,
-                  onChanged: (t) => setState(() => _tipo = t),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Importo predefinito: '
-                  '${Importo.formatta(v.importoUnitario, 'EUR')} '
-                  '${_addebito.nonMensile ? _t.perData : 'al mese'}',
-                  style: TextStyle(color: schema.onSurfaceVariant),
-                ),
-                if (v.variato)
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Per $nomeMese hai impostato '
-                          '${Importo.formatta(v.previsto, 'EUR')}.',
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: _salvataggio
-                            ? null
-                            : () => _esegui(
-                                () => widget.sessione.costoVita
-                                    .annullaVariazione(v.voce.id, widget.mese),
-                              ),
-                        child: const Text('Torna al predefinito'),
-                      ),
-                    ],
-                  ),
-                const SizedBox(height: 16),
-                CampoImporto(
-                  controller: _importo,
-                  autofocus: true,
-                  ammettiZero: true,
-                  etichetta: v.fissa ? 'Importo' : 'Stima',
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Se cambi l\'importo, vale:',
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-                RadioGroup<_Ambito>(
-                  groupValue: _ambito,
-                  onChanged: (a) => setState(() => _ambito = a ?? _ambito),
-                  child: Column(
-                    children: [
-                      RadioListTile(
-                        value: _Ambito.soloMese,
-                        title: Text('Solo per $nomeMese'),
-                        subtitle: const Text('Gli altri mesi non cambiano'),
-                      ),
-                      const RadioListTile(
-                        value: _Ambito.domani,
-                        title: Text('Da domani in poi'),
-                        subtitle: Text(
-                          'Nuovo importo predefinito dal giorno dopo',
-                        ),
-                      ),
-                      const RadioListTile(
-                        value: _Ambito.meseProssimo,
-                        title: Text('Dal mese prossimo in poi'),
-                        subtitle: Text('Il mese in corso resta com\'è'),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(),
-                TextFormField(
-                  controller: _nome,
-                  decoration: const InputDecoration(labelText: 'Nome'),
-                  validator: (t) => (t == null || t.trim().isEmpty)
-                      ? 'Dai un nome alla voce'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                CampoCategoria(
-                  sessione: widget.sessione,
-                  valore: _categoria,
-                  onChanged: (c) => setState(() => _categoria = c),
-                ),
-                const SizedBox(height: 8),
-                SezioneAddebito(
-                  sessione: widget.sessione,
-                  testi: _t,
-                  valore: _addebito,
-                  importo: Importo.leggi(_importo.text),
-                  onChanged: () => setState(() {}),
-                ),
-              ],
+    return ModuloAdattivo(
+      titolo: v.voce.nome,
+      azione: 'Salva',
+      onAzione: _salvataggio ? null : _salva,
+      onElimina: _salvataggio ? null : _elimina,
+      larghezza: 460,
+      contenuto: Form(
+        key: _form,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SceltaTipoVoce(
+              valore: _tipo,
+              onChanged: (t) => setState(() => _tipo = t),
             ),
-          ),
+            const SizedBox(height: 12),
+            Text(
+              'Importo predefinito: '
+              '${Importo.formatta(v.importoUnitario, 'EUR')} '
+              '${_addebito.nonMensile ? _t.perData : 'al mese'}',
+              style: TextStyle(color: schema.onSurfaceVariant),
+            ),
+            if (v.variato)
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Per $nomeMese hai impostato '
+                      '${Importo.formatta(v.previsto, 'EUR')}.',
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _salvataggio
+                        ? null
+                        : () => _esegui(
+                            () => widget.sessione.costoVita.annullaVariazione(
+                              v.voce.id,
+                              widget.mese,
+                            ),
+                          ),
+                    child: const Text('Torna al predefinito'),
+                  ),
+                ],
+              ),
+            const SizedBox(height: 16),
+            CampoImporto(
+              controller: _importo,
+              autofocus: true,
+              ammettiZero: true,
+              etichetta: v.fissa ? 'Importo' : 'Stima',
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Se cambi l\'importo, vale:',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            RadioGroup<_Ambito>(
+              groupValue: _ambito,
+              onChanged: (a) => setState(() => _ambito = a ?? _ambito),
+              child: Column(
+                children: [
+                  RadioListTile(
+                    value: _Ambito.soloMese,
+                    title: Text('Solo per $nomeMese'),
+                    subtitle: const Text('Gli altri mesi non cambiano'),
+                  ),
+                  const RadioListTile(
+                    value: _Ambito.domani,
+                    title: Text('Da domani in poi'),
+                    subtitle: Text('Nuovo importo predefinito dal giorno dopo'),
+                  ),
+                  const RadioListTile(
+                    value: _Ambito.meseProssimo,
+                    title: Text('Dal mese prossimo in poi'),
+                    subtitle: Text('Il mese in corso resta com\'è'),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            TextFormField(
+              controller: _nome,
+              decoration: const InputDecoration(labelText: 'Nome'),
+              validator: (t) => (t == null || t.trim().isEmpty)
+                  ? 'Dai un nome alla voce'
+                  : null,
+            ),
+            const SizedBox(height: 16),
+            CampoCategoria(
+              sessione: widget.sessione,
+              valore: _categoria,
+              onChanged: (c) => setState(() => _categoria = c),
+            ),
+            const SizedBox(height: 8),
+            SezioneAddebito(
+              sessione: widget.sessione,
+              testi: _t,
+              valore: _addebito,
+              importo: Importo.leggi(_importo.text),
+              onChanged: () => setState(() {}),
+            ),
+          ],
         ),
       ),
-      actions: [
-        TextButton.icon(
-          onPressed: _salvataggio ? null : _elimina,
-          icon: const Icon(Icons.delete_outline),
-          label: const Text('Elimina'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Annulla'),
-        ),
-        FilledButton(
-          onPressed: _salvataggio ? null : _salva,
-          child: const Text('Salva'),
-        ),
-      ],
     );
   }
 }

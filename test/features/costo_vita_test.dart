@@ -64,6 +64,9 @@ void main() {
   Finder nelDialogo(Finder f) =>
       find.descendant(of: find.byType(AlertDialog), matching: f);
 
+  /// Il pulsante "Nuova" della sezione visibile.
+  final nuova = find.text('Nuova').hitTestable();
+
   testWidgets('configura, cambia solo per il mese, torna al predefinito', (
     tester,
   ) async {
@@ -86,18 +89,30 @@ void main() {
     await tocca(tester, find.text('Costo della vita').last);
     await attendi(tester, find.text('Quanto ti costa vivere ogni mese?'));
 
-    // Suggerimento a un tocco: nome già scritto, si inserisce solo l'importo.
-    await tocca(tester, find.text('Affitto o mutuo'));
+    // Un solo pulsante "Nuova"; nella finestra il suggerimento a un tocco
+    // scrive il nome, si inserisce solo l'importo.
+    expect(find.byType(ActionChip).hitTestable(), findsNothing);
+    await tocca(tester, nuova);
     await attendi(tester, nelDialogo(find.text('Nuova spesa fissa')));
+    await tocca(tester, nelDialogo(find.text('Affitto o mutuo')));
     await tester.enterText(nelDialogo(find.byType(TextFormField)).at(1), '800');
     await tocca(tester, nelDialogo(find.text('Aggiungi')));
     await attendi(tester, find.text('800,00 €'));
     expect(find.text('Quanto ti costa vivere ogni mese?'), findsNothing);
     expect(find.byType(GraficoCostoVita), findsWidgets);
 
-    // Variabile con stima.
-    await tocca(tester, find.text('Spesa alimentare'));
+    // Variabile con stima; il suggerimento già usato non si ripropone.
+    await tocca(tester, nuova);
+    await attendi(tester, nelDialogo(find.text('Nuova spesa fissa')));
+    expect(nelDialogo(find.text('Affitto o mutuo')), findsNothing);
+    await tocca(tester, nelDialogo(find.text('Variabile')));
     await attendi(tester, nelDialogo(find.text('Nuova spesa variabile')));
+    await tocca(tester, nelDialogo(find.text('Spesa alimentare')));
+    // Anche la categoria del suggerimento (serve per lo "Speso").
+    await attendi(
+      tester,
+      nelDialogo(find.textContaining(RegExp(r'(^|› )Spesa$'))),
+    );
     await tester.enterText(nelDialogo(find.byType(TextFormField)).at(1), '400');
     await tocca(tester, nelDialogo(find.text('Aggiungi')));
     await attendi(tester, find.text('1.200,00 €'));
@@ -212,8 +227,10 @@ void main() {
 
       await tocca(tester, find.text('Entrate').last);
       await attendi(tester, find.text('Quanto entra ogni mese?'));
-      await tocca(tester, find.text('Stipendio'));
+      await tocca(tester, nuova);
       await attendi(tester, nelDialogo(find.text('Nuova entrata fissa')));
+      // Scelta della fine dell'accredito: testo breve "Fino a".
+      await tocca(tester, nelDialogo(find.text('Stipendio')));
       await tester.enterText(
         nelDialogo(find.byType(TextFormField)).at(1),
         '2100',

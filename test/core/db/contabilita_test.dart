@@ -294,9 +294,17 @@ void main() {
       );
       expect(ottobre.totale, 3);
       final uscite = await cerca(
-        const FiltroMovimenti(effetto: EffettoSaldo.uscita),
+        const FiltroMovimenti(effetti: {EffettoSaldo.uscita}),
       );
       expect(descrizioni(uscite), ['Spesa : Lidl', 'Rata Auto 100%']);
+      // Scelta multipla: entrate e uscite, senza i trasferimenti.
+      final entrateUscite = await cerca(
+        const FiltroMovimenti(
+          effetti: {EffettoSaldo.entrata, EffettoSaldo.uscita},
+        ),
+      );
+      expect(descrizioni(entrateUscite), isNot(contains('Prelievo')));
+      expect(entrateUscite.totale, 3); // i 4 movimenti tranne il prelievo
       // Il portafoglio conta anche come destinazione del trasferimento.
       final soloContanti = await cerca(
         FiltroMovimenti(portafoglioId: contanti),

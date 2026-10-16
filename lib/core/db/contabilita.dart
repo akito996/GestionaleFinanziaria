@@ -57,7 +57,7 @@ class FiltroMovimenti {
     this.testo = '',
     this.categorie,
     this.portafoglioId,
-    this.effetto,
+    this.effetti,
   });
 
   /// Periodo (giorni inclusi).
@@ -75,8 +75,9 @@ class FiltroMovimenti {
   /// Movimenti che toccano questo portafoglio (anche come destinazione).
   final String? portafoglioId;
 
-  /// Vedi [EffettoSaldo]; `null` = entrate, uscite e trasferimenti.
-  final String? effetto;
+  /// Tipi ammessi, anche più di uno (vedi [EffettoSaldo]); `null` o vuoto =
+  /// entrate, uscite e trasferimenti.
+  final Set<String>? effetti;
 }
 
 /// Risultato di una ricerca: i primi movimenti e i totali di tutti quelli
@@ -457,8 +458,8 @@ class Contabilita {
           c &
           (m.portafoglioId.equals(id) | m.portafoglioDestinazioneId.equals(id));
     }
-    if (f.effetto case final String effetto) {
-      c = c & _db.definizioniTipo.effetto.equals(effetto);
+    if (f.effetti case final Set<String> effetti when effetti.isNotEmpty) {
+      c = c & _db.definizioniTipo.effetto.isIn(effetti);
     }
     final testo = f.testo.trim();
     if (testo.isNotEmpty) {

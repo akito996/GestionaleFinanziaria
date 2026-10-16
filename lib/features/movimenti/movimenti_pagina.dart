@@ -29,13 +29,22 @@ enum _Periodo {
   final String etichetta;
 }
 
+/// I tipi di movimento dei filtri veloci, con l'etichetta.
+const tipiMovimento = [
+  (EffettoSaldo.entrata, 'Entrate'),
+  (EffettoSaldo.uscita, 'Uscite'),
+  (EffettoSaldo.trasferimento, 'Trasferimenti'),
+];
+
 /// Le scelte di ricerca e filtro (una copia di lavoro nel pannello compatto).
 class _Filtri {
   String testo = '';
   _Periodo periodo = _Periodo.sempre;
   DateTime? dal;
   DateTime? al;
-  String? effetto;
+
+  /// Tipi scelti, anche più di uno (vuoto = tutti).
+  Set<String> effetti = {};
   String? categoriaId;
   String categoriaNome = '';
   Set<String>? categorie;
@@ -47,7 +56,7 @@ class _Filtri {
     ..periodo = periodo
     ..dal = dal
     ..al = al
-    ..effetto = effetto
+    ..effetti = {...effetti}
     ..categoriaId = categoriaId
     ..categoriaNome = categoriaNome
     ..categorie = categorie
@@ -58,7 +67,7 @@ class _Filtri {
   int get attivi => [
     testo.trim().isNotEmpty,
     periodo != _Periodo.sempre,
-    effetto != null,
+    effetti.isNotEmpty,
     categoriaId != null,
     portafoglioId != null,
   ].where((a) => a).length;
@@ -88,12 +97,10 @@ class _Filtri {
         '${dataLeggibile(context, dal!)} – ${dataLeggibile(context, al!)}'
       else if (periodo != _Periodo.sempre)
         periodo.etichetta,
-      switch (effetto) {
-        EffettoSaldo.entrata => 'Entrate',
-        EffettoSaldo.uscita => 'Uscite',
-        EffettoSaldo.trasferimento => 'Trasferimenti',
-        _ => '',
-      },
+      [
+        for (final (effetto, etichetta) in tipiMovimento)
+          if (effetti.contains(effetto)) etichetta,
+      ].join(' + '),
       categoriaNome,
       portafoglioNome,
       if (testo.trim().isNotEmpty) '«${testo.trim()}»',
@@ -149,7 +156,7 @@ class _MovimentiPaginaState extends State<MovimentiPagina> {
         testo: f.testo,
         categorie: f.categorie,
         portafoglioId: f.portafoglioId,
-        effetto: f.effetto,
+        effetti: f.effetti,
       ),
       limite: _limite,
     );
@@ -181,7 +188,7 @@ class _MovimentiPaginaState extends State<MovimentiPagina> {
           ..periodo = vuoti.periodo
           ..dal = null
           ..al = null
-          ..effetto = null
+          ..effetti = {}
           ..categoriaId = null
           ..categoriaNome = ''
           ..categorie = null
@@ -338,10 +345,17 @@ class _MovimentiPaginaState extends State<MovimentiPagina> {
     required TextEditingController ricerca,
     required ValueChanged<String> onTesto,
   }) {
-    ChoiceChip tipo(String? effetto, String etichetta) => ChoiceChip(
+    // Scelta multipla (es. Entrate + Uscite); "Tutti" toglie le scelte, e
+    // sceglierli tutti equivale a "Tutti".
+    FilterChip tipo(String effetto, String etichetta) => FilterChip(
       label: Text(etichetta),
-      selected: f.effetto == effetto,
-      onSelected: (_) => cambia(() => f.effetto = effetto),
+      selected: f.effetti.contains(effetto),
+      onSelected: (scelto) => cambia(() {
+        scelto ? f.effetti.add(effetto) : f.effetti.remove(effetto);
+        if (f.effetti.length == tipiMovimento.length) {
+          f.effetti.clear();
+        }
+      }),
     );
     Future<void> scegliCategoriaPer() async {
       final scelta = await scegliCategoria(
@@ -490,10 +504,13 @@ class _MovimentiPaginaState extends State<MovimentiPagina> {
         spacing: 8,
         runSpacing: 8,
         children: [
-          tipo(null, 'Tutti'),
-          tipo(EffettoSaldo.entrata, 'Entrate'),
-          tipo(EffettoSaldo.uscita, 'Uscite'),
-          tipo(EffettoSaldo.trasferimento, 'Trasferimenti'),
+          FilterChip(
+            label: const Text('Tutti'),
+            selected: f.effetti.isEmpty,
+            onSelected: (_) => cambia(f.effetti.clear),
+          ),
+          for (final (effetto, etichetta) in tipiMovimento)
+            tipo(effetto, etichetta),
         ],
       ),
       const SizedBox(height: 12),
