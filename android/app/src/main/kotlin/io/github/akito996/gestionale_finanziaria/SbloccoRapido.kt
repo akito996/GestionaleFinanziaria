@@ -1,6 +1,5 @@
 package io.github.akito996.gestionale_finanziaria
 
-import android.content.pm.PackageManager
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyPermanentlyInvalidatedException
@@ -24,9 +23,10 @@ import javax.crypto.spec.GCMParameterSpec
  * Sblocco con impronta, viso o PIN del telefono (ADR-016).
  *
  * Un segreto casuale apre l'archivio (nell'app). Qui viene cifrato con una
- * chiave AES dell'Android Keystore (nel chip di sicurezza StrongBox, se il
- * telefono ce l'ha) che si può usare solo subito dopo la verifica
- * dell'utente: senza impronta, viso "sicuro" o PIN il segreto resta cifrato.
+ * chiave AES dell'Android Keystore, nell'area sicura del processore (TEE),
+ * che si può usare solo subito dopo la verifica dell'utente: senza impronta,
+ * viso "sicuro" o PIN il segreto resta cifrato. Niente chip StrongBox: su
+ * alcuni telefoni non accetta la verifica a ogni uso e l'attivazione fallisce.
  * Se si toglie il blocco schermo, Android annulla la chiave e l'app chiede di
  * nuovo la password.
  */
@@ -184,23 +184,11 @@ class SbloccoRapido(private val attivita: FragmentActivity) :
             KeyProperties.KEY_ALGORITHM_AES,
             "AndroidKeyStore",
         )
-        val chip = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
-            attivita.packageManager.hasSystemFeature(
-                PackageManager.FEATURE_STRONGBOX_KEYSTORE,
-            )
-        if (chip) {
-            try {
-                generatore.init(specifica(strongBox = true))
-                return generatore.generateKey()
-            } catch (e: Exception) {
-                // StrongBox occupato o senza AES: si usa l'area sicura (TEE).
-            }
-        }
-        generatore.init(specifica(strongBox = false))
+        generatore.init(specifica())
         return generatore.generateKey()
     }
 
-    private fun specifica(strongBox: Boolean): KeyGenParameterSpec =
+    private fun specifica(): KeyGenParameterSpec =
         KeyGenParameterSpec.Builder(
             ALIAS,
             KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
@@ -221,9 +209,6 @@ class SbloccoRapido(private val attivita: FragmentActivity) :
                     // Una verifica per ogni uso, solo impronta.
                     @Suppress("DEPRECATION")
                     setUserAuthenticationValidityDurationSeconds(-1)
-                }
-                if (strongBox && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    setIsStrongBoxBacked(true)
                 }
             }
             .build()

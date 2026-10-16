@@ -272,6 +272,22 @@ void main() {
     await chiudi(tester, sessione);
   });
 
+  testWidgets('Impostazioni: verifica annullata, lo dice e resta spento', (
+    tester,
+  ) async {
+    final sessione = await allaProposta(tester);
+    await tocca(tester, find.text('Non ora'));
+    await tocca(tester, find.text('Altro'));
+    await tocca(tester, find.text('Impostazioni'));
+    await attendi(tester, find.text('Sblocco con impronta, viso o PIN'));
+    cassaforte.annulla = true;
+    await tocca(tester, find.byType(Switch));
+    await attendi(tester, find.textContaining('Verifica annullata'));
+    expect(sessione.sicurezza.rapidoAttivo, isFalse);
+    expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
+    await chiudi(tester, sessione);
+  });
+
   group('blocco automatico', () {
     /// Archivio con sblocco rapido e il blocco automatico scelto, aperto
     /// all'avvio con la verifica automatica.

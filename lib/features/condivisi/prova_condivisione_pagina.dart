@@ -108,6 +108,21 @@ class _ProvaCondivisionePaginaState extends State<ProvaCondivisionePagina> {
           'Cartella "$_nomeCartella" già presente: spostata dentro '
               '"${DriveCondiviso.cartellaApp}".',
       });
+      // La stessa persona non si invita due volte.
+      final ruolo = (await drive.condivisoCon(
+        cartella.id,
+      ))[email.toLowerCase()];
+      if (ruolo != null) {
+        final testo = ruolo == 'owner'
+            ? '$email è il tuo account: sei già il proprietario.'
+            : '$email è già presente nel portafoglio condiviso: non serve '
+                  'invitarla di nuovo.';
+        _scrivi(null, testo);
+        if (mounted) {
+          await _avvisaGiaPresente(testo);
+        }
+        return;
+      }
       final nome = _nomeFile(widget.codice);
       final esistente = await drive.trovaFile(cartella.id, nome);
       // Le segnalazioni dei membri restano anche se il file si riscrive.
@@ -141,6 +156,21 @@ class _ProvaCondivisionePaginaState extends State<ProvaCondivisionePagina> {
       drive.chiudi();
     }
   });
+
+  Future<void> _avvisaGiaPresente(String testo) => showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      icon: const Icon(Icons.person_outline),
+      title: const Text('Persona già presente'),
+      content: Text(testo),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('OK'),
+        ),
+      ],
+    ),
+  );
 
   /// 2. Membro: sceglie la cartella (o il file che c'è dentro), legge il file
   /// del proprietario e scrive il suo. Se non può scrivere nella cartella,

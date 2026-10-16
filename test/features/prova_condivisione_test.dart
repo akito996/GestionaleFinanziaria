@@ -87,6 +87,18 @@ class _DriveFinto {
           cartella: dati['mimeType'] == _tipoCartella,
         );
         return _ok({'id': crea(utente, nuovo)});
+      case 'GET' when percorso.endsWith('/permissions'):
+        final cartella = percorso.split('/')[4];
+        return _ok({
+          'permissions': [
+            {
+              'emailAddress': '${elementi[cartella]!.proprietario}@example.com',
+              'role': 'owner',
+            },
+            for (final c in condivisioni.where((c) => c.id == cartella))
+              {'emailAddress': c.email, 'role': 'writer'},
+          ],
+        });
       case 'POST' when percorso.endsWith('/permissions'):
         condivisioni.add((
           id: percorso.split('/')[4],
@@ -376,7 +388,8 @@ void main() {
     final fileMembro = drive.conNome('wallecy_GF-MEMB.txt').single;
     expect(drive.elementi[fileMembro]!.padre, drive.conNome('WalleCy').last);
 
-    // Il proprietario ripete il passo 1: la segnalazione resta.
+    // Il proprietario ripete il passo 1 con la stessa email: stessa
+    // cartella, nessun nuovo invito, avviso "Persona già presente".
     await tocca(
       tester,
       su('proprietario', find.text('Crea la cartella e condividila')),
@@ -385,7 +398,13 @@ void main() {
       su('proprietario', find.textContaining('già presente: la riuso')),
       findsOneWidget,
     );
+    expect(find.text('Persona già presente'), findsOneWidget);
+    await tocca(tester, find.text('OK'));
     expect(drive.conNome('wallecy_share_GF-PROP'), hasLength(1));
+    expect(
+      drive.condivisioni.where((c) => c.email == 'memb@example.com'),
+      hasLength(1),
+    );
 
     await tocca(
       tester,

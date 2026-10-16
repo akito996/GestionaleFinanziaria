@@ -6,6 +6,7 @@ import '../../core/sicurezza/cassaforte.dart';
 import '../../core/sicurezza/sicurezza_dispositivo.dart';
 import '../comuni/avvisi.dart';
 import '../comuni/blocco_automatico.dart';
+import '../comuni/errori.dart';
 
 bool get _suWindows => defaultTargetPlatform == TargetPlatform.windows;
 
@@ -23,6 +24,13 @@ String pulsanteSbloccoRapido(SicurezzaDispositivo sicurezza) =>
 IconData get iconaSbloccoRapido =>
     _suWindows ? Icons.face_unlock_outlined : Icons.fingerprint;
 
+/// Mentre si aspetta la verifica (la finestra di Windows Hello a volte
+/// resta dietro l'app).
+String testoInVerifica(SicurezzaDispositivo sicurezza) =>
+    'In attesa della verifica: completala nella finestra di '
+    '${nomeSbloccoRapido(sicurezza)}.'
+    '${_suWindows ? ' Se non la vedi, cercala nella barra delle applicazioni.' : ''}';
+
 /// Cosa manca al dispositivo per lo sblocco rapido (`null` se è pronto).
 String? mancaPerSbloccoRapido(SicurezzaDispositivo sicurezza) =>
     switch (sicurezza.disponibilita) {
@@ -39,6 +47,7 @@ String? mancaPerSbloccoRapido(SicurezzaDispositivo sicurezza) =>
 
 /// Attiva lo sblocco rapido (chiede subito la verifica). `true` se attivo.
 ///
+/// Ogni esito si vede: attivo, annullato o l'errore con il motivo.
 /// [dallaProposta]: se non si attiva, l'avviso ricorda che si può fare dalle
 /// Impostazioni (la proposta non ricompare).
 Future<bool> attivaSbloccoRapido(
@@ -48,7 +57,7 @@ Future<bool> attivaSbloccoRapido(
 }) async {
   final messaggi = ScaffoldMessenger.of(context);
   final dopo = dallaProposta ? ' $_quandoVuoi' : '';
-  String? esito;
+  String esito;
   var riuscito = false;
   try {
     // Sul telefono il PIN si chiede in una schermata di sistema.
@@ -58,17 +67,25 @@ Future<bool> attivaSbloccoRapido(
         'Sblocco con ${nomeSbloccoRapido(sessione.sicurezza)} attivo. Ogni '
         '14 giorni ti chiediamo la password, così non la dimentichi.';
   } on VerificaAnnullata {
-    esito = dallaProposta ? _quandoVuoi : null;
+    esito = 'Verifica annullata: lo sblocco rapido resta spento.$dopo';
   } on VerificaBloccata {
     esito = 'Troppi tentativi: riprova tra poco.$dopo';
+  } on ChiaveDispositivoAnnullata {
+    esito =
+        'Sblocco rapido non attivato: il dispositivo ha rifiutato la '
+        'chiave. Riprova.$dopo';
   } on ErroreCassaforte catch (e) {
     esito = 'Sblocco rapido non attivato (${e.dettaglio}).$dopo';
+  } catch (e, stack) {
+    // Mai in silenzio: i dettagli tecnici dicono cosa è successo.
+    if (context.mounted) {
+      await mostraErroreImprevisto(context, e, stack);
+    }
+    return false;
   }
-  if (esito != null) {
-    messaggi
-      ..clearSnackBars()
-      ..showSnackBar(avviso(content: Text(esito)));
-  }
+  messaggi
+    ..clearSnackBars()
+    ..showSnackBar(avviso(content: Text(esito)));
   return riuscito;
 }
 

@@ -177,6 +177,28 @@ class DriveCondiviso {
     await _json(r);
   }
 
+  /// Chi ha già accesso (email in minuscolo) e con quale ruolo ("owner",
+  /// "writer", ...).
+  Future<Map<String, String>> condivisoCon(String id) async {
+    final r = await _client.get(
+      _api
+          .resolve('files/$id/permissions')
+          .replace(
+            queryParameters: {
+              'fields': 'permissions(emailAddress,role)',
+              'pageSize': '100',
+            },
+          ),
+    );
+    final permessi =
+        (await _json(r))['permissions'] as List<Object?>? ?? const [];
+    return {
+      for (final p in permessi.cast<Map<String, Object?>>())
+        if (p['emailAddress'] case final String email)
+          email.toLowerCase(): p['role'] as String? ?? '',
+    };
+  }
+
   /// Il file [nome] nella cartella, se l'app lo vede.
   Future<String?> trovaFile(String cartellaId, String nome) async =>
       (await _cerca(

@@ -138,6 +138,21 @@ jobs:
             build/windows/x64/runner/Release/
       - name: Peso della build
         run: python tool/dimensioni.py build/windows/x64/runner/Release
+      # Ogni build deve contenere il suo commit (lo stesso della firma in basso
+      # a sinistra nell'app). VERSIONE.txt lo mostra anche aprendo lo zip:
+      # gli orari dei file nello zip non bastano (molti file di Flutter
+      # tengono sempre la stessa data).
+      - name: Commit nella build e VERSIONE.txt
+        run: |
+          breve="${GITHUB_SHA::7}"
+          if ! grep -aq "$breve" build/windows/x64/runner/Release/data/app.so; then
+            echo "::error title=Build Windows::La build non contiene il commit $breve"
+            exit 1
+          fi
+          printf 'WalleCy per Windows\r\nCommit: %s\r\nBuild n. %s del %s\r\n' \
+            "$breve" "${{ github.run_number }}" "$(TZ=Europe/Rome date '+%d/%m/%Y %H:%M')" \
+            > build/windows/x64/runner/Release/VERSIONE.txt
+          echo "::notice title=Build Windows::Commit $breve verificato nella build"
       # Firma del programma (Authenticode): senza, Windows mostra "PC
       # protetto da Windows" (SmartScreen) a chi lo scarica.
       - name: Firma del programma Windows
@@ -155,6 +170,9 @@ jobs:
           name: WalleCy-windows-${{ github.sha }}
           path: build/windows/x64/runner/Release/
           if-no-files-found: error
+      # VERSIONE.txt serve solo nello zip, non nel pacchetto dello Store.
+      - name: Via VERSIONE.txt prima del pacchetto MSIX
+        run: rm -f build/windows/x64/runner/Release/VERSIONE.txt
       # Pacchetto per il Microsoft Store (ADR-017): lo firma Microsoft quando
       # lo pubblica, quindi niente avviso "PC protetto da Windows". I dati
       # dello Store (Partner Center) sono pubblici: variabili del repository,
@@ -280,6 +298,19 @@ jobs:
           done
       - name: Peso delle build
         run: python3 tool/dimensioni.py build/app/outputs/flutter-apk/*-release.apk
+      # Ogni APK deve contenere il suo commit (lo stesso della firma in basso
+      # a sinistra nell'app): mai una build vecchia con un nome nuovo.
+      - name: Commit negli APK
+        run: |
+          breve="${GITHUB_SHA::7}"
+          for apk in build/app/outputs/flutter-apk/*-release.apk; do
+            trovati="$(unzip -p "$apk" 'lib/*/libapp.so' | grep -ac "$breve" || true)"
+            if [ "${trovati:-0}" -eq 0 ]; then
+              echo "::error title=APK $(basename "$apk")::L'APK non contiene il commit $breve"
+              exit 1
+            fi
+          done
+          echo "::notice title=APK::Commit $breve verificato in tutti gli APK"
       # Prima di ogni rilascio: ogni APK firmato con la chiave definitiva e
       # con gli schemi moderni (v2/v3), impronta SHA-1 per i client OAuth
       # Android (pubblica), e librerie a 64 bit allineate a 16 KB (telefoni
@@ -323,11 +354,12 @@ jobs:
       - name: APK da installare
         run: |
           mkdir -p build/da-installare
-          cp build/app/outputs/flutter-apk/app-arm64-v8a-prova-release.apk build/da-installare/WalleCy-prova.apk
+          # Il commit nel nome: si vede subito quale versione si installa.
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-prova-release.apk "build/da-installare/WalleCy-prova-${GITHUB_SHA::7}.apk"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: android-da-installare-${{ github.sha }}
-          path: build/da-installare/WalleCy-prova.apk
+          path: build/da-installare/WalleCy-prova-*.apk
           if-no-files-found: error
           retention-days: 14
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

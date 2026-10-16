@@ -34,6 +34,10 @@ class ImpostazioniPagina extends StatefulWidget {
 class _ImpostazioniPaginaState extends State<ImpostazioniPagina> {
   bool _occupato = false;
 
+  /// Attivazione in corso: si aspetta la verifica (dito, viso, PIN o
+  /// Windows Hello).
+  bool _inVerifica = false;
+
   SicurezzaDispositivo get _sicurezza => widget.sessione.sicurezza;
 
   @override
@@ -44,7 +48,10 @@ class _ImpostazioniPaginaState extends State<ImpostazioniPagina> {
   }
 
   Future<void> _cambiaRapido(bool attiva) async {
-    setState(() => _occupato = true);
+    setState(() {
+      _occupato = true;
+      _inVerifica = attiva;
+    });
     try {
       if (attiva) {
         await attivaSbloccoRapido(context, widget.sessione);
@@ -53,7 +60,10 @@ class _ImpostazioniPaginaState extends State<ImpostazioniPagina> {
       }
     } finally {
       if (mounted) {
-        setState(() => _occupato = false);
+        setState(() {
+          _occupato = false;
+          _inVerifica = false;
+        });
       }
     }
   }
@@ -132,7 +142,11 @@ class _ImpostazioniPaginaState extends State<ImpostazioniPagina> {
                         title: Text(
                           'Sblocco con ${nomeSbloccoRapido(_sicurezza)}',
                         ),
-                        subtitle: Text(_statoRapido()),
+                        subtitle: Text(
+                          _inVerifica
+                              ? testoInVerifica(_sicurezza)
+                              : _statoRapido(),
+                        ),
                         value: _sicurezza.rapidoAttivo,
                         onChanged:
                             _occupato || (!pronta && !_sicurezza.rapidoAttivo)

@@ -29,12 +29,22 @@ class Apartment {
   Apartment& operator=(const Apartment&) = delete;
 };
 
-// La finestra di Windows Hello a volte si apre dietro l'app: la si porta
-// davanti appena compare.
+// La finestra di Windows Hello non ha risposto in tempo.
+struct TempoScaduto {};
+
+// La finestra di Windows Hello a volte si apre dietro l'app: le si permette
+// di venire davanti da sola e, se la si trova, la si porta davanti. Dopo 2
+// minuti senza risposta si rinuncia, così l'app non resta in attesa.
 template <typename Operazione>
 auto Attendi(Operazione const& operazione) {
+  AllowSetForegroundWindow(ASFW_ANY);
+  const ULONGLONG limite = GetTickCount64() + 2 * 60 * 1000;
   bool davanti = false;
   while (operazione.Status() == AsyncStatus::Started) {
+    if (GetTickCount64() > limite) {
+      operazione.Cancel();
+      throw TempoScaduto();
+    }
     if (!davanti) {
       HWND dialogo = FindWindowW(L"Credential Dialog Xaml Host", nullptr);
       if (dialogo != nullptr) {
@@ -100,6 +110,12 @@ Esito Firma(const std::vector<uint8_t>& sfida, bool crea) {
     CryptographicBuffer::CopyToByteArray(firmato.Result(), byte);
     Esito esito;
     esito.firma.assign(byte.begin(), byte.end());
+    return esito;
+  } catch (TempoScaduto const&) {
+    Esito esito;
+    esito.errore = "errore";
+    esito.messaggio =
+        "la finestra di Windows Hello non ha risposto entro 2 minuti";
     return esito;
   } catch (winrt::hresult_error const& e) {
     Esito esito;

@@ -27,7 +27,7 @@ Le alternative scartate:
   - questa chiave avvolge la chiave dei dati (DEK) con XChaCha20-Poly1305. L'AAD è `gf-sblocco-rapido|v1|<id archivio>`;
   - il risultato sta in `sicurezza.json` accanto al keyring: mai sincronizzato, nessun segreto in chiaro.
 - **Android** (`SbloccoRapido.kt`):
-  - chiave AES-256-GCM nell'Android Keystore, nel chip StrongBox se c'è, altrimenti nell'area sicura (TEE);
+  - chiave AES-256-GCM nell'Android Keystore, nell'area sicura (TEE). Dal 16/10/2026 non più nel chip StrongBox: su alcuni telefoni non accetta la verifica a ogni uso e l'attivazione falliva;
   - si usa solo subito dopo una verifica (`setUserAuthenticationRequired`, durata 0) con `BiometricPrompt` e `CryptoObject`;
   - da Android 11: impronta, viso di classe "forte" o PIN/segno del telefono. Prima di Android 11: solo impronta;
   - la chiave cifra un segreto casuale da 32 byte;
