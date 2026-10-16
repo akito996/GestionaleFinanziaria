@@ -1,6 +1,6 @@
 # ADR-019 – Portafogli condivisi (conti cointestati)
 
-- **Stato**: accettata. Consegna 0 (prova tecnica) in corso.
+- **Stato**: accettata. Consegna 0 (prova tecnica) **riuscita** il 16/10/2026; consegna 1 progettata (file preparati dal proprietario).
 - **Data**: 2026-10-16
 - **Codice (consegna 0)**:
   - `lib/core/condivisi/` (`accesso_drive_file.dart`, `drive_condiviso.dart`);
@@ -84,6 +84,32 @@ L'utente vuole portafogli condivisi fra account diversi, per simulare i conti co
   - il proprietario apre il file del membro con un tocco: la finestra di Google mostra **solo** quel file (`PICKER_FILE_IDS` / `file_ids`). È il passo naturale per "conferma il membro" (membri «da confermare»).
 - **Ordine nel Drive**: tutte le cartelle di condivisione stanno dentro un'unica cartella **«WalleCy»** nella radice del Drive. Le cartelle già presenti si riusano (e si spostano dentro «WalleCy» se erano fuori); ogni persona ha un solo file, che si aggiorna invece di duplicarsi.
 - **Invito**: Google manda all'invitato un'email con un messaggio dell'app che spiega cosa fare in WalleCy.
+
+## Esito della prova a due account (16/10/2026, sera)
+- Il membro sceglie il **file** del proprietario (la finestra di Android apre la cartella invece di sceglierla), lo **legge** ed elenca la cartella: vede solo i file scelti.
+- Il membro **scrive** il proprio file nella cartella condivisa anche senza aver scelto la cartella, e **aggiorna** il file del proprietario.
+- Il proprietario **non vede** il file creato dal membro, pur essendo nella sua cartella: `drive.file` vale **per persona** (file creati o scelti da quella persona con l'app).
+- Con **un tocco** nella finestra di Google il proprietario apre il file del membro (passo 4).
+- Il filtro `PICKER_FILE_IDS` sembra **ignorato** dalla finestra di Android (mostrava «Recenti» con entrambi i file): l'app controlla sempre la scelta e non conta sul filtro.
+
+## Progetto scelto per la consegna 1: file preparati dal proprietario
+Scelta dell'utente: **Qualità/Prezzo** (le altre: proprietario come "centro" che ridistribuisce; un file creato da ogni membro e confermato dal proprietario).
+- La cartella del portafoglio sta dentro «WalleCy» del proprietario ed è condivisa (ruolo "writer") con i membri.
+- Il proprietario crea **tutti** i file, già all'invito:
+  - il **registro** del portafoglio (membri, ruoli, quote), firmato dal proprietario;
+  - un file **per ogni membro**, creato prima che il membro entri.
+
+  Il proprietario li vede sempre: nessun tocco di conferma da parte sua.
+- Ogni file ha **un solo scrittore**: il proprietario il registro, ogni membro solo il proprio file, aggiornato sul posto (stesso id). Niente conflitti di scrittura.
+- **Ingresso del membro**: sceglie una volta i file del portafoglio (cartella in «Condivisi con me», scelta multipla); l'app controlla di avere il registro e il proprio file.
+- **Nuovo membro**: gli altri membri vedono «nuovo membro da confermare» e con un tocco aprono il suo file.
+- **Contenuto dei file**: pacchetti cifrati con la chiave del portafoglio (XChaCha20-Poly1305) e firmati dall'autore (Ed25519); unione riga per riga come nell'ADR-015.
+
+**Consegna 1, in quattro passi**:
+- 1a. Fondamenta locali: chiavi della persona, tabelle dei portafogli condivisi e dei membri, voci con l'autore.
+- 1b. Invito: "Condiviso" nel modulo del portafoglio, email, cartella e file preparati, consegna della chiave.
+- 1c. Ingresso del membro: "Unisciti a un portafoglio condiviso", scelta dei file, il portafoglio compare.
+- 1d. Sincronizzazione condivisa: scrittura e lettura dei file, firme, unione, "nuovo membro da confermare".
 
 ## Consegne
 0. **Prova tecnica** (Laboratorio):
