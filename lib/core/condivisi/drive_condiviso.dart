@@ -226,6 +226,16 @@ class DriveCondiviso {
     };
   }
 
+  /// Nel cestino di Google Drive (recuperabile per 30 giorni).
+  Future<void> cestina(String id) async {
+    final r = await _client.patch(
+      _api.resolve('files/$id'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'trashed': true}),
+    );
+    await _json(r);
+  }
+
   /// Toglie a [email] l'accesso alla cartella o al file (invito scaduto).
   Future<void> togliCondivisione(String id, String email) async {
     final elenco = await _client.get(

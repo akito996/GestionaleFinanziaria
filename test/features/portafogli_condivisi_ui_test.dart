@@ -345,4 +345,102 @@ void main() {
     await attendi(tester, find.text('Archivio bloccato'));
     await tester.pumpWidget(const SizedBox());
   });
+
+  testWidgets('ex membro in grigio; eliminare un condiviso avvisa e chiude', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (_) async => null,
+    );
+    final drive = DriveFinto();
+    final sessione = Sessione(
+      sodium: sodium,
+      deposito: DepositoLocale(cartella),
+      costoArgon2: (
+        ops: ParametriArgon2.opsMinimo,
+        mem: ParametriArgon2.memMinima,
+      ),
+      accessoDriveFile: AccessoFinto(drive, 'prop'),
+    );
+    late String w;
+    await tester.runAsync(() async {
+      await sessione.avvia();
+      await sessione.preparaNuovoArchivio('Password-Lunga-1');
+      await sessione.confermaNuovoArchivio();
+      final c = sessione.contabilita;
+      final tipo = (await c.tipi(AmbitoTipo.portafoglio)).first.id;
+      w = await c.creaPortafoglio(nome: 'Casa', tipoId: tipo, valuta: 'EUR');
+      await sessione.condivisi.invita(w, 'memb@example.com');
+
+      // Il membro (solo il motore) entra, aggiunge una spesa ed esce.
+      final db = Archivio.inMemoria();
+      final cm = await Contabilita.apri(db);
+      final io = IdentitaPersona.daChiaveDati(
+        sodium,
+        SecureKey.fromList(sodium, Uint8List.fromList(List.filled(32, 5))),
+      );
+      final membro = PortafogliCondivisiServizio(
+        db: db,
+        contabilita: cm,
+        sodium: sodium,
+        identita: () => io,
+        accesso: AccessoFinto(drive, 'memb')
+          ..sceglie = (e) => e.nome.startsWith('wallecy_'),
+      );
+      await membro.unisciti();
+      await sessione.condivisi.sincronizza();
+      await membro.sincronizza();
+      final spesa = (await cm.tipi(AmbitoTipo.movimento))
+          .firstWhere((t) => t.effetto == EffettoSaldo.uscita)
+          .id;
+      await cm.registraMovimento(
+        tipoId: spesa,
+        portafoglioId: w,
+        importo: 900,
+        valuta: 'EUR',
+        data: DateTime(2026, 10, 17),
+        descrizione: 'Spesa del membro',
+      );
+      await membro.sincronizza();
+      await sessione.condivisi.sincronizza();
+      await membro.interrompi(w);
+      await sessione.condivisi.sincronizza();
+      await db.close();
+    });
+    sessione.avviso = null;
+    await tester.pumpWidget(GestionaleApp(sessione: sessione));
+    await attendi(tester, find.text('Casa'));
+
+    // Nel portafoglio: la spesa del membro uscito, in grigio.
+    await tocca(tester, find.text('Casa'));
+    await attendi(tester, find.text('Spesa del membro'));
+    await attendi(tester, find.textContaining('ex membro · '));
+    expect(
+      find.ancestor(
+        of: find.text('Spesa del membro'),
+        matching: find.byType(Opacity),
+      ),
+      findsWidgets,
+    );
+
+    // Eliminarlo: prima l'avviso sul portafoglio condiviso.
+    await tocca(tester, find.byTooltip('Elimina portafoglio'));
+    await attendi(tester, find.text('Elimina il portafoglio'));
+    await tocca(tester, find.text('Elimina il portafoglio'));
+    await attendi(tester, find.text('È un portafoglio condiviso'));
+    await tocca(tester, find.text('Continua'));
+    await tocca(tester, find.widgetWithText(FilledButton, 'Elimina'));
+    await attendi(tester, find.text('"Casa" eliminato'));
+    final cartellaDrive = drive
+        .conNome(PortafogliCondivisiServizio.nomeCartella('Casa', w))
+        .single;
+    expect(drive.elementi[cartellaDrive]!.cestinato, isTrue);
+
+    sessione.blocca().ignore();
+    await attendi(tester, find.text('Archivio bloccato'));
+    await tester.pumpWidget(const SizedBox());
+  });
 }

@@ -274,8 +274,8 @@ class _GuscioState extends State<Guscio> {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        icon: const Icon(Icons.group_off_outlined),
-        title: const Text('Condivisione non riuscita'),
+        icon: const Icon(Icons.group_outlined),
+        title: const Text('Portafoglio condiviso'),
         content: Text(testo),
         actions: [
           FilledButton(

@@ -361,6 +361,23 @@ class _SchedaPersoneState extends State<SchedaPersone> {
                     ? null
                     : () => apriCodiceSicurezza(context, sessione, m),
               ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => interrompiCondivisione(
+                  context,
+                  sessione,
+                  portafoglioId,
+                  proprietario: proprietario,
+                ),
+                icon: const Icon(Icons.link_off),
+                label: Text(
+                  proprietario
+                      ? 'Interrompi la condivisione'
+                      : 'Esci dalla condivisione',
+                ),
+              ),
+            ),
           ],
         ),
       );
@@ -533,4 +550,86 @@ class _DisegnoQr extends CustomPainter {
 
   @override
   bool shouldRepaint(_DisegnoQr vecchio) => false;
+}
+
+/// Fine della condivisione scelta da qui (ADR-019): il proprietario la chiude
+/// per tutti, un membro esce. Il portafoglio resta come un portafoglio
+/// normale e le voci degli altri diventano "ex membro". `true` se fatto.
+Future<bool> interrompiCondivisione(
+  BuildContext context,
+  Sessione sessione,
+  String portafoglioId, {
+  required bool proprietario,
+  bool conferma = true,
+}) async {
+  if (conferma) {
+    final procedi = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.link_off),
+        title: Text(
+          proprietario
+              ? 'Interrompere la condivisione?'
+              : 'Uscire dalla condivisione?',
+        ),
+        content: Text(
+          proprietario
+              ? 'La condivisione finisce per tutti: la cartella su Google Drive '
+                    'va nel cestino. Il portafoglio resta qui e sui telefoni '
+                    'degli altri come un portafoglio normale; le voci degli '
+                    'altri diventano «ex membro».'
+              : 'Non riceverai più le voci degli altri e loro non riceveranno '
+                    'le tue. Il portafoglio resta qui come un portafoglio '
+                    'normale; le voci degli altri diventano «ex membro».',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(proprietario ? 'Interrompi' : 'Esci'),
+          ),
+        ],
+      ),
+    );
+    if (procedi != true || !context.mounted) {
+      return false;
+    }
+  }
+  final messaggi = ScaffoldMessenger.of(context);
+  try {
+    await senzaBloccoAutomatico(
+      () => sessione.condivisi.interrompi(portafoglioId),
+    );
+  } on ErroreDriveCondiviso catch (e) {
+    messaggi
+      ..clearSnackBars()
+      ..showSnackBar(
+        avviso(
+          content: Text(
+            e.stato == 408
+                ? e.dettaglio
+                : 'Google Drive ha risposto ${e.stato}: condivisione non '
+                      'interrotta. Riprova quando sei online.',
+          ),
+        ),
+      );
+    return false;
+  }
+  messaggi
+    ..clearSnackBars()
+    ..showSnackBar(
+      avviso(
+        content: Text(
+          proprietario
+              ? 'Condivisione interrotta: il portafoglio resta qui come un '
+                    'portafoglio normale.'
+              : 'Sei uscito dalla condivisione: il portafoglio resta qui come '
+                    'un portafoglio normale.',
+        ),
+      ),
+    );
+  return true;
 }

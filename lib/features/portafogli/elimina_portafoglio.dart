@@ -8,6 +8,8 @@ import '../../core/sessione.dart';
 import '../comuni/avvisi.dart';
 import '../comuni/errori.dart';
 import '../comuni/layout.dart';
+import '../condivisi/condividi_portafoglio.dart';
+import '../../core/db/tabelle.dart';
 import '../movimenti/riga_movimento.dart';
 
 /// Elimina un portafoglio, scegliendo cosa fare dei suoi movimenti.
@@ -91,6 +93,56 @@ class _EliminaPortafoglioPaginaState extends State<EliminaPortafoglioPagina> {
       _Scelta.sposta => <String>{},
       _Scelta.scegli => _daEliminare,
     };
+    // Portafoglio condiviso: prima un avviso su cosa si perde (ADR-019).
+    final condiviso = await widget.sessione.condivisi.di(_p.id);
+    final proprietario = condiviso?.ruolo == RuoloMembro.proprietario;
+    if (condiviso != null) {
+      if (!mounted) {
+        return;
+      }
+      final persone = (await widget.sessione.condivisi.membri(_p.id))
+          .where((m) => m.stato != StatoMembro.uscito)
+          .length;
+      if (!mounted) {
+        return;
+      }
+      final continua = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          icon: const Icon(Icons.warning_amber_outlined),
+          title: const Text('È un portafoglio condiviso'),
+          content: Text(
+            proprietario
+                ? '"${_p.nome}" è condiviso con ${persone - 1} '
+                      '${persone - 1 == 1 ? 'persona' : 'persone'}. '
+                      'Eliminandolo si perdono tutti i suoi dati su questo '
+                      'dispositivo e la condivisione finisce per tutti: la '
+                      'cartella su Google Drive va nel cestino. Sui telefoni '
+                      'degli altri il portafoglio resta come un portafoglio '
+                      'normale.'
+                : 'Sei un membro di "${_p.nome}": eliminandolo esci dalla '
+                      'condivisione e si perdono tutti i suoi dati su questo '
+                      'dispositivo. Per gli altri il portafoglio continua.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Annulla'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Continua'),
+            ),
+          ],
+        ),
+      );
+      if (continua != true || !mounted) {
+        return;
+      }
+    }
+    if (!mounted) {
+      return;
+    }
     final conferma = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -127,6 +179,21 @@ class _EliminaPortafoglioPaginaState extends State<EliminaPortafoglioPagina> {
     setState(() => _occupato = true);
     final messaggi = ScaffoldMessenger.of(context);
     final navigatore = Navigator.of(context);
+    // Prima la fine della condivisione (Drive): se non riesce, non si
+    // elimina niente.
+    if (condiviso != null &&
+        !await interrompiCondivisione(
+          context,
+          widget.sessione,
+          _p.id,
+          proprietario: proprietario,
+          conferma: false,
+        )) {
+      if (mounted) {
+        setState(() => _occupato = false);
+      }
+      return;
+    }
     try {
       final annulla = await _c.eliminazione.elimina(
         _p.id,

@@ -117,7 +117,126 @@ class PortafogliCondivisiServizio {
     return DateTime.tryParse(quando)?.add(durataInvito);
   }
 
-  void chiudi() => _avvisi.close();
+  /// Le persone che non fanno più parte di un portafoglio condiviso (uscite,
+  /// tolte, invito scaduto, o condivisione finita): le loro voci restano,
+  /// segnate come "ex membro".
+  ValueListenable<Set<String>> get exMembri {
+    _osservaEx ??=
+        (_db.select(_db.membri)..where(
+              (m) => m.stato.isIn([StatoMembro.uscito, StatoMembro.scaduto]),
+            ))
+            .watch()
+            .listen(
+              (elenco) => _exMembri.value = {for (final m in elenco) m.id},
+            );
+    return _exMembri;
+  }
+
+  final _exMembri = ValueNotifier<Set<String>>(const {});
+  StreamSubscription<List<Membro>>? _osservaEx;
+
+  void chiudi() {
+    _avvisi.close();
+    _osservaEx?.cancel();
+    _exMembri.dispose();
+  }
+
+  // ------------------------------------------------- fine della condivisione
+
+  /// Fine della condivisione, scelta da qui. Il proprietario la chiude per
+  /// tutti (registro "concluso", cartella nel cestino di Drive); un membro
+  /// esce (lo scrive nel suo file). Il portafoglio resta qui come un
+  /// portafoglio normale; le voci degli altri diventano "ex membro".
+  Future<void> interrompi(String portafoglioId) async {
+    final pc = await di(portafoglioId);
+    if (pc == null) {
+      return;
+    }
+    final client = await accesso.client();
+    if (client == null) {
+      throw const ErroreDriveCondiviso(401, 'Accesso a Google annullato.');
+    }
+    final drive = _creaDrive(client);
+    try {
+      await _chiudiSuDrive(drive, pc);
+    } finally {
+      drive.chiudi();
+    }
+    await _concludi(pc);
+  }
+
+  /// Su Drive: il proprietario chiude per tutti (registro "concluso",
+  /// cartella nel cestino); un membro scrive nel suo file che è uscito.
+  Future<void> _chiudiSuDrive(
+    DriveCondiviso drive,
+    PortafoglioCondiviso pc,
+  ) async {
+    if (pc.ruolo == RuoloMembro.proprietario) {
+      if (pc.registroId.isNotEmpty) {
+        await _scriviRegistro(drive, pc, concluso: true);
+      }
+      await drive.cestina(pc.cartellaId);
+      return;
+    }
+    final mio = await io(pc);
+    final fileId = pc.mioFileId;
+    if (mio != null && fileId != null) {
+      await drive.aggiorna(
+        fileId,
+        jsonEncode({
+          ..._intestazioneFile(pc.portafoglioId, mio.id, _identita()),
+          'uscito': true,
+        }),
+      );
+    }
+  }
+
+  /// Da qui in poi è un portafoglio normale: le altre persone diventano
+  /// "ex membro".
+  Future<void> _concludi(PortafoglioCondiviso pc) => _db.transaction(() async {
+    await (_db.update(
+      _db.portafogliCondivisi,
+    )..where((c) => c.id.equals(pc.id))).write(
+      PortafogliCondivisiCompanion(
+        eliminato: const Value(true),
+        aggiornatoIl: Value(_orologio.adesso()),
+      ),
+    );
+    for (final m in await membri(pc.portafoglioId)) {
+      if (m.fileId != pc.mioFileId && m.stato != StatoMembro.uscito) {
+        await (_db.update(_db.membri)..where((x) => x.id.equals(m.id))).write(
+          MembriCompanion(
+            stato: const Value(StatoMembro.uscito),
+            aggiornatoIl: Value(_orologio.adesso()),
+          ),
+        );
+      }
+    }
+  });
+
+  Future<String> _nomePortafoglio(String portafoglioId) async =>
+      (await (_db.select(
+        _db.portafogli,
+      )..where((p) => p.id.equals(portafoglioId))).getSingleOrNull())?.nome ??
+      '';
+
+  void _avvisa(String testo) {
+    if (!_avvisi.isClosed) {
+      _avvisi.add(testo);
+    }
+  }
+
+  /// Il proprietario ha chiuso la condivisione (o non la si vede più).
+  Future<void> _finita(PortafoglioCondiviso pc) async {
+    await _concludi(pc);
+    final nome = await _nomePortafoglio(pc.portafoglioId);
+    _avvisa(
+      'La condivisione di «${nome.isEmpty ? 'un portafoglio' : nome}» è '
+      'finita: il proprietario l\'ha interrotta. Il portafoglio resta qui '
+      'come un portafoglio normale; le voci degli altri sono segnate come '
+      '«ex membro».',
+    );
+  }
 
   final Archivio _db;
   final Contabilita _contabilita;
@@ -171,19 +290,22 @@ class PortafogliCondivisiServizio {
         final membri = await (_db.select(
           _db.membri,
         )..where((m) => m.eliminato.equals(false))).get();
-        final nomi = {
-          for (final p in await _db.select(_db.portafogli).get()) p.id: p.nome,
+        final portafogli = {
+          for (final p in await _db.select(_db.portafogli).get()) p.id: p,
         };
         return [
           for (final c in elenco)
-            (
-              info: c,
-              nome: nomi[c.portafoglioId] ?? '',
-              membri: [
-                for (final m in membri)
-                  if (m.portafoglioId == c.portafoglioId) m,
-              ],
-            ),
+            // Un portafoglio eliminato qui non è più nell'elenco (la sua
+            // condivisione si chiude al prossimo giro).
+            if (portafogli[c.portafoglioId]?.eliminato != true)
+              (
+                info: c,
+                nome: portafogli[c.portafoglioId]?.nome ?? '',
+                membri: [
+                  for (final m in membri)
+                    if (m.portafoglioId == c.portafoglioId) m,
+                ],
+              ),
         ];
       });
 
@@ -354,6 +476,7 @@ class PortafogliCondivisiServizio {
       cartellaId: pc.cartellaId,
       registroId: pc.registroId,
       fileId: fileId,
+      fileProprietario: proprietario?.fileId,
       portafoglio: p?.nome ?? '',
       da: proprietario?.email ?? '',
       scadenza: scadenza,
@@ -503,8 +626,9 @@ class PortafogliCondivisiServizio {
   /// del portafoglio è sigillata per ogni persona che ha già le chiavi.
   Future<void> _scriviRegistro(
     DriveCondiviso drive,
-    PortafoglioCondiviso pc,
-  ) async {
+    PortafoglioCondiviso pc, {
+    bool concluso = false,
+  }) async {
     final chiave = base64.decode(pc.chiave);
     var versione = 1;
     if (pc.registroId.isNotEmpty) {
@@ -519,6 +643,7 @@ class PortafogliCondivisiServizio {
       'formato': formato,
       'portafoglio': pc.portafoglioId,
       'versione': versione,
+      if (concluso) 'concluso': true,
       'membri': [
         for (final m in await membri(pc.portafoglioId))
           {
@@ -613,9 +738,7 @@ class PortafogliCondivisiServizio {
   Future<EsitoIngresso> unisciti({InvitoCondiviso? invito}) async {
     final ElementiScelti scelta;
     try {
-      scelta = await accesso.scegli(
-        soloId: [if (invito != null) invito.registroId, ?invito?.fileId],
-      );
+      scelta = await accesso.scegli(soloId: invito?.daScegliere ?? const []);
     } on SceltaAnnullata {
       return EsitoIngresso.annullato;
     }
@@ -693,6 +816,46 @@ class PortafogliCondivisiServizio {
     } finally {
       drive.chiudi();
     }
+  }
+
+  /// Il portafoglio non arriva perché manca l'accesso a qualche file (es. il
+  /// file del proprietario non scelto all'ingresso): la finestra di Google
+  /// mostra i file del portafoglio, poi si sincronizza. `entrato` se ora il
+  /// portafoglio c'è.
+  Future<EsitoIngresso> completaIngresso(String portafoglioId) async {
+    final pc = await di(portafoglioId);
+    if (pc == null) {
+      return EsitoIngresso.annullato;
+    }
+    final persone = await membri(portafoglioId);
+    final ElementiScelti scelta;
+    try {
+      scelta = await accesso.scegli(
+        soloId: [
+          pc.registroId,
+          ?pc.mioFileId,
+          for (final m in persone)
+            if (m.fileId != null &&
+                m.fileId != pc.mioFileId &&
+                m.stato == StatoMembro.attivo)
+              m.fileId!,
+        ],
+      );
+    } on SceltaAnnullata {
+      return EsitoIngresso.annullato;
+    }
+    final drive = _creaDrive(scelta.client);
+    try {
+      await _sincronizzaUno(drive, pc);
+    } finally {
+      drive.chiudi();
+    }
+    final arrivato = await (_db.select(
+      _db.portafogli,
+    )..where((p) => p.id.equals(portafoglioId))).getSingleOrNull();
+    return arrivato == null
+        ? EsitoIngresso.fileMancanti
+        : EsitoIngresso.entrato;
   }
 
   /// Le persone del registro, nell'archivio del membro.
@@ -786,15 +949,40 @@ class PortafogliCondivisiServizio {
     PortafoglioCondiviso pc,
   ) async {
     final proprietario = pc.ruolo == RuoloMembro.proprietario;
+    // 0. Portafoglio eliminato qui (anche con una versione precedente
+    // dell'app): la condivisione finisce, come con "Interrompi".
+    final locale = await (_db.select(
+      _db.portafogli,
+    )..where((p) => p.id.equals(pc.portafoglioId))).getSingleOrNull();
+    if (locale != null && locale.eliminato) {
+      await _chiudiSuDrive(drive, pc);
+      await _concludi(pc);
+      return;
+    }
     var persone = await membri(pc.portafoglioId);
     // 1. Registro: il membro aggiorna le persone e prende la sua chiave.
     if (!proprietario && pc.registroId.isNotEmpty) {
+      final String testo;
+      try {
+        testo = await drive.leggi(pc.registroId);
+      } on ErroreDriveCondiviso catch (e) {
+        if (e.stato == 403 || e.stato == 404) {
+          // La cartella non è più condivisa (o è stata eliminata).
+          await _finita(pc);
+          return;
+        }
+        rethrow;
+      }
       final registro = _verificaRegistro(
-        await drive.leggi(pc.registroId),
+        testo,
         proprietario: persone
             .where((m) => m.ruolo == RuoloMembro.proprietario)
             .firstOrNull,
       );
+      if (registro['concluso'] == true) {
+        await _finita(pc);
+        return;
+      }
       await _aggiornaMembri(pc, registro);
       persone = await membri(pc.portafoglioId);
       if (pc.chiave.isEmpty) {
@@ -904,6 +1092,31 @@ class PortafogliCondivisiServizio {
         try {
           final file =
               jsonDecode(await drive.leggi(fileId)) as Map<String, Object?>;
+          // Un membro è uscito: resta "ex membro", la cartella non gli è
+          // più condivisa.
+          if (proprietario &&
+              file['uscito'] == true &&
+              m.stato == StatoMembro.attivo) {
+            await (_db.update(
+              _db.membri,
+            )..where((x) => x.id.equals(m.id))).write(
+              MembriCompanion(
+                stato: const Value(StatoMembro.uscito),
+                aggiornatoIl: Value(_orologio.adesso()),
+              ),
+            );
+            try {
+              await drive.togliCondivisione(pc.cartellaId, m.email);
+            } on ErroreDriveCondiviso catch (e) {
+              debugPrint('Condivisione non tolta a ${m.email}: $e');
+            }
+            await _scriviRegistro(drive, pc);
+            final nome = await _nomePortafoglio(pc.portafoglioId);
+            _avvisa(
+              '${m.email} è uscito da «$nome». Le sue voci restano, segnate '
+              'come «ex membro».',
+            );
+          }
           final dati = file['dati'];
           if (dati is! String) {
             continue;

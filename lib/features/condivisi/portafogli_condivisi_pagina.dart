@@ -134,6 +134,70 @@ class _PortafogliCondivisiPaginaState extends State<PortafogliCondivisiPagina> {
     }
   }
 
+  /// Apre il portafoglio; se non è ancora arrivato, prima completa
+  /// l'ingresso (o aggiorna, se manca ancora la chiave).
+  Future<void> _apri(VistaCondiviso v) async {
+    if (v.info.chiave.isEmpty) {
+      await _aggiorna();
+      return;
+    }
+    if (v.nome.isEmpty) {
+      final procedi = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          icon: const Icon(Icons.folder_shared_outlined),
+          title: const Text('Il portafoglio non è ancora arrivato'),
+          content: const Text(
+            'Manca l\'accesso al file di chi condivide il portafoglio. '
+            'Nella finestra di Google scegli i file che vedi; se non li vedi, '
+            'apri «Condivisi con me», la cartella «wallecy_share_…», e scegli '
+            'tutti i file.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Annulla'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Apri la finestra di Google'),
+            ),
+          ],
+        ),
+      );
+      if (procedi != true || !mounted) {
+        return;
+      }
+      var arrivato = false;
+      await _lavoro(() async {
+        final esito = await widget.sessione.condivisi.completaIngresso(
+          v.info.portafoglioId,
+        );
+        arrivato = esito == EsitoIngresso.entrato;
+        if (!arrivato) {
+          _avvisa(
+            esito == EsitoIngresso.annullato
+                ? 'Scelta annullata.'
+                : 'Il portafoglio non è ancora arrivato: scegli tutti i file '
+                      'della cartella, oppure chiedi al proprietario di aprire '
+                      'WalleCy e riprova tra qualche minuto.',
+          );
+        }
+      });
+      if (!arrivato || !mounted) {
+        return;
+      }
+    }
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PortafoglioPagina(
+          sessione: widget.sessione,
+          portafoglioId: v.info.portafoglioId,
+        ),
+      ),
+    );
+  }
+
   Future<void> _aggiorna() => _lavoro(() async {
     await widget.sessione.condivisi.sincronizza(interattivo: true);
     _avvisa('Portafogli condivisi aggiornati.');
@@ -207,20 +271,14 @@ class _PortafogliCondivisiPaginaState extends State<PortafogliCondivisiPagina> {
                             : 'Sei un membro',
                         '${v.membri.length} persone',
                         if (v.info.chiave.isEmpty)
-                          'in attesa della chiave dal proprietario',
+                          'in attesa della chiave dal proprietario: '
+                              'tocca per aggiornare'
+                        else if (v.nome.isEmpty)
+                          'non ancora arrivato: tocca per completare',
                       ].join(' · '),
                     ),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: v.nome.isEmpty
-                        ? null
-                        : () => Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => PortafoglioPagina(
-                                sessione: widget.sessione,
-                                portafoglioId: v.info.portafoglioId,
-                              ),
-                            ),
-                          ),
+                    onTap: _occupato ? null : () => _apri(v),
                   ),
                 ),
             ],

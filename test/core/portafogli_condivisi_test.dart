@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:drift/drift.dart' show driftRuntimeOptions;
+import 'package:drift/drift.dart' show Value, driftRuntimeOptions;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gestionale_finanziaria/core/condivisi/drive_condiviso.dart';
 import 'package:gestionale_finanziaria/core/condivisi/identita_persona.dart';
@@ -356,14 +356,152 @@ void main() {
       await memb.condivisi.unisciti(invito: invito),
       EsitoIngresso.inAttesa,
     );
+    // Registro, il proprio file e quello del proprietario (da lì arrivano
+    // il portafoglio e le voci).
     expect(memb.accesso.richiesteSoloId.last, [
       invito.registroId,
       invito.fileId,
+      drive.conNome('wallecy_prop.json').single,
     ]);
     expect(await memb.condivisi.osservaInviti().first, isEmpty);
 
     // Già entrato: lo stesso invito non si aggiunge più.
     expect(await memb.condivisi.aggiungiInvito(invito), isFalse);
+  });
+
+  /// Proprietario e membro già uniti nel portafoglio "Casa".
+  Future<({_Persona prop, _Persona memb, String w, String pane})> uniti(
+    DriveFinto drive,
+  ) async {
+    final (:prop, :w, :pane) = await conPortafoglio(drive);
+    final memb = await persona(drive, 'memb', 2);
+    await prop.condivisi.invita(w, 'memb@example.com');
+    final cartella = drive
+        .conNome(PortafogliCondivisiServizio.nomeCartella('Casa', w))
+        .single;
+    memb.accesso.sceglie = (e) => e.padre == cartella;
+    await memb.condivisi.unisciti();
+    await prop.condivisi.sincronizza();
+    await memb.condivisi.sincronizza();
+    return (prop: prop, memb: memb, w: w, pane: pane);
+  }
+
+  test('ingresso senza il file del proprietario: si completa', () async {
+    final drive = DriveFinto();
+    final (:prop, :w, :pane) = await conPortafoglio(drive);
+    final memb = await persona(drive, 'memb', 2);
+    await prop.condivisi.invita(w, 'memb@example.com');
+    // Come nella prova vera: solo il registro e il proprio file.
+    memb.accesso.sceglie = (e) =>
+        e.nome == PortafogliCondivisiServizio.nomeRegistro ||
+        e.nome == 'wallecy_memb.json';
+    expect(await memb.condivisi.unisciti(), EsitoIngresso.inAttesa);
+    await prop.condivisi.sincronizza();
+    await memb.condivisi.sincronizza();
+    // La chiave c'è, ma il portafoglio non arriva.
+    expect((await memb.condivisi.di(w))!.chiave, isNotEmpty);
+    expect(
+      await (memb.db.select(
+        memb.db.portafogli,
+      )..where((p) => p.id.equals(w))).getSingleOrNull(),
+      isNull,
+    );
+    // "Tocca per completare": la finestra chiede anche il file del
+    // proprietario, e il portafoglio arriva.
+    expect(await memb.condivisi.completaIngresso(w), EsitoIngresso.entrato);
+    expect(
+      memb.accesso.richiesteSoloId.last,
+      contains(drive.conNome('wallecy_prop.json').single),
+    );
+    expect((await memb.movimento(pane)).importoMinimo, 1250);
+  });
+
+  test('il proprietario interrompe: per tutti resta un portafoglio', () async {
+    final drive = DriveFinto();
+    final (:prop, :memb, :w, :pane) = await uniti(drive);
+    final cartella = drive
+        .conNome(PortafogliCondivisiServizio.nomeCartella('Casa', w))
+        .single;
+    final avvisi = <String>[];
+    final ascolto = memb.condivisi.avvisi.listen(avvisi.add);
+    addTearDown(ascolto.cancel);
+
+    await prop.condivisi.interrompi(w);
+    expect(await prop.condivisi.di(w), isNull);
+    expect(drive.elementi[cartella]!.cestinato, isTrue);
+    expect(
+      (await prop.condivisi.membri(w))
+          .firstWhere((m) => m.ruolo == RuoloMembro.membro)
+          .stato,
+      StatoMembro.uscito,
+    );
+
+    // Il membro se ne accorge: avviso, e il portafoglio resta suo.
+    await memb.condivisi.sincronizza();
+    await Future<void>.delayed(Duration.zero);
+    expect(await memb.condivisi.di(w), isNull);
+    expect(avvisi.single, contains('è finita'));
+    expect((await memb.movimento(pane)).importoMinimo, 1250);
+    expect(
+      (await memb.condivisi.membri(w))
+          .firstWhere((m) => m.ruolo == RuoloMembro.proprietario)
+          .stato,
+      StatoMembro.uscito,
+    );
+    // Una nuova spesa resta solo qui: niente più file su Drive.
+    final prima = drive.richieste;
+    await memb.condivisi.sincronizza();
+    expect(drive.richieste, prima);
+  });
+
+  test('portafoglio eliminato (anche con la versione vecchia): sparisce '
+      'dall\'elenco e la condivisione si chiude', () async {
+    final drive = DriveFinto();
+    final (:prop, :memb, :w, :pane) = await uniti(drive);
+    final cartella = drive
+        .conNome(PortafogliCondivisiServizio.nomeCartella('Casa', w))
+        .single;
+    // Eliminato come faceva la versione precedente: solo qui.
+    await (prop.db.update(
+      prop.db.portafogli,
+    )..where((p) => p.id.equals(w))).write(
+      PortafogliCompanion(
+        eliminato: const Value(true),
+        aggiornatoIl: Value(prop.c.orologio.adesso()),
+      ),
+    );
+    expect(await prop.condivisi.osserva().first, isEmpty);
+
+    await prop.condivisi.sincronizza();
+    expect(await prop.condivisi.di(w), isNull);
+    expect(drive.elementi[cartella]!.cestinato, isTrue);
+    await memb.condivisi.sincronizza();
+    expect(await memb.condivisi.di(w), isNull);
+    expect((await memb.movimento(pane)).importoMinimo, 1250);
+  });
+
+  test('il membro esce: il proprietario lo vede ex membro', () async {
+    final drive = DriveFinto();
+    final (:prop, :memb, :w, pane: _) = await uniti(drive);
+    final cartella = drive
+        .conNome(PortafogliCondivisiServizio.nomeCartella('Casa', w))
+        .single;
+    final avvisi = <String>[];
+    final ascolto = prop.condivisi.avvisi.listen(avvisi.add);
+    addTearDown(ascolto.cancel);
+
+    await memb.condivisi.interrompi(w);
+    expect(await memb.condivisi.di(w), isNull);
+
+    await prop.condivisi.sincronizza();
+    await Future<void>.delayed(Duration.zero);
+    final exMembro = (await prop.condivisi.membri(w))
+        .firstWhere((m) => m.ruolo == RuoloMembro.membro);
+    expect(exMembro.stato, StatoMembro.uscito);
+    expect(drive.permessi[cartella], isNot(contains('memb')));
+    expect(avvisi.single, contains('è uscito'));
+    // Per il proprietario il portafoglio resta condiviso (con gli altri).
+    expect(await prop.condivisi.di(w), isNotNull);
   });
 
   test('Google Drive che non risponde: errore dopo il tempo massimo', () async {

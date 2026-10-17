@@ -140,7 +140,14 @@ Scelta dell'utente: **Qualità/Prezzo** (le altre: proprietario come "centro" ch
   - "Accetta" passa alla finestra di Google gli id del registro e del file della persona (se la finestra li ignora, si sceglie a mano come prima);
   - "Ho un link d'invito" per incollarlo (Windows, o se il link non apre l'app); il proprietario ha "Copia il link d'invito" accanto a chi è in attesa, da mandare con WhatsApp o SMS;
   - serve GitHub Pages attivo; con un dominio proprio si passerà agli Android App Links verificati.
-- Da fare (consegne 2 e 3): quote nel totale e voci assegnate, vista per membro, impedire nell'interfaccia di modificare le voci altrui, badge in Panoramica, notifiche, uscita e rimozione con cambio di chiave, scansione del QR con la fotocamera.
+- **Ingresso da completare, fine della condivisione ed ex membri** (seconda prova vera, 17/10/2026):
+  - il link d'invito contiene anche l'id del file del proprietario (`o`): "Accetta" propone registro, file della persona e file del proprietario;
+  - se il membro ne ha scelti solo una parte, in elenco compare "Portafoglio in arrivo · tocca per completare": il tocco riapre la finestra di Google con i soli file mancanti (`completaIngresso`) e poi apre il portafoglio;
+  - **Interrompi la condivisione** (proprietario, nella scheda "Persone"): registro segnato `concluso`, cartella su Drive nel **cestino**; **Esci dalla condivisione** (membro): `uscito` nel proprio file, il proprietario al giro dopo toglie la cartella a quella persona e riceve un avviso;
+  - dopo la fine il portafoglio **resta su ogni dispositivo** come portafoglio normale; le voci di chi non fa più parte della condivisione restano, **in grigio** con la scritta "ex membro";
+  - **eliminare** un portafoglio condiviso: prima l'avviso "È un portafoglio condiviso" (si perdono tutti i suoi dati; per il proprietario la cartella va nel cestino e la condivisione finisce per tutti), poi la conferma normale; se la chiusura su Drive non riesce, non si elimina niente;
+  - un portafoglio eliminato (anche con una versione precedente dell'app) sparisce dall'elenco dei condivisi e la sua condivisione si chiude da sola al primo giro.
+- Da fare (consegne 2 e 3): quote nel totale e voci assegnate, vista per membro, impedire nell'interfaccia di modificare le voci altrui, badge in Panoramica, notifiche, rimozione di un membro con cambio di chiave, scansione del QR con la fotocamera.
 
 ## Consegne
 0. **Prova tecnica** (Laboratorio):
@@ -151,7 +158,7 @@ Scelta dell'utente: **Qualità/Prezzo** (le altre: proprietario come "centro" ch
    Serve a verificare con due account veri cosa permette `drive.file` sulle cartelle scelte (i file all'interno, la scrittura).
 1. **Fondamenta**: chiavi delle persone, chiave del portafoglio, invito e accettazione, cartella e sincronizzazione condivisa, firme.
 2. **Uso**: voci con autore, vista per membro, filtri, quota nel totale, badge, esportazione, automatiche.
-3. **Notifiche e ruoli avanzati**: notifiche in background, rimozione con cambio di chiave, eliminazione, uscita volontaria.
+3. **Notifiche e ruoli avanzati**: notifiche in background, rimozione con cambio di chiave (eliminazione e uscita volontaria fatte il 17/10/2026).
 
 ## Prerequisiti (li fa l'utente in Google Cloud)
 - Abilitare la **Google Picker API**.

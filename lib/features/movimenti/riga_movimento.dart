@@ -78,6 +78,24 @@ class RigaMovimento extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Voce di una persona che non fa più parte del portafoglio condiviso:
+    // resta, in grigio, segnata come "ex membro" (ADR-019).
+    final ex = sessione.condivisiSeAperto?.exMembri;
+    final autore = dettaglio.movimento.inseritoDa;
+    if (ex == null || autore == null) {
+      return _riga(context, exMembro: false);
+    }
+    return ValueListenableBuilder<Set<String>>(
+      valueListenable: ex,
+      builder: (context, exMembri, _) {
+        final exMembro = exMembri.contains(autore);
+        final riga = _riga(context, exMembro: exMembro);
+        return exMembro ? Opacity(opacity: 0.5, child: riga) : riga;
+      },
+    );
+  }
+
+  Widget _riga(BuildContext context, {required bool exMembro}) {
     final m = dettaglio.movimento;
     final effetto = dettaglio.tipo.effetto;
     final colore = coloreEffetto(context, effetto);
@@ -109,6 +127,7 @@ class RigaMovimento extends StatelessWidget {
       ),
       title: Text(titolo, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text(
+        '${exMembro ? 'ex membro · ' : ''}'
         '${dettaglio.categoria == null ? '' : '${dettaglio.categoria!.nome} · '}'
         '$portafogli · '
         '${dataLeggibile(context, Contabilita.daGiorno(m.data))}',

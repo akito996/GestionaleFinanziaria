@@ -14,6 +14,7 @@ class InvitoCondiviso {
     required this.cartellaId,
     required this.registroId,
     this.fileId,
+    this.fileProprietario,
     required this.portafoglio,
     required this.da,
     this.scadenza,
@@ -29,6 +30,13 @@ class InvitoCondiviso {
 
   /// Il file preparato per chi è invitato (id di Google Drive).
   final String? fileId;
+
+  /// Il file del proprietario: da lì arrivano il portafoglio e le voci di
+  /// tutti (id di Google Drive).
+  final String? fileProprietario;
+
+  /// I file da scegliere nella finestra di Google per entrare.
+  List<String> get daScegliere => [registroId, ?fileId, ?fileProprietario];
 
   /// Nome del portafoglio ed email di chi invita (da mostrare).
   final String portafoglio;
@@ -51,6 +59,7 @@ class InvitoCondiviso {
       'c': cartellaId,
       'r': registroId,
       'f': ?fileId,
+      'o': ?fileProprietario,
       'p': portafoglio,
       'da': da,
       if (scadenza != null) 's': scadenza!.toUtc().toIso8601String(),
@@ -79,11 +88,13 @@ class InvitoCondiviso {
     final c = p['c'];
     final r = p['r'];
     final f = p['f'];
+    final o = p['o'];
     if (c is! String ||
         r is! String ||
         !_id.hasMatch(c) ||
         !_id.hasMatch(r) ||
-        (f != null && (f is! String || !_id.hasMatch(f)))) {
+        (f != null && (f is! String || !_id.hasMatch(f))) ||
+        (o != null && (o is! String || !_id.hasMatch(o)))) {
       return null;
     }
     final s = p['s'];
@@ -91,6 +102,7 @@ class InvitoCondiviso {
       cartellaId: c,
       registroId: r,
       fileId: f as String?,
+      fileProprietario: o as String?,
       portafoglio: _breve(p['p']),
       da: _breve(p['da']),
       scadenza: s is String ? DateTime.tryParse(s) : null,
@@ -106,6 +118,7 @@ class InvitoCondiviso {
     'c': cartellaId,
     'r': registroId,
     'f': fileId,
+    'o': fileProprietario,
     'p': portafoglio,
     'da': da,
     if (scadenza != null) 's': scadenza!.toUtc().toIso8601String(),

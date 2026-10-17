@@ -114,6 +114,10 @@ class Sessione extends ChangeNotifier {
   /// Portafogli condivisi: solo ad archivio aperto.
   PortafogliCondivisiServizio get condivisi => _condivisi!;
 
+  /// Come [condivisi], ma `null` ad archivio bloccato (per le schermate che
+  /// possono ridisegnarsi durante il blocco).
+  PortafogliCondivisiServizio? get condivisiSeAperto => _condivisi;
+
   /// Accesso a Google Drive per la sincronizzazione (ADR-015).
   late final AccessoGoogle accessoGoogle =
       _accessoIniettato ?? AccessoGoogle.perPiattaforma(_credenzialiGoogle);

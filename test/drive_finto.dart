@@ -20,6 +20,9 @@ class ElementoFinto {
   final String proprietario;
   final bool cartella;
   String testo;
+
+  /// Nel cestino: si legge ancora per id, non compare negli elenchi.
+  bool cestinato = false;
 }
 
 /// Google Drive finto in memoria, condiviso da più account (l'utente "x" ha
@@ -178,6 +181,9 @@ class DriveFinto {
       case 'PATCH' when percorso.startsWith('/upload/'):
         elementi[id]!.testo = utf8.decode(r.bodyBytes);
         return _ok();
+      case 'PATCH' when r.body.contains('"trashed":true'):
+        elementi[id]!.cestinato = true;
+        return _ok();
       case 'PATCH':
         elementi[id]!.padre = q['addParents']!;
         return _ok();
@@ -195,6 +201,7 @@ class DriveFinto {
           'files': [
             for (final e in elementi.entries)
               if (vede(utente, e.key) &&
+                  !e.value.cestinato &&
                   (nome == null || e.value.nome == nome) &&
                   (padre == null || e.value.padre == padre) &&
                   (!soloCartelle || e.value.cartella))
