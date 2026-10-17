@@ -56,11 +56,15 @@ class _AlberoCategorieVistaState extends State<AlberoCategorieVista> {
   @override
   void initState() {
     super.initState();
-    widget.sessione.statistiche.preferenza(_chiavePreferenza).then((v) {
-      if (v != null && mounted) {
-        setState(() => _aperteAllAvvio = v == '1');
-      }
-    });
+    widget.sessione.statistiche
+        .preferenza(_chiavePreferenza)
+        .then((v) {
+          if (v != null && mounted) {
+            setState(() => _aperteAllAvvio = v == '1');
+          }
+        })
+        // Archivio bloccato nel frattempo: la preferenza non serve più.
+        .catchError((Object _) {});
   }
 
   @override

@@ -133,6 +133,13 @@ Scelta dell'utente: **Qualità/Prezzo** (le altre: proprietario come "centro" ch
   - **un'ora per accettare** (richiesta dell'utente): nel dettaglio del portafoglio l'avviso "In attesa di risposta… fino alle HH:MM"; dopo un'ora senza risposta l'invito scade, la cartella non è più condivisa con quella persona, il proprietario riceve l'avviso "Condivisione non riuscita" e può invitarla di nuovo ("Invita di nuovo"). Se la condivisione non parte per niente, lo stesso avviso subito. In ogni caso il portafoglio si usa normalmente;
   - file di ogni persona con il nome del suo account (`wallecy_<account>.json`), creati sempre nuovi (mai sovrascritti);
   - database v16: `membri.invitato_il`, stato `scaduto`.
+- **Link d'invito** (richiesta del 17/10/2026, scelta Qualità/Prezzo; le altre: notifiche con Firebase, oppure solo un pulsante "Controlla se ti hanno invitato"):
+  - una notifica automatica nell'app del membro **non è possibile gratis** con `drive.file`: l'app del membro non vede gli inviti finché non li sceglie. Servirebbe un permesso più ampio (verifica di Google a pagamento) o un server;
+  - l'email di Google contiene il link `https://akito996.github.io/WalleCy/invito.html#…` (i dati dopo "#" non arrivano al server); la pagina `sito/invito.html` mostra l'invito e apre l'app con `wallecy://invito?…`;
+  - Android: intent-filter `wallecy://invito` in `MainActivity` (canale `gestionale/invito`), `flutter_deeplinking_enabled=false`; il link aspetta lo sblocco dell'archivio, poi si apre **Impostazioni › Portafogli condivisi › "Nuovi inviti"** con "Accetta" / "Ignora";
+  - "Accetta" passa alla finestra di Google gli id del registro e del file della persona (se la finestra li ignora, si sceglie a mano come prima);
+  - "Ho un link d'invito" per incollarlo (Windows, o se il link non apre l'app); il proprietario ha "Copia il link d'invito" accanto a chi è in attesa, da mandare con WhatsApp o SMS;
+  - serve GitHub Pages attivo; con un dominio proprio si passerà agli Android App Links verificati.
 - Da fare (consegne 2 e 3): quote nel totale e voci assegnate, vista per membro, impedire nell'interfaccia di modificare le voci altrui, badge in Panoramica, notifiche, uscita e rimozione con cambio di chiave, scansione del QR con la fotocamera.
 
 ## Consegne

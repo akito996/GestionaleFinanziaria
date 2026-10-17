@@ -5,7 +5,9 @@ import 'package:sodium/sodium_sumo.dart';
 
 import 'condivisi/accesso_drive_file.dart';
 import 'condivisi/identita_persona.dart';
+import 'condivisi/invito.dart';
 import 'condivisi/portafogli_condivisi.dart';
+import 'condivisi/ricevitore_inviti.dart';
 import 'crypto/keyring.dart';
 import 'crypto/operazioni_chiavi.dart';
 import 'crypto/secret_key.dart';
@@ -104,6 +106,10 @@ class Sessione extends ChangeNotifier {
       AccessoDriveFile.perPiattaforma(_credenzialiCondivisi);
 
   PortafogliCondivisiServizio? _condivisi;
+
+  /// Un link d'invito arrivato (anche ad archivio bloccato): lo prende la
+  /// schermata principale dopo lo sblocco.
+  final invitoInArrivo = ValueNotifier<InvitoCondiviso?>(null);
 
   /// Portafogli condivisi: solo ad archivio aperto.
   PortafogliCondivisiServizio get condivisi => _condivisi!;
@@ -222,6 +228,8 @@ class Sessione extends ChangeNotifier {
         (Object e) => debugPrint('Sblocco rapido: dispositivo non letto: $e'),
       ),
     );
+    // Link d'invito ai portafogli condivisi (Android).
+    unawaited(RicevitoreInviti((i) => invitoInArrivo.value = i).avvia());
     final esiste = await deposito.esisteKeyring();
     _proponiSbloccoRapido = esiste;
     _cambia(esiste ? FaseSessione.bloccata : FaseSessione.primoAvvio);

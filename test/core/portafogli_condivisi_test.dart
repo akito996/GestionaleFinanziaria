@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gestionale_finanziaria/core/condivisi/drive_condiviso.dart';
 import 'package:gestionale_finanziaria/core/condivisi/identita_persona.dart';
+import 'package:gestionale_finanziaria/core/condivisi/invito.dart';
 import 'package:gestionale_finanziaria/core/condivisi/portafogli_condivisi.dart';
 import 'package:gestionale_finanziaria/core/db/archivio.dart';
 import 'package:gestionale_finanziaria/core/db/contabilita.dart';
@@ -318,6 +319,51 @@ void main() {
     ora = ora.add(const Duration(hours: 3));
     await prop.condivisi.sincronizza();
     expect((await invitato()).stato, StatoMembro.attivo);
+  });
+
+  test('link d\'invito: nell\'email, nei Nuovi inviti, Accetta', () async {
+    final drive = DriveFinto();
+    final (:prop, :w, pane: _) = await conPortafoglio(drive);
+    final memb = await persona(drive, 'memb', 2);
+    await prop.condivisi.invita(w, 'memb@example.com');
+
+    // Il link è nel messaggio dell'email di Google.
+    final messaggio = drive.condivisioni.single.messaggio!;
+    final link = RegExp(r'https://\S+').firstMatch(messaggio)!.group(0)!;
+    final invito = InvitoCondiviso.daLink(link)!;
+    expect(invito.portafoglio, 'Casa');
+    expect(invito.da, 'prop@example.com');
+    expect(invito.fileId, drive.conNome('wallecy_memb.json').single);
+    expect(invito.scadenza, isNotNull);
+
+    // Lo stesso link si copia dal portafoglio.
+    final invitato = (await prop.condivisi.membri(w))
+        .firstWhere((m) => m.email == 'memb@example.com');
+    expect(
+      (await prop.condivisi.invitoPer(w, invitato))!.registroId,
+      invito.registroId,
+    );
+
+    // Il membro lo riceve: "Nuovi inviti".
+    expect(await memb.condivisi.aggiungiInvito(invito), isTrue);
+    expect(
+      (await memb.condivisi.osservaInviti().first).single.portafoglio,
+      'Casa',
+    );
+
+    // "Accetta": la finestra di Google prova a mostrare solo i file giusti.
+    expect(
+      await memb.condivisi.unisciti(invito: invito),
+      EsitoIngresso.inAttesa,
+    );
+    expect(memb.accesso.richiesteSoloId.last, [
+      invito.registroId,
+      invito.fileId,
+    ]);
+    expect(await memb.condivisi.osservaInviti().first, isEmpty);
+
+    // Già entrato: lo stesso invito non si aggiunge più.
+    expect(await memb.condivisi.aggiungiInvito(invito), isFalse);
   });
 
   test('Google Drive che non risponde: errore dopo il tempo massimo', () async {

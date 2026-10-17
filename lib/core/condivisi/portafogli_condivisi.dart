@@ -16,6 +16,7 @@ import '../db/tabelle.dart';
 import 'accesso_drive_file.dart';
 import 'drive_condiviso.dart';
 import 'identita_persona.dart';
+import 'invito.dart';
 
 /// Esito di un invito.
 enum EsitoInvito {
@@ -262,7 +263,12 @@ class PortafogliCondivisiServizio {
       if (gia != null) {
         // Già invitata ma non entrata (email persa, invito interrotto o
         // scaduto): la condivisione si rifà e ricomincia l'ora per accettare.
-        await drive.condividi(pc.cartellaId, indirizzo, messaggio: _invito);
+        final scadenza = _adesso().add(durataInvito);
+        await drive.condividi(
+          pc.cartellaId,
+          indirizzo,
+          messaggio: await _messaggioInvito(pc, gia.fileId, scadenza),
+        );
         await (_db.update(_db.membri)..where((m) => m.id.equals(gia.id))).write(
           MembriCompanion(
             stato: const Value(StatoMembro.invitato),
@@ -285,7 +291,15 @@ class PortafogliCondivisiServizio {
       );
       // Prima la condivisione su Drive, poi la persona qui: se l'invito si
       // interrompe, non resta una persona "da confermare" senza cartella.
-      await drive.condividi(pc.cartellaId, indirizzo, messaggio: _invito);
+      await drive.condividi(
+        pc.cartellaId,
+        indirizzo,
+        messaggio: await _messaggioInvito(
+          pc,
+          fileId,
+          _adesso().add(durataInvito),
+        ),
+      );
       await _db
           .into(_db.membri)
           .insert(
@@ -307,11 +321,115 @@ class PortafogliCondivisiServizio {
     }
   }
 
-  static const _invito =
-      'Ti ho invitato a un portafoglio condiviso di WalleCy. Apri WalleCy, '
-      'Impostazioni, Portafogli condivisi, e premi "Unisciti". Nella finestra '
-      'di Google apri "Condivisi con me", poi questa cartella, e scegli tutti '
-      'i file che contiene.';
+  /// Il messaggio dell'email di Google: il link d'invito e, se non apre
+  /// WalleCy, come entrare a mano.
+  Future<String> _messaggioInvito(
+    PortafoglioCondiviso pc,
+    String? fileId,
+    DateTime scadenza,
+  ) async {
+    final invito = await _invito(pc, fileId, scadenza);
+    final ora = scadenza.toLocal();
+    final hh = ora.hour.toString().padLeft(2, '0');
+    final mm = ora.minute.toString().padLeft(2, '0');
+    return 'Ti ho invitato al portafoglio condiviso «${invito.portafoglio}» '
+        'di WalleCy. Hai tempo fino alle $hh:$mm. Dal telefono con WalleCy '
+        'apri questo link: ${invito.link} . Se non funziona: apri WalleCy, '
+        'Impostazioni, Portafogli condivisi, «Unisciti», poi in «Condivisi '
+        'con me» apri questa cartella e scegli tutti i file.';
+  }
+
+  Future<InvitoCondiviso> _invito(
+    PortafoglioCondiviso pc,
+    String? fileId,
+    DateTime? scadenza,
+  ) async {
+    final p = await (_db.select(
+      _db.portafogli,
+    )..where((x) => x.id.equals(pc.portafoglioId))).getSingleOrNull();
+    final proprietario = (await membri(pc.portafoglioId))
+        .where((m) => m.ruolo == RuoloMembro.proprietario)
+        .firstOrNull;
+    return InvitoCondiviso(
+      cartellaId: pc.cartellaId,
+      registroId: pc.registroId,
+      fileId: fileId,
+      portafoglio: p?.nome ?? '',
+      da: proprietario?.email ?? '',
+      scadenza: scadenza,
+    );
+  }
+
+  /// Il link d'invito per [m], da copiare in un messaggio (WhatsApp, SMS).
+  Future<InvitoCondiviso?> invitoPer(String portafoglioId, Membro m) async {
+    final pc = await di(portafoglioId);
+    if (pc == null || pc.registroId.isEmpty) {
+      return null;
+    }
+    return _invito(pc, m.fileId, scadenzaDi(m));
+  }
+
+  // ------------------------------------------------------ inviti ricevuti
+
+  static const _chiaveInviti = 'condivisi.inviti';
+
+  /// Gli inviti arrivati con un link e non ancora accettati ("Nuovi inviti").
+  Stream<List<InvitoCondiviso>> osservaInviti() =>
+      (_db.select(_db.impostazioni)
+            ..where((i) => i.chiave.equals(_chiaveInviti)))
+          .watch()
+          .map((righe) => _leggiInviti(righe.firstOrNull?.valore));
+
+  static List<InvitoCondiviso> _leggiInviti(String? json) {
+    if (json == null) {
+      return const [];
+    }
+    try {
+      return [
+        for (final v in (jsonDecode(json) as List).cast<Map<String, Object?>>())
+          ?InvitoCondiviso.daMappa(v),
+      ];
+    } on Object {
+      return const [];
+    }
+  }
+
+  Future<List<InvitoCondiviso>> _inviti() async => _leggiInviti(
+    (await (_db.select(
+      _db.impostazioni,
+    )..where((i) => i.chiave.equals(_chiaveInviti))).getSingleOrNull())?.valore,
+  );
+
+  Future<void> _salvaInviti(List<InvitoCondiviso> inviti) => _db
+      .into(_db.impostazioni)
+      .insertOnConflictUpdate(
+        ImpostazioniCompanion.insert(
+          chiave: _chiaveInviti,
+          valore: jsonEncode([for (final i in inviti) i.toJson()]),
+        ),
+      );
+
+  /// Un invito arrivato con un link. `false` se è di un portafoglio in cui
+  /// si è già entrati.
+  Future<bool> aggiungiInvito(InvitoCondiviso invito) async {
+    final gia = await (_db.select(
+      _db.portafogliCondivisi,
+    )..where((c) => c.registroId.equals(invito.registroId))).get();
+    if (gia.isNotEmpty) {
+      return false;
+    }
+    await _salvaInviti([
+      for (final i in await _inviti())
+        if (i.registroId != invito.registroId) i,
+      invito,
+    ]);
+    return true;
+  }
+
+  Future<void> togliInvito(String registroId) async => _salvaInviti([
+    for (final i in await _inviti())
+      if (i.registroId != registroId) i,
+  ]);
 
   Future<PortafoglioCondiviso> _primaCondivisione(
     DriveCondiviso drive,
@@ -489,10 +607,15 @@ class PortafogliCondivisiServizio {
   /// Il membro sceglie i file della cartella condivisa (finestra di Google),
   /// pubblica le sue chiavi nel proprio file e aspetta la chiave del
   /// portafoglio dal proprietario.
-  Future<EsitoIngresso> unisciti() async {
+  /// Con [invito] la finestra di Google prova a mostrare solo i file
+  /// giusti (registro e il proprio file); se non ci riesce, si sceglie a
+  /// mano come sempre.
+  Future<EsitoIngresso> unisciti({InvitoCondiviso? invito}) async {
     final ElementiScelti scelta;
     try {
-      scelta = await accesso.scegli();
+      scelta = await accesso.scegli(
+        soloId: [if (invito != null) invito.registroId, ?invito?.fileId],
+      );
     } on SceltaAnnullata {
       return EsitoIngresso.annullato;
     }
@@ -562,6 +685,7 @@ class PortafogliCondivisiServizio {
       }
       final pc = (await di(portafoglioId))!;
       await _aggiornaMembri(pc, registro, mieChiavi: io);
+      await togliInvito(pc.registroId);
       await _sincronizzaUno(drive, pc);
       return (await di(portafoglioId))!.chiave.isEmpty
           ? EsitoIngresso.inAttesa

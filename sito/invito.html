@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Invito a WalleCy</title>
+  <meta name="description" content="Invito a un portafoglio condiviso di WalleCy.">
+  <link rel="stylesheet" href="stile.css">
+  <style>
+    .pulsante {
+      display: inline-block;
+      margin: 8px 0 16px;
+      padding: 12px 24px;
+      border-radius: 24px;
+      background: var(--accento);
+      color: var(--sfondo);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .scheda {
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid var(--tenue);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Invito a un portafoglio condiviso</h1>
+    <div id="invito" class="scheda" hidden>
+      <p><strong id="portafoglio"></strong></p>
+      <p id="da"></p>
+      <p id="scadenza"></p>
+    </div>
+    <p id="nessuno" hidden>
+      Questo link non contiene un invito valido. Chiedi a chi ti ha invitato
+      di mandartelo di nuovo.
+    </p>
+
+    <p><a id="apri" class="pulsante" href="#" hidden>Apri in WalleCy</a></p>
+
+    <h2>Se il pulsante non apre WalleCy</h2>
+    <ul>
+      <li>Sul <strong>telefono Android</strong>: installa WalleCy dalla
+        <a href="https://github.com/akito996/WalleCy/releases">pagina delle versioni</a>
+        e tocca di nuovo il link dell'invito.</li>
+      <li>Sul <strong>PC</strong>: apri WalleCy, Impostazioni ›
+        Portafogli condivisi › «Ho un link d'invito», e incolla questo link.</li>
+      <li>In alternativa: Impostazioni › Portafogli condivisi › «Unisciti», poi
+        nella finestra di Google apri «Condivisi con me», la cartella
+        «wallecy_share_…», e scegli tutti i file.</li>
+    </ul>
+
+    <p class="nota">
+      Questa pagina non salva niente e non manda niente: i dati dell'invito
+      restano nel tuo browser. I dati del portafoglio arrivano a WalleCy
+      cifrati, solo dopo che accetti.
+    </p>
+  </main>
+  <script>
+    // I dati sono dopo il "#": il browser non li manda mai al server.
+    (function () {
+      var p = new URLSearchParams(location.hash.slice(1));
+      var valido = /^[A-Za-z0-9_-]{1,200}$/;
+      if (!valido.test(p.get('c') || '') || !valido.test(p.get('r') || '')) {
+        document.getElementById('nessuno').hidden = false;
+        return;
+      }
+      document.getElementById('portafoglio').textContent =
+        '«' + (p.get('p') || 'Portafoglio') + '»';
+      if (p.get('da')) {
+        document.getElementById('da').textContent = 'Ti invita ' + p.get('da') + '.';
+      }
+      var s = p.get('s') ? new Date(p.get('s')) : null;
+      if (s && !isNaN(s)) {
+        var ora = s.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        document.getElementById('scadenza').textContent =
+          s < new Date()
+            ? 'Questo invito è scaduto: chiedi di essere invitato di nuovo.'
+            : 'Hai tempo fino alle ' + ora + '.';
+      }
+      document.getElementById('invito').hidden = false;
+      var apri = document.getElementById('apri');
+      apri.href = 'wallecy://invito?' + location.hash.slice(1);
+      apri.hidden = false;
+    })();
+  </script>
+</body>
+</html>

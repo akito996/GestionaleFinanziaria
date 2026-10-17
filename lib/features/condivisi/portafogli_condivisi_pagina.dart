@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/condivisi/drive_condiviso.dart';
+import '../../core/condivisi/invito.dart';
 import '../../core/condivisi/portafogli_condivisi.dart';
 import '../../core/db/tabelle.dart';
 import '../../core/sessione.dart';
@@ -25,9 +27,11 @@ class PortafogliCondivisiPagina extends StatefulWidget {
 class _PortafogliCondivisiPaginaState extends State<PortafogliCondivisiPagina> {
   bool _occupato = false;
 
-  /// Preparato una volta sola (vedi SchedaPersone).
+  /// Preparati una volta sola (vedi SchedaPersone).
   late final Stream<List<VistaCondiviso>> _flusso = widget.sessione.condivisi
       .osserva();
+  late final Stream<List<InvitoCondiviso>> _inviti = widget.sessione.condivisi
+      .osservaInviti();
 
   Future<void> _lavoro(Future<void> Function() lavoro) async {
     setState(() => _occupato = true);
@@ -57,17 +61,23 @@ class _PortafogliCondivisiPaginaState extends State<PortafogliCondivisiPagina> {
     }
   }
 
-  Future<void> _unisciti() async {
+  Future<void> _unisciti({InvitoCondiviso? invito}) async {
     final procedi = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         icon: const Icon(Icons.group_add_outlined),
-        title: const Text('Unisciti a un portafoglio condiviso'),
+        title: Text(
+          invito == null
+              ? 'Unisciti a un portafoglio condiviso'
+              : 'Accetta l\'invito a «${invito.portafoglio}»',
+        ),
         content: const Text(
-          'Nella finestra di Google apri «Condivisi con me», poi la cartella '
-          '«wallecy_share_…» che ti hanno condiviso, e scegli TUTTI i file '
-          'che ci sono dentro: il registro e un file per ogni persona, con '
-          'il nome del suo account. Tocca ognuno, poi «Seleziona».',
+          'Nella finestra di Google scegli i file del portafoglio. Se li '
+          'vedi già (il registro e il tuo file), sceglili tutti. Altrimenti '
+          'apri «Condivisi con me», poi la cartella «wallecy_share_…», e '
+          'scegli TUTTI i file che ci sono dentro: il registro e un file per '
+          'ogni persona, con il nome del suo account. Tocca ognuno, poi '
+          '«Seleziona».',
         ),
         actions: [
           TextButton(
@@ -85,7 +95,7 @@ class _PortafogliCondivisiPaginaState extends State<PortafogliCondivisiPagina> {
       return;
     }
     await _lavoro(() async {
-      final esito = await widget.sessione.condivisi.unisciti();
+      final esito = await widget.sessione.condivisi.unisciti(invito: invito);
       _avvisa(switch (esito) {
         EsitoIngresso.entrato =>
           'Sei entrato: il portafoglio è nella '
@@ -110,6 +120,20 @@ class _PortafogliCondivisiPaginaState extends State<PortafogliCondivisiPagina> {
     });
   }
 
+  /// "Ho un link d'invito": per Windows o se il link non ha aperto l'app.
+  Future<void> _incollaLink() async {
+    final invito = await showDialog<InvitoCondiviso>(
+      context: context,
+      builder: (_) => const _ModuloLink(),
+    );
+    if (invito == null || !mounted) {
+      return;
+    }
+    if (!await widget.sessione.condivisi.aggiungiInvito(invito)) {
+      _avvisa('Fai già parte del portafoglio «${invito.portafoglio}».');
+    }
+  }
+
   Future<void> _aggiorna() => _lavoro(() async {
     await widget.sessione.condivisi.sincronizza(interattivo: true);
     _avvisa('Portafogli condivisi aggiornati.');
@@ -120,6 +144,11 @@ class _PortafogliCondivisiPaginaState extends State<PortafogliCondivisiPagina> {
     appBar: AppBar(
       title: const Text('Portafogli condivisi'),
       actions: [
+        IconButton(
+          tooltip: 'Ho un link d\'invito',
+          icon: const Icon(Icons.add_link),
+          onPressed: _occupato ? null : _incollaLink,
+        ),
         IconButton(
           tooltip: 'Aggiorna ora',
           icon: const Icon(Icons.sync),
@@ -149,6 +178,13 @@ class _PortafogliCondivisiPaginaState extends State<PortafogliCondivisiPagina> {
                 'Se ti hanno invitato, premi «Unisciti».',
               ),
               const SizedBox(height: 16),
+              _NuoviInviti(
+                inviti: _inviti,
+                occupato: _occupato,
+                onAccetta: (i) => _unisciti(invito: i),
+                onIgnora: (i) =>
+                    widget.sessione.condivisi.togliInvito(i.registroId),
+              ),
               if (elenco.isEmpty && snapshot.hasData)
                 const Padding(
                   padding: EdgeInsets.all(24),
@@ -192,5 +228,146 @@ class _PortafogliCondivisiPaginaState extends State<PortafogliCondivisiPagina> {
         );
       },
     ),
+  );
+}
+
+/// "Nuovi inviti": arrivati con un link e non ancora accettati.
+class _NuoviInviti extends StatelessWidget {
+  const _NuoviInviti({
+    required this.inviti,
+    required this.occupato,
+    required this.onAccetta,
+    required this.onIgnora,
+  });
+
+  final Stream<List<InvitoCondiviso>> inviti;
+  final bool occupato;
+  final void Function(InvitoCondiviso invito) onAccetta;
+  final void Function(InvitoCondiviso invito) onIgnora;
+
+  @override
+  Widget build(BuildContext context) => StreamBuilder<List<InvitoCondiviso>>(
+    stream: inviti,
+    builder: (context, snapshot) {
+      final elenco = snapshot.data ?? const [];
+      if (elenco.isEmpty) {
+        return const SizedBox.shrink();
+      }
+      final schema = Theme.of(context).colorScheme;
+      final ora = DateTime.now();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Nuovi inviti', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          for (final i in elenco)
+            Card(
+              color: schema.secondaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      '«${i.portafoglio.isEmpty ? 'Portafoglio' : i.portafoglio}»',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      [
+                        if (i.da.isNotEmpty) 'Da ${i.da}',
+                        if (i.scadutoAlle(ora))
+                          'invito scaduto: chiedi di invitarti di nuovo'
+                        else if (i.scadenza != null)
+                          'accetta entro le '
+                              '${TimeOfDay.fromDateTime(i.scadenza!.toLocal()).format(context)}',
+                      ].join(' · '),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      alignment: WrapAlignment.end,
+                      spacing: 8,
+                      children: [
+                        TextButton(
+                          onPressed: occupato ? null : () => onIgnora(i),
+                          child: const Text('Ignora'),
+                        ),
+                        FilledButton(
+                          onPressed: occupato ? null : () => onAccetta(i),
+                          child: const Text('Accetta'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          const SizedBox(height: 16),
+        ],
+      );
+    },
+  );
+}
+
+/// "Ho un link d'invito": il campo appartiene alla finestra e si chiude con
+/// lei (anche durante l'animazione di chiusura).
+class _ModuloLink extends StatefulWidget {
+  const _ModuloLink();
+
+  @override
+  State<_ModuloLink> createState() => _ModuloLinkState();
+}
+
+class _ModuloLinkState extends State<_ModuloLink> {
+  final _campo = TextEditingController();
+  String? _errore;
+
+  @override
+  void dispose() {
+    _campo.dispose();
+    super.dispose();
+  }
+
+  void _aggiungi() {
+    final invito = InvitoCondiviso.daLink(_campo.text);
+    if (invito == null) {
+      setState(() => _errore = 'Non è un link d\'invito di WalleCy.');
+    } else {
+      Navigator.of(context).pop(invito);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    icon: const Icon(Icons.add_link),
+    title: const Text('Ho un link d\'invito'),
+    content: SizedBox(
+      width: 420,
+      child: TextField(
+        controller: _campo,
+        autofocus: true,
+        maxLines: 3,
+        minLines: 1,
+        decoration: InputDecoration(
+          labelText: 'Incolla il link dell\'email o del messaggio',
+          errorText: _errore,
+          suffixIcon: IconButton(
+            tooltip: 'Incolla',
+            icon: const Icon(Icons.content_paste),
+            onPressed: () async {
+              final dati = await Clipboard.getData('text/plain');
+              _campo.text = dati?.text ?? '';
+            },
+          ),
+        ),
+        onSubmitted: (_) => _aggiungi(),
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('Annulla'),
+      ),
+      FilledButton(onPressed: _aggiungi, child: const Text('Aggiungi')),
+    ],
   );
 }

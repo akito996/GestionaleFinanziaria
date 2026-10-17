@@ -9,6 +9,7 @@ import '../../core/sessione.dart';
 import '../../core/sync/sincronizzazione.dart';
 import '../carte/carte_pagina.dart';
 import '../categorie/categorie_pagina.dart';
+import '../condivisi/portafogli_condivisi_pagina.dart';
 import '../prestiti/avviso_maxi.dart';
 import '../prestiti/prestiti_pagina.dart';
 import '../report/report_pagina.dart';
@@ -221,7 +222,49 @@ class _GuscioState extends State<Guscio> {
       if (widget.sessione.fase == FaseSessione.sbloccata) {
         widget.sessione.condivisi.sincronizza().ignore();
       }
+      _invitoArrivato();
     });
+    // Link d'invito: arrivato prima dello sblocco o con l'app aperta.
+    widget.sessione.invitoInArrivo.addListener(_invitoArrivato);
+  }
+
+  /// Un link d'invito: va nei "Nuovi inviti" e si apre la pagina dei
+  /// portafogli condivisi, dove si accetta.
+  Future<void> _invitoArrivato() async {
+    final invito = widget.sessione.invitoInArrivo.value;
+    if (invito == null ||
+        !mounted ||
+        widget.sessione.fase != FaseSessione.sbloccata) {
+      return;
+    }
+    widget.sessione.invitoInArrivo.value = null;
+    final bool nuovo;
+    try {
+      nuovo = await widget.sessione.condivisi.aggiungiInvito(invito);
+    } on Object {
+      // Archivio bloccato nel frattempo: l'invito torna in attesa.
+      widget.sessione.invitoInArrivo.value = invito;
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+    if (!nuovo) {
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          avviso(
+            content: Text(
+              'Fai già parte del portafoglio «${invito.portafoglio}».',
+            ),
+          ),
+        );
+    }
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PortafogliCondivisiPagina(sessione: widget.sessione),
+      ),
+    );
   }
 
   void _avvisoCondiviso(String testo) {
@@ -262,7 +305,15 @@ class _GuscioState extends State<Guscio> {
       await proponiSbloccoRapido(context, widget.sessione);
     }
     if (mounted && widget.sessione.fase == FaseSessione.sbloccata) {
-      await controllaAvvisiMaxi(context, widget.sessione);
+      try {
+        await controllaAvvisiMaxi(context, widget.sessione);
+      } on Object {
+        // Archivio bloccato mentre si leggevano i prestiti (es. blocco
+        // automatico "Subito"): non c'è niente da chiedere.
+        if (widget.sessione.fase == FaseSessione.sbloccata) {
+          rethrow;
+        }
+      }
     }
   }
 
@@ -273,6 +324,7 @@ class _GuscioState extends State<Guscio> {
     _ciclo?.dispose();
     _blocco?.dispose();
     _avvisiCondivisi?.cancel();
+    widget.sessione.invitoInArrivo.removeListener(_invitoArrivato);
     super.dispose();
   }
 

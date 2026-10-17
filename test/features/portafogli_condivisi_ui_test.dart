@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gestionale_finanziaria/app.dart';
 import 'package:gestionale_finanziaria/core/condivisi/identita_persona.dart';
+import 'package:gestionale_finanziaria/core/condivisi/invito.dart';
 import 'package:gestionale_finanziaria/core/condivisi/portafogli_condivisi.dart';
 import 'package:gestionale_finanziaria/core/crypto/derivazione.dart';
 import 'package:gestionale_finanziaria/core/db/archivio.dart';
@@ -247,6 +248,98 @@ void main() {
     final w = portafogli.single.portafoglio.id;
     final persone = await tester.runAsync(() => sessione.condivisi.membri(w));
     expect(persone!.where((m) => m.email == 'memb@example.com'), isEmpty);
+
+    sessione.blocca().ignore();
+    await attendi(tester, find.text('Archivio bloccato'));
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('link d\'invito: apre Nuovi inviti, Accetta; link sbagliato', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (_) async => null,
+    );
+    final drive = DriveFinto();
+
+    // Il proprietario (solo il motore) invita il membro.
+    final invito = await tester.runAsync(() async {
+      final db = Archivio.inMemoria();
+      final c = await Contabilita.apri(db);
+      final io = IdentitaPersona.daChiaveDati(
+        sodium,
+        SecureKey.fromList(sodium, Uint8List.fromList(List.filled(32, 7))),
+      );
+      final proprietario = PortafogliCondivisiServizio(
+        db: db,
+        contabilita: c,
+        sodium: sodium,
+        identita: () => io,
+        accesso: AccessoFinto(drive, 'prop'),
+      );
+      final tipo = (await c.tipi(AmbitoTipo.portafoglio)).first.id;
+      final w = await c.creaPortafoglio(
+        nome: 'Vacanze',
+        tipoId: tipo,
+        valuta: 'EUR',
+      );
+      await proprietario.invita(w, 'memb@example.com');
+      final m = (await proprietario.membri(w))
+          .firstWhere((m) => m.email == 'memb@example.com');
+      final i = await proprietario.invitoPer(w, m);
+      await db.close();
+      return i;
+    });
+
+    // Il membro usa l'app vera.
+    final sessione = Sessione(
+      sodium: sodium,
+      deposito: DepositoLocale(cartella),
+      costoArgon2: (
+        ops: ParametriArgon2.opsMinimo,
+        mem: ParametriArgon2.memMinima,
+      ),
+      accessoDriveFile: AccessoFinto(drive, 'memb'),
+    );
+    await tester.runAsync(() async {
+      await sessione.avvia();
+      await sessione.preparaNuovoArchivio('Password-Lunga-1');
+      await sessione.confermaNuovoArchivio();
+    });
+    sessione.avviso = null;
+    await tester.pumpWidget(GestionaleApp(sessione: sessione));
+    await attendi(tester, find.text('Crea il tuo primo portafoglio'));
+
+    // Arriva il link (come quando lo si tocca sul telefono).
+    sessione.invitoInArrivo.value = InvitoCondiviso.daLink(
+      invito!.link.toString(),
+    );
+    await attendi(tester, find.text('Nuovi inviti'));
+    expect(find.text('«Vacanze»'), findsOneWidget);
+    expect(find.textContaining('Da prop@example.com'), findsOneWidget);
+
+    // Un link sbagliato incollato a mano: spiega che non è un invito.
+    await tocca(tester, find.byTooltip('Ho un link d\'invito'));
+    await tester.enterText(
+      nelDialogo(find.byType(TextField)),
+      'https://example.com/niente',
+    );
+    await tocca(tester, nelDialogo(find.text('Aggiungi')));
+    expect(find.text('Non è un link d\'invito di WalleCy.'), findsOneWidget);
+    await tocca(tester, nelDialogo(find.text('Annulla')));
+
+    // "Accetta": la finestra di Google con i file dell'invito.
+    await tocca(tester, find.text('Accetta'));
+    await tocca(tester, find.text('Apri la finestra di Google'));
+    await attendi(tester, find.textContaining('Fatto.'));
+    expect(find.text('Nuovi inviti'), findsNothing);
+    final condivisi = await tester.runAsync(
+      () => sessione.condivisi.osserva().first,
+    );
+    expect(condivisi!.single.info.registroId, invito.registroId);
 
     sessione.blocca().ignore();
     await attendi(tester, find.text('Archivio bloccato'));

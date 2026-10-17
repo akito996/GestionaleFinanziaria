@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:qr/qr.dart';
 
 import '../../core/condivisi/drive_condiviso.dart';
@@ -327,15 +328,26 @@ class _SchedaPersoneState extends State<SchedaPersone> {
                     : proprietario &&
                           (m.stato == StatoMembro.invitato ||
                               m.stato == StatoMembro.scaduto)
-                    ? IconButton(
-                        tooltip: 'Invita di nuovo',
-                        icon: const Icon(Icons.forward_to_inbox_outlined),
-                        onPressed: () => invitaPersona(
-                          context,
-                          sessione,
-                          portafoglioId,
-                          m.email,
-                        ),
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (m.stato == StatoMembro.invitato)
+                            IconButton(
+                              tooltip: 'Copia il link d\'invito',
+                              icon: const Icon(Icons.link),
+                              onPressed: () => _copiaLink(m),
+                            ),
+                          IconButton(
+                            tooltip: 'Invita di nuovo',
+                            icon: const Icon(Icons.forward_to_inbox_outlined),
+                            onPressed: () => invitaPersona(
+                              context,
+                              sessione,
+                              portafoglioId,
+                              m.email,
+                            ),
+                          ),
+                        ],
                       )
                     : Icon(
                         m.verificato
@@ -354,6 +366,28 @@ class _SchedaPersoneState extends State<SchedaPersone> {
       );
     },
   );
+
+  /// Il link d'invito negli appunti, da incollare in WhatsApp o in un SMS.
+  Future<void> _copiaLink(Membro m) async {
+    final invito = await sessione.condivisi.invitoPer(portafoglioId, m);
+    if (invito == null || !mounted) {
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: invito.link.toString()));
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        avviso(
+          content: Text(
+            'Link d\'invito copiato: incollalo in un messaggio (WhatsApp, '
+            'SMS) per ${m.email}. Dal suo telefono apre WalleCy sull\'invito.',
+          ),
+        ),
+      );
+  }
 
   static String _statoPersona(PortafoglioCondiviso info, Membro m) {
     final ruolo = m.ruolo == RuoloMembro.proprietario
