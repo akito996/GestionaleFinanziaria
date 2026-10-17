@@ -100,14 +100,20 @@ abstract interface class LettoreFoto {
 
 /// Su Android: Tesseract (open source) nell'app, vedi `LetturaFoto.kt`.
 class LettoreFotoAndroid implements LettoreFoto {
-  const LettoreFotoAndroid();
+  const LettoreFotoAndroid({this.modello});
 
   static const _canale = MethodChannel('gestionale/lettura_foto');
 
+  /// La cartella del modello preciso, se c'è (altrimenti quello veloce
+  /// dell'APK). Con `attesa` aspetta un po' uno scaricamento già partito.
+  final Future<String?> Function({Duration attesa})? modello;
+
   @override
   Future<FotoLetta> leggi(String percorso) async {
+    final cartella = await modello?.call(attesa: const Duration(seconds: 8));
     final r = (await _canale.invokeMapMethod<String, Object?>('leggi', {
       'percorso': percorso,
+      'modello': ?cartella,
     }))!;
     return FotoLetta(
       larghezza: r['larghezza']! as int,
@@ -134,8 +140,10 @@ class LettoreFotoAndroid implements LettoreFoto {
     Riquadro zona, {
     bool riga = true,
   }) async {
+    final cartella = await modello?.call(attesa: Duration.zero);
     final r = (await _canale.invokeMapMethod<String, Object?>('zona', {
       'percorso': percorso,
+      'modello': ?cartella,
       'sinistra': zona.sinistra,
       'sopra': zona.sopra,
       'destra': zona.destra,

@@ -257,6 +257,32 @@ void main() {
     await tester.runAsync(lettore.chiudi);
     await file.delete();
   }, skip: !Platform.isAndroid);
+
+  // Scontrino lungo (30 voci) con i prezzi allineati a destra: il totale
+  // si trova anche se la lettura mette i prezzi in un'altra colonna.
+  testWidgets('scontrino lungo con i prezzi a destra (Android)', (
+    tester,
+  ) async {
+    final png = await tester.runAsync<List<int>>(_scontrinoLungo);
+    final file = File('${Directory.systemTemp.path}/scontrino_lungo.png');
+    await file.writeAsBytes(png!);
+    const lettore = LettoreFotoAndroid();
+    final s = await tester.runAsync(
+      () => LettoreScontrino.leggi(
+        lettore,
+        file.path,
+        oggi: DateTime(2026, 10, 14),
+      ),
+    );
+    debugPrint(
+      'SCONTRINO LUNGO: ${s!.negozio?.valore} · ${s.data?.valore} · '
+      '${s.importo?.valore}',
+    );
+    expect(s.importo?.valore, 51230);
+    expect(s.data?.valore, DateTime(2026, 10, 14));
+    await tester.runAsync(lettore.chiudi);
+    await file.delete();
+  }, skip: !Platform.isAndroid);
 }
 
 /// Dispositivo senza sblocco rapido.
@@ -278,6 +304,50 @@ class _SenzaSbloccoRapido implements CassaforteDispositivo {
 
   @override
   Future<void> disattiva() async {}
+}
+
+/// Uno scontrino lungo: descrizioni a sinistra, prezzi a destra.
+Future<List<int>> _scontrinoLungo() async {
+  final righe = <(String, String)>[
+    ('SUPERMERCATO ROSSI', ''),
+    ('DOCUMENTO COMMERCIALE', ''),
+    for (var i = 1; i <= 30; i++) ('ARTICOLO $i', '${i + 3},${i % 10}0'),
+    ('SUBTOTALE', '480,00'),
+    ('TOTALE COMPLESSIVO', '512,30'),
+    ('DI CUI IVA', '61,40'),
+    ('PAGAMENTO CONTANTE', '600,00'),
+    ('RESTO', '87,70'),
+    ('14-10-2026 10:21', ''),
+  ];
+  const larghezza = 900.0;
+  const alto = 46.0;
+  final registratore = ui.PictureRecorder();
+  final tela = Canvas(registratore)
+    ..drawRect(
+      Rect.fromLTWH(0, 0, larghezza, alto * righe.length + 80),
+      Paint()..color = const Color(0xFFFFFFFF),
+    );
+  ui.Paragraph testo(String t, ui.TextAlign allineamento) =>
+      (ui.ParagraphBuilder(
+              ui.ParagraphStyle(fontSize: 28, textAlign: allineamento),
+            )
+            ..pushStyle(ui.TextStyle(color: const Color(0xFF000000)))
+            ..addText(t))
+          .build()
+        ..layout(const ui.ParagraphConstraints(width: larghezza - 80));
+  for (final (i, (sinistra, destra)) in righe.indexed) {
+    final y = 40 + i * alto;
+    tela.drawParagraph(testo(sinistra, ui.TextAlign.left), Offset(40, y));
+    if (destra.isNotEmpty) {
+      tela.drawParagraph(testo(destra, ui.TextAlign.right), Offset(40, y));
+    }
+  }
+  final immagine = await registratore.endRecording().toImage(
+    larghezza.toInt(),
+    (alto * righe.length + 80).toInt(),
+  );
+  final dati = await immagine.toByteData(format: ui.ImageByteFormat.png);
+  return dati!.buffer.asUint8List();
 }
 
 /// Uno scontrino disegnato (nero su bianco), come una foto ben fatta.

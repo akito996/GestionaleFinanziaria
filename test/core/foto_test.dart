@@ -125,6 +125,133 @@ void main() {
       expect(LettoreScontrino.primaData('01.01.2019', oggi: oggi), isNull);
     });
 
+    test('scontrino lungo: i prezzi letti in un\'altra colonna', () {
+      // Come Tesseract su molti scontrini: prima la colonna delle
+      // descrizioni, poi quella dei prezzi (con le stesse altezze).
+      final descrizioni = [
+        'SUPERMERCATO ESEMPIO',
+        for (var i = 0; i < 30; i++) 'Articolo numero $i',
+        'SUBTOTALE',
+        'TOTALE COMPLESSIVO',
+        'DI CUI IVA',
+        'PAGAMENTO CONTANTE',
+        'RESTO',
+      ];
+      final prezzi = <int, String>{
+        for (var i = 0; i < 30; i++) i + 1: '${i + 1},${i % 10}0',
+        31: '480,00',
+        32: '512,30',
+        33: '61,40',
+        34: '600,00',
+        35: '87,70',
+      };
+      RigaLetta riga(String t, int i, {bool destra = false}) => RigaLetta(
+        t,
+        Riquadro(
+          destra ? 700 : 40,
+          20 + i * 40,
+          destra ? 960 : 600,
+          50 + i * 40,
+        ),
+      );
+      final foto = FotoLetta(
+        larghezza: 1000,
+        altezza: 40 * 37,
+        righe: [
+          for (final (i, t) in descrizioni.indexed) riga(t, i),
+          for (final e in prezzi.entries) riga(e.value, e.key, destra: true),
+        ],
+      );
+      final s = LettoreScontrino.interpreta(foto, oggi: oggi);
+      expect(s.importo!.valore, 51230);
+      // La zona da ingrandire prende tutta la riga del totale.
+      expect(s.importo!.zona!.sinistra, 0);
+      expect(s.importo!.zona!.sopra, lessThan(20 + 32 * 40));
+      expect(s.importo!.zona!.sotto, greaterThan(50 + 32 * 40));
+    });
+
+    test('lettere al posto delle cifre e cifre al posto delle lettere', () {
+      expect(
+        LettoreScontrino.comeNumeri('2O26 l4/1O 23,4O'),
+        '2026 14/10 23,40',
+      );
+      expect(LettoreScontrino.comeNumeri('TOTALE SOLO'), 'TOTALE SOLO');
+      expect(
+        LettoreScontrino.primaData('l4/1O/2O26 1O:21', oggi: oggi),
+        DateTime(2026, 10, 14),
+      );
+      expect(LettoreScontrino.haParolaTotale('T0TALE EUR0 23,40'), isTrue);
+      expect(LettoreScontrino.haParolaTotale('TOTAIE 23,40'), isTrue);
+      expect(LettoreScontrino.haParolaTotale('SUBT0TALE 23,40'), isFalse);
+      expect(LettoreScontrino.haParolaTotale('TOTALE PUNTI 120'), isFalse);
+      final foto = FotoLetta(
+        larghezza: 1000,
+        altezza: 200,
+        righe: [
+          for (final (i, t) in [
+            'Pane 2,1O',
+            'T0TALE EUR0 23,4O',
+            'C0NTANTE 50,00',
+          ].indexed)
+            RigaLetta(t, Riquadro(0, i * 40, 1000, i * 40 + 30)),
+        ],
+      );
+      expect(
+        LettoreScontrino.interpreta(foto, oggi: oggi).importo!.valore,
+        2340,
+      );
+    });
+
+    test('date con il mese in lettere e nel formato anno-mese-giorno', () {
+      expect(
+        LettoreScontrino.primaData('DATA 14 OTT 2026 ORE 10:21', oggi: oggi),
+        DateTime(2026, 10, 14),
+      );
+      expect(
+        LettoreScontrino.primaData('14-ott-26', oggi: oggi),
+        DateTime(2026, 10, 14),
+      );
+      expect(
+        LettoreScontrino.primaData('2026-10-13T18:02', oggi: oggi),
+        DateTime(2026, 10, 13),
+      );
+    });
+
+    test(
+      'data e totale non letti: lo zoom li cerca dove stanno di solito',
+      () async {
+        final lettore = _LettoreFinto(
+          [
+            'BAR CENTRALE',
+            'Pasta 1,20',
+            'Olio 89,00', // letto male: in realtà 8,90
+            '~~~~~~ 10,10', // la parola del totale non si legge
+            'CONTANTE 20,00',
+            'RESTO 9,90',
+            '14 1~ 2O26 1O:21', // data illeggibile, ma c'è l'ora
+            'DOCUMENTO N. 0123-0456',
+          ],
+          zoom: {
+            'Olio 89,00': 'Olio 8,90',
+            '~~~~~~ 10,10': 'TOTALE COMPLESSIVO 10,10',
+            '14 1~ 2O26 1O:21': '14/10/2026 10:21',
+          },
+        );
+        final messaggi = <String>[];
+        final s = await LettoreScontrino.leggi(
+          lettore,
+          'x',
+          oggi: oggi,
+          avanzamento: messaggi.add,
+        );
+        expect(s.data!.valore, DateTime(2026, 10, 14));
+        expect(s.data!.immagine, isNotNull);
+        expect(s.importo!.valore, 1010);
+        expect(s.negozio!.valore, 'Bar Centrale');
+        expect(messaggi, ['Cerco la data…', 'Cerco il totale…']);
+      },
+    );
+
     test('importi e nomi', () {
       expect(LettoreScontrino.importoMassimo('TOTALE 1.234,56'), 123456);
       expect(LettoreScontrino.importoMassimo('TOTALE 12.50 EUR'), 1250);

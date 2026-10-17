@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../core/foto/lettura_foto.dart';
+import '../../core/foto/modello_preciso.dart';
 import '../../core/foto/scontrino.dart';
 import '../../core/importo.dart';
 import '../comuni/blocco_automatico.dart';
@@ -14,8 +16,15 @@ import '../comuni/errori.dart';
 /// Lettura delle foto: per ora solo su Android (sostituibile nei test).
 bool Function() fotoDisponibile = () => !kIsWeb && Platform.isAndroid;
 
+/// Il modello preciso per leggere le foto: si scarica alla prima foto
+/// (ADR-012); fino ad allora si usa quello veloce dell'app.
+final modelloPreciso = ModelloPreciso(cartella: getApplicationSupportDirectory);
+
 /// Il motore che legge il testo (sostituibile nei test).
-LettoreFoto lettoreFoto = const LettoreFotoAndroid();
+LettoreFoto lettoreFoto = LettoreFotoAndroid(modello: modelloPreciso.pronto);
+
+/// Fa partire lo scaricamento del modello preciso (sostituibile nei test).
+Future<void> Function() preparaModelloPreciso = modelloPreciso.prepara;
 
 /// Da dove arriva la foto: fotocamera o galleria (sostituibile nei test).
 Future<String?> Function(ImageSource sorgente) prendiFoto = (sorgente) =>
@@ -39,7 +48,8 @@ Future<String?> scegliFoto(
             title: Text(titolo),
             subtitle: const Text(
               'La foto viene letta solo su questo telefono e poi cancellata. '
-              'Tienila dritta, vicina e con buona luce.',
+              'Tienila dritta, vicina e con buona luce. Se lo scontrino è '
+              'lungo, basta inquadrare bene la parte con il totale e la data.',
             ),
           ),
           ListTile(
@@ -56,7 +66,12 @@ Future<String?> scegliFoto(
       ),
     ),
   );
-  return sorgente == null ? null : prendiFoto(sorgente);
+  if (sorgente == null) {
+    return null;
+  }
+  // Mentre si scatta, il modello preciso si scarica (solo la prima volta).
+  preparaModelloPreciso().ignore();
+  return prendiFoto(sorgente);
 }
 
 /// Esegue [lettura] mostrando "Leggo…" (non si chiude toccando fuori).
@@ -234,6 +249,15 @@ class _ConfermaScontrinoState extends State<_ConfermaScontrino> {
                 onChanged: (d) => setState(() => _data = d),
               ),
             ),
+            if (lettoreFoto is LettoreFotoAndroid &&
+                !modelloPreciso.disponibile)
+              Text(
+                'Letto con il modello veloce. Quello preciso '
+                '(${ModelloPreciso.pesoMb.toStringAsFixed(1).replaceAll('.', ',')} MB) '
+                'si sta scaricando: dalla prossima foto la lettura sarà più '
+                'accurata.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
           ],
         ),
       ),

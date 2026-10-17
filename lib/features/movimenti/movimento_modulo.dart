@@ -126,7 +126,11 @@ class _MovimentoModuloState extends State<_MovimentoModulo> {
     final letto = await leggiConAttesa(
       context,
       messaggio,
-      () => LettoreScontrino.leggi(lettoreFoto, percorso),
+      () => LettoreScontrino.leggi(
+        lettoreFoto,
+        percorso,
+        avanzamento: (testo) => messaggio.value = testo,
+      ),
     );
     messaggio.dispose();
     cancellaFoto(percorso);

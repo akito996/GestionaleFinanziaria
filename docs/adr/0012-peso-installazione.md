@@ -62,7 +62,7 @@ Richiesta dell'utente: ottimizzare velocità, fluidità, uso della batteria e pe
 
 **Peso, misurato il 17/10/2026:** Windows 19,2 MB da scaricare e 45,4 MB installata; APK arm64 48,3 MB, armeabi-v7a 41,4 MB. Dal 13/10 l'APK è cresciuto di circa 15 MB, soprattutto per la lettura delle foto (ADR-014): la libreria Tesseract e il modello italiano `tessdata_best`, che pesa da solo **8,9 MB** (`tessdata_fast`: 2,7 MB).
 
-Le tre scelte per il peso, **in attesa della decisione dell'utente**:
+Le tre scelte per il peso; **l'utente ha scelto Prestazione** (17/10/2026, vedi ADR-014):
 
 | Scelta | Cosa cambia | APK arm64 (stima) |
 |---|---|---|

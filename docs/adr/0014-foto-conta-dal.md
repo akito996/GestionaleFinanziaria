@@ -45,3 +45,24 @@ Scelte dell'utente:
 - ⚠️ L'APK cresce: circa +7,5 MB di libreria a 64 bit e +8,9 MB di modello.
 - ⚠️ Tesseract è meno preciso di ML Kit su scontrini stropicciati o storti: per questo si confermano sempre i dati.
 - 🔜 Allegare la foto al movimento (se richiesto) e la lettura su Windows.
+
+## Aggiornamento del 17/10/2026: modelli e scontrini lunghi
+Prova vera dell'utente: su uno scontrino con tante voci la lettura faticava a trovare il totale e non trovava la data.
+- **Modelli** (ADR-012, scelta **Prestazione**):
+  - nell'APK c'è il modello **veloce** (`tessdata_fast` 4.1.0, 2,7 MB, SHA-256 verificato in build), che funziona subito anche senza Internet;
+  - il modello **preciso** (`tessdata_best` 4.1.0, 8,9 MB) si scarica la prima volta che si sceglie una foto, mentre la si scatta (`ModelloPreciso`). Si installa solo se l'impronta SHA-256 è quella attesa e da lì si usa sempre;
+  - la prima lettura aspetta fino a 8 secondi uno scaricamento già partito. Se si legge con il modello veloce, la finestra di conferma lo dice;
+  - chi aveva già il modello preciso dalle versioni precedenti lo riusa senza scaricarlo.
+- **Zoom a piena risoluzione**: la zona si ritaglia dal file originale (`BitmapRegionDecoder`, con la rotazione EXIF), non dalla foto ridotta a 2400 pixel. Si porta a circa 64 pixel di altezza, anche rimpicciolendo. Se il formato non lo permette, si usa la foto ridotta.
+- **Totale**:
+  - l'importo si cerca anche sulla **stessa riga visiva** (i prezzi letti come colonna a parte) e sulla riga subito sotto;
+  - la parola si riconosce anche letta male ("T0TALE", "TOTAIE", "IOTALE");
+  - a pari punteggio vince la riga più in basso;
+  - restano esclusi subtotale, IVA, contante, resto, punti, buoni;
+  - se la parola non si legge, si ingrandiscono le righe con gli importi più alti nella parte bassa e vince quella in cui lo zoom legge "TOTALE".
+- **Data**:
+  - si correggono le cifre lette come lettere (`comeNumeri`: "2O26", "l4", "23,4O"), ma non quando il gruppo è attaccato ad altre lettere ("14-ott-26");
+  - formati in più: mese in lettere ("14 OTT 2026") e anno-mese-giorno;
+  - se non si trova, si ingrandiscono le righe con l'ora, con "DATA", "ORE" o "DOCUMENTO N.", o con tre numeri separati, partendo dal basso.
+- In attesa compare "Cerco la data…" o "Cerco il totale…". Il consiglio nella scelta della foto dice: per gli scontrini lunghi basta inquadrare bene totale e data.
+- Nuovo test nell'emulatore: scontrino lungo (30 voci) con i prezzi allineati a destra, letto da Tesseract vero.

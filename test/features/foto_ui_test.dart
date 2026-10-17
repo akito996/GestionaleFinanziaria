@@ -72,6 +72,8 @@ void main() {
     );
     fotoDisponibile = () => true;
     prendiFoto = (_) async => '${cartella.path}/foto-inesistente.jpg';
+    // Nei test niente scaricamento del modello preciso.
+    preparaModelloPreciso = () async {};
   });
 
   tearDown(() async {

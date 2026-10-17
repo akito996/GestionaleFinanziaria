@@ -125,7 +125,11 @@ val verificaTesseract = tasks.register("verificaTesseract") {
 }
 tasks.named("preBuild") { dependsOn(verificaTesseract) }
 
-/** Scarica il modello italiano (tessdata_best 4.1.0) e lo mette negli asset. */
+/**
+ * Scarica il modello italiano veloce (tessdata_fast 4.1.0, 2,7 MB) e lo mette
+ * negli asset. Quello preciso (tessdata_best, 8,9 MB) lo scarica l'app al primo
+ * uso della lettura foto (ADR-012, scelta Prestazione del 17/10/2026).
+ */
 abstract class ModelloLettura : DefaultTask() {
     @get:Input
     abstract val indirizzo: Property<String>
@@ -166,10 +170,10 @@ androidComponents {
         val nome = variante.name.replaceFirstChar { it.uppercase() }
         val modello = tasks.register<ModelloLettura>("modelloLettura$nome") {
             indirizzo.set(
-                "https://raw.githubusercontent.com/tesseract-ocr/tessdata_best/4.1.0/ita.traineddata",
+                "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/4.1.0/ita.traineddata",
             )
-            impronta.set("8df9c89176fb93f56bf4b2d4ede04c01c1f31d4b7697fbd76cc336df700f3f38")
-            copia.set(rootProject.layout.buildDirectory.file("modello-lettura/ita.traineddata"))
+            impronta.set("b8f89e1e785118dac4d51ae042c029a64edb5c3ee42ef73027a6d412748d8827")
+            copia.set(rootProject.layout.buildDirectory.file("modello-lettura/veloce/ita.traineddata"))
         }
         variante.sources.assets?.addGeneratedSourceDirectory(modello, ModelloLettura::cartella)
     }
