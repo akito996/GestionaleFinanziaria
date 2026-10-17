@@ -25,6 +25,10 @@ class PortafogliCondivisiPagina extends StatefulWidget {
 class _PortafogliCondivisiPaginaState extends State<PortafogliCondivisiPagina> {
   bool _occupato = false;
 
+  /// Preparato una volta sola (vedi SchedaPersone).
+  late final Stream<List<VistaCondiviso>> _flusso = widget.sessione.condivisi
+      .osserva();
+
   Future<void> _lavoro(Future<void> Function() lavoro) async {
     setState(() => _occupato = true);
     try {
@@ -62,7 +66,8 @@ class _PortafogliCondivisiPaginaState extends State<PortafogliCondivisiPagina> {
         content: const Text(
           'Nella finestra di Google apri «Condivisi con me», poi la cartella '
           '«wallecy_share_…» che ti hanno condiviso, e scegli TUTTI i file '
-          'che ci sono dentro (tocca ognuno, poi «Seleziona»).',
+          'che ci sono dentro: il registro e un file per ogni persona, con '
+          'il nome del suo account. Tocca ognuno, poi «Seleziona».',
         ),
         actions: [
           TextButton(
@@ -98,6 +103,9 @@ class _PortafogliCondivisiPaginaState extends State<PortafogliCondivisiPagina> {
           'Questo account Google non è stato invitato in quel portafoglio. '
               'Controlla di usare l\'account giusto.',
         EsitoIngresso.annullato => 'Scelta annullata.',
+        EsitoIngresso.scaduto =>
+          'L\'invito è scaduto (nessuna risposta entro un\'ora): chiedi '
+              'al proprietario di invitarti di nuovo.',
       });
     });
   }
@@ -126,7 +134,7 @@ class _PortafogliCondivisiPaginaState extends State<PortafogliCondivisiPagina> {
       label: const Text('Unisciti'),
     ),
     body: StreamBuilder<List<VistaCondiviso>>(
-      stream: widget.sessione.condivisi.osserva(),
+      stream: _flusso,
       builder: (context, snapshot) {
         final elenco = snapshot.data ?? const [];
         return LayoutBuilder(

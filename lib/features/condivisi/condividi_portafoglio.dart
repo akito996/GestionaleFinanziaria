@@ -8,7 +8,6 @@ import '../../core/db/tabelle.dart';
 import '../../core/sessione.dart';
 import '../comuni/avvisi.dart';
 import '../comuni/blocco_automatico.dart';
-import '../comuni/errori.dart';
 
 /// Invita una persona nel portafoglio (ADR-019): alla prima volta il
 /// portafoglio diventa condiviso. Google le manda un'email.
@@ -35,10 +34,23 @@ Future<void> invitaPersona(
   String email,
 ) async {
   final messaggi = ScaffoldMessenger.of(context);
+  // Resta finché la condivisione non è finita (una decina di richieste).
   messaggi
     ..clearSnackBars()
     ..showSnackBar(
-      avviso(content: const Text('Preparo la condivisione su Google Drive…')),
+      const SnackBar(
+        duration: Duration(minutes: 5),
+        content: Row(
+          children: [
+            SizedBox.square(
+              dimension: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 16),
+            Expanded(child: Text('Preparo la condivisione su Google Drive…')),
+          ],
+        ),
+      ),
     );
   try {
     // Il consenso di Google si dà nel browser o in una finestra di sistema.
@@ -54,24 +66,32 @@ Future<void> invitaPersona(
         messaggi.showSnackBar(
           avviso(
             content: Text(
-              'Invito mandato a ${email.trim()}: riceverà un\'email da Google. '
-              'Resta "da confermare" finché non entra con WalleCy.',
+              'Invito mandato a ${email.trim()}: ha un\'ora per accettare. '
+              'Intanto il portafoglio si usa normalmente.',
             ),
           ),
         );
-      case EsitoInvito.giaPresente || EsitoInvito.seiTu:
+      case EsitoInvito.giaPresente ||
+          EsitoInvito.seiTu ||
+          EsitoInvito.rimandato:
         await showDialog<void>(
           context: context,
           builder: (context) => AlertDialog(
             icon: const Icon(Icons.person_outline),
             title: const Text('Persona già presente'),
-            content: Text(
-              esito == EsitoInvito.seiTu
-                  ? '${email.trim()} è il tuo account: sei già il '
-                        'proprietario del portafoglio.'
-                  : '${email.trim()} è già presente nel portafoglio: non '
-                        'serve invitarla di nuovo.',
-            ),
+            content: Text(switch (esito) {
+              EsitoInvito.seiTu =>
+                '${email.trim()} è il tuo account: sei già il proprietario '
+                    'del portafoglio.',
+              EsitoInvito.rimandato =>
+                '${email.trim()} è già presente nel portafoglio ma non è '
+                    'ancora entrata: le ho rimandato l\'invito (Google le '
+                    'manda di nuovo l\'email) e ha di nuovo un\'ora per '
+                    'accettare.',
+              _ =>
+                '${email.trim()} è già presente nel portafoglio: non serve '
+                    'invitarla di nuovo.',
+            }),
             actions: [
               FilledButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -85,24 +105,42 @@ Future<void> invitaPersona(
           avviso(content: const Text('Accesso a Google annullato.')),
         );
     }
-  } on ErroreDriveCondiviso catch (e) {
-    messaggi
-      ..clearSnackBars()
-      ..showSnackBar(
-        avviso(
-          content: Text(
-            'Google Drive ha risposto ${e.stato}: invito non mandato. '
-            'Riprova tra poco.',
-          ),
-        ),
-      );
-  } catch (e, stack) {
+  } catch (e) {
     messaggi.clearSnackBars();
     if (context.mounted) {
-      await mostraErroreImprevisto(context, e, stack);
+      await condivisioneNonRiuscita(
+        context,
+        e is ErroreDriveCondiviso && e.stato == 408
+            ? e.dettaglio
+            : e is ErroreDriveCondiviso
+            ? 'Google Drive ha risposto ${e.stato}.'
+            : 'Errore: $e',
+      );
     }
   }
 }
+
+/// La condivisione non è partita (o è scaduta): il portafoglio resta e si
+/// usa normalmente; si può condividere più tardi.
+Future<void> condivisioneNonRiuscita(BuildContext context, String motivo) =>
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.group_off_outlined),
+        title: const Text('Condivisione non riuscita'),
+        content: Text(
+          '$motivo\n\nIl portafoglio c\'è e si usa normalmente: puoi '
+          'condividerlo più tardi dall\'icona delle persone, nel suo '
+          'dettaglio.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
 
 class _ModuloInvito extends StatefulWidget {
   const _ModuloInvito();
@@ -181,7 +219,7 @@ class _ModuloInvitoState extends State<_ModuloInvito> {
 
 /// Le persone di un portafoglio condiviso, nel suo dettaglio. Niente se il
 /// portafoglio non è condiviso.
-class SchedaPersone extends StatelessWidget {
+class SchedaPersone extends StatefulWidget {
   const SchedaPersone({
     super.key,
     required this.sessione,
@@ -192,8 +230,21 @@ class SchedaPersone extends StatelessWidget {
   final String portafoglioId;
 
   @override
+  State<SchedaPersone> createState() => _SchedaPersoneState();
+}
+
+class _SchedaPersoneState extends State<SchedaPersone> {
+  Sessione get sessione => widget.sessione;
+  String get portafoglioId => widget.portafoglioId;
+
+  /// Preparato una volta sola: dopo il blocco dell'archivio il servizio non
+  /// c'è più, e la scheda può ridisegnarsi un'ultima volta.
+  late final Stream<List<VistaCondiviso>> _flusso = sessione.condivisi
+      .osserva();
+
+  @override
   Widget build(BuildContext context) => StreamBuilder<List<VistaCondiviso>>(
-    stream: sessione.condivisi.osserva(),
+    stream: _flusso,
     builder: (context, snapshot) {
       final vista = snapshot.data
           ?.where((v) => v.info.portafoglioId == portafoglioId)
@@ -203,10 +254,38 @@ class SchedaPersone extends StatelessWidget {
       }
       final schema = Theme.of(context).colorScheme;
       final proprietario = vista.info.ruolo == RuoloMembro.proprietario;
+      final inAttesa = [
+        for (final m in vista.membri)
+          if (PortafogliCondivisiServizio.scadenzaDi(m) case final scade?)
+            (m.email, scade),
+      ];
       return Card(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Avviso: si aspetta la risposta delle persone invitate.
+            for (final (email, scade) in inAttesa)
+              Container(
+                color: schema.secondaryContainer,
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.hourglass_top,
+                      color: schema.onSecondaryContainer,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'In attesa di risposta da $email: ha tempo fino alle '
+                        '${TimeOfDay.fromDateTime(scade.toLocal()).format(context)}. '
+                        'Intanto il portafoglio si usa normalmente.',
+                        style: TextStyle(color: schema.onSecondaryContainer),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ListTile(
               leading: const Icon(Icons.group_outlined),
               title: const Text('Portafoglio condiviso'),
@@ -245,6 +324,19 @@ class SchedaPersone extends StatelessWidget {
                 subtitle: Text(_statoPersona(vista.info, m)),
                 trailing: m.fileId == vista.info.mioFileId
                     ? null
+                    : proprietario &&
+                          (m.stato == StatoMembro.invitato ||
+                              m.stato == StatoMembro.scaduto)
+                    ? IconButton(
+                        tooltip: 'Invita di nuovo',
+                        icon: const Icon(Icons.forward_to_inbox_outlined),
+                        onPressed: () => invitaPersona(
+                          context,
+                          sessione,
+                          portafoglioId,
+                          m.email,
+                        ),
+                      )
                     : Icon(
                         m.verificato
                             ? Icons.verified_user_outlined
@@ -271,7 +363,10 @@ class SchedaPersone extends StatelessWidget {
       return '$ruolo · sei tu';
     }
     return switch (m.stato) {
-      StatoMembro.invitato => '$ruolo · invitato, non ancora entrato',
+      StatoMembro.invitato => '$ruolo · in attesa di risposta',
+      StatoMembro.scaduto =>
+        '$ruolo · invito scaduto (nessuna risposta entro un\'ora): '
+            'puoi invitarla di nuovo',
       StatoMembro.uscito => '$ruolo · uscito',
       _ =>
         m.verificato

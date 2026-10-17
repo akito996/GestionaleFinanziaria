@@ -119,6 +119,11 @@ void main() {
       await tocca(tester, find.text('Conto corrente'));
       await attendi(tester, find.text('Portafoglio condiviso'));
       expect(find.text('memb@example.com (da confermare)'), findsOneWidget);
+      // Avviso: si aspetta la risposta, con l'ora entro cui accettare.
+      expect(
+        find.textContaining('In attesa di risposta da memb@example.com'),
+        findsOneWidget,
+      );
 
       // Di nuovo la stessa persona: "Persona già presente".
       await tocca(tester, find.byTooltip('Condividi con altre persone'));
@@ -128,8 +133,9 @@ void main() {
       );
       await tocca(tester, nelDialogo(find.text('Invita')));
       await attendi(tester, find.text('Persona già presente'));
+      expect(find.textContaining('le ho rimandato'), findsOneWidget);
       await tocca(tester, find.text('OK'));
-      expect(drive.condivisioni, hasLength(1));
+      expect(drive.condivisioni, hasLength(2));
 
       // Il membro entra (solo il motore) e il proprietario si sincronizza.
       final w = (await tester.runAsync(
@@ -187,4 +193,63 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     },
   );
+
+  testWidgets('condivisione non riuscita: avviso, il portafoglio resta', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (_) async => null,
+    );
+    final drive = DriveFinto()..rifiutaCondivisione = true;
+    final sessione = Sessione(
+      sodium: sodium,
+      deposito: DepositoLocale(cartella),
+      costoArgon2: (
+        ops: ParametriArgon2.opsMinimo,
+        mem: ParametriArgon2.memMinima,
+      ),
+      accessoDriveFile: AccessoFinto(drive, 'prop'),
+    );
+    await tester.runAsync(() async {
+      await sessione.avvia();
+      await sessione.preparaNuovoArchivio('Password-Lunga-1');
+      await sessione.confermaNuovoArchivio();
+    });
+    sessione.avviso = null;
+    await tester.pumpWidget(GestionaleApp(sessione: sessione));
+    await attendi(tester, find.text('Crea il tuo primo portafoglio'));
+
+    await tocca(tester, find.text('Conto corrente'));
+    await attendi(tester, nelDialogo(find.text('Tipo')));
+    await tester.enterText(nelDialogo(find.byType(TextFormField)).first, '10');
+    await tocca(tester, nelDialogo(find.text('Condiviso')));
+    await tester.enterText(
+      nelDialogo(
+        find.widgetWithText(
+          TextFormField,
+          'Email Google della persona da invitare',
+        ),
+      ),
+      'memb@example.com',
+    );
+    await tocca(tester, nelDialogo(find.text('Crea')));
+    await attendi(tester, find.text('Condivisione non riuscita'));
+    expect(find.textContaining('si usa normalmente'), findsOneWidget);
+    await tocca(tester, find.text('OK'));
+    // Il portafoglio c'è, senza persone invitate.
+    final portafogli = await tester.runAsync(
+      () => sessione.contabilita.osservaPortafogli().first,
+    );
+    expect(portafogli!.single.portafoglio.nome, 'Conto corrente');
+    final w = portafogli.single.portafoglio.id;
+    final persone = await tester.runAsync(() => sessione.condivisi.membri(w));
+    expect(persone!.where((m) => m.email == 'memb@example.com'), isEmpty);
+
+    sessione.blocca().ignore();
+    await attendi(tester, find.text('Archivio bloccato'));
+    await tester.pumpWidget(const SizedBox());
+  });
 }

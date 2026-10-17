@@ -1,12 +1,16 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gestionale_finanziaria/core/condivisi/drive_condiviso.dart';
 import 'package:gestionale_finanziaria/core/condivisi/identita_persona.dart';
 import 'package:gestionale_finanziaria/core/condivisi/portafogli_condivisi.dart';
 import 'package:gestionale_finanziaria/core/db/archivio.dart';
 import 'package:gestionale_finanziaria/core/db/contabilita.dart';
 import 'package:gestionale_finanziaria/core/db/tabelle.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:sodium/sodium_sumo.dart';
 
 import '../drive_finto.dart';
@@ -52,7 +56,12 @@ void main() {
     driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
   });
 
-  Future<_Persona> persona(DriveFinto drive, String utente, int seme) async {
+  Future<_Persona> persona(
+    DriveFinto drive,
+    String utente,
+    int seme, {
+    DateTime Function()? adesso,
+  }) async {
     final db = Archivio.inMemoria();
     addTearDown(db.close);
     final c = await Contabilita.apri(db);
@@ -71,15 +80,17 @@ void main() {
         sodium: sodium,
         identita: () => io,
         accesso: accesso,
+        adesso: adesso,
       ),
     );
   }
 
   /// Il proprietario con il portafoglio "Casa" (1.000 €) e una spesa.
   Future<({_Persona prop, String w, String pane})> conPortafoglio(
-    DriveFinto drive,
-  ) async {
-    final prop = await persona(drive, 'prop', 1);
+    DriveFinto drive, {
+    DateTime Function()? adesso,
+  }) async {
+    final prop = await persona(drive, 'prop', 1, adesso: adesso);
     final tipi = {
       for (final t in await prop.c.tipi(AmbitoTipo.portafoglio)) t.nome: t.id,
     };
@@ -117,16 +128,23 @@ void main() {
       await prop.condivisi.invita(w, 'Memb@Example.com'),
       EsitoInvito.invitato,
     );
+    // Ancora da confermare: l'invito si rimanda.
     expect(
       await prop.condivisi.invita(w, 'memb@example.com'),
-      EsitoInvito.giaPresente,
+      EsitoInvito.rimandato,
     );
     expect(
       await prop.condivisi.invita(w, 'prop@example.com'),
       EsitoInvito.seiTu,
     );
-    expect(drive.condivisioni.single.email, 'memb@example.com');
-    expect(drive.condivisioni.single.messaggio, contains('Unisciti'));
+    expect(drive.condivisioni.map((c) => c.email), [
+      'memb@example.com',
+      'memb@example.com',
+    ]);
+    expect(drive.condivisioni.first.messaggio, contains('Unisciti'));
+    // Nomi chiari: il file di ognuno porta il nome del suo account.
+    expect(drive.conNome('wallecy_prop.json'), hasLength(1));
+    expect(drive.conNome('wallecy_memb.json'), hasLength(1));
     final cartella = drive
         .conNome(PortafogliCondivisiServizio.nomeCartella('Casa', w))
         .single;
@@ -165,6 +183,11 @@ void main() {
     final idMemb = persone.firstWhere((m) => m.ruolo == RuoloMembro.membro).id;
     expect(arrivato.inseritoDa, idProp);
     expect(persone.firstWhere((m) => m.id == idMemb).stato, StatoMembro.attivo);
+    // Entrata: ora è "già presente".
+    expect(
+      await prop.condivisi.invita(w, 'memb@example.com'),
+      EsitoInvito.giaPresente,
+    );
 
     // Il membro aggiunge una spesa: arriva al proprietario, con l'autore.
     final farmacia = await memb.c.registraMovimento(
@@ -227,6 +250,86 @@ void main() {
     // Nessuna scelta.
     memb.accesso.sceglie = (_) => false;
     expect(await memb.condivisi.unisciti(), EsitoIngresso.annullato);
+  });
+
+  test('invito interrotto: niente persona a metà, poi riesce', () async {
+    final drive = DriveFinto();
+    final (:prop, :w, pane: _) = await conPortafoglio(drive);
+    drive.rifiutaCondivisione = true;
+    await expectLater(
+      prop.condivisi.invita(w, 'memb@example.com'),
+      throwsA(isA<ErroreDriveCondiviso>()),
+    );
+    expect(
+      (await prop.condivisi.membri(w))
+          .where((m) => m.email == 'memb@example.com'),
+      isEmpty,
+    );
+    expect(
+      await prop.condivisi.invita(w, 'memb@example.com'),
+      EsitoInvito.invitato,
+    );
+  });
+
+  test('un\'ora per accettare: poi scade, avviso, si può reinvitare', () async {
+    final drive = DriveFinto();
+    var ora = DateTime.utc(2026, 10, 17, 12);
+    final (:prop, :w, pane: _) = await conPortafoglio(drive, adesso: () => ora);
+    final memb = await persona(drive, 'memb', 2, adesso: () => ora);
+    final avvisi = <String>[];
+    final ascolto = prop.condivisi.avvisi.listen(avvisi.add);
+    addTearDown(ascolto.cancel);
+    await prop.condivisi.invita(w, 'memb@example.com');
+    final cartella = drive
+        .conNome(PortafogliCondivisiServizio.nomeCartella('Casa', w))
+        .single;
+    Future<Membro> invitato() async =>
+        (await prop.condivisi.membri(w))
+            .firstWhere((m) => m.email == 'memb@example.com');
+
+    // Entro l'ora: in attesa, con la scadenza.
+    expect(
+      prop.condivisi.scadenzaInvito(await invitato()),
+      DateTime.utc(2026, 10, 17, 13),
+    );
+    ora = ora.add(const Duration(minutes: 59));
+    await prop.condivisi.sincronizza();
+    expect((await invitato()).stato, StatoMembro.invitato);
+
+    // Dopo l'ora: scaduto, cartella non più condivisa, avviso.
+    ora = ora.add(const Duration(minutes: 2));
+    await prop.condivisi.sincronizza();
+    await Future<void>.delayed(Duration.zero);
+    expect((await invitato()).stato, StatoMembro.scaduto);
+    expect(drive.permessi[cartella], isNot(contains('memb')));
+    expect(avvisi.single, contains('nessuna risposta entro un\'ora'));
+    memb.accesso.sceglie = (e) => e.padre == cartella;
+    expect(await memb.condivisi.unisciti(), EsitoIngresso.scaduto);
+
+    // Si reinvita: di nuovo un'ora. Il membro entra in tempo e resta dentro
+    // anche se il proprietario si sincronizza più tardi.
+    expect(
+      await prop.condivisi.invita(w, 'memb@example.com'),
+      EsitoInvito.rimandato,
+    );
+    expect((await invitato()).stato, StatoMembro.invitato);
+    expect(drive.permessi[cartella], contains('memb'));
+    expect(await memb.condivisi.unisciti(), EsitoIngresso.inAttesa);
+    ora = ora.add(const Duration(hours: 3));
+    await prop.condivisi.sincronizza();
+    expect((await invitato()).stato, StatoMembro.attivo);
+  });
+
+  test('Google Drive che non risponde: errore dopo il tempo massimo', () async {
+    final appesa = MockClient((_) => Completer<http.Response>().future);
+    final drive = DriveCondiviso(
+      appesa,
+      attesa: const Duration(milliseconds: 50),
+    );
+    await expectLater(
+      drive.info('x'),
+      throwsA(isA<ErroreDriveCondiviso>().having((e) => e.stato, 'stato', 408)),
+    );
   });
 
   test('senza consenso in sottofondo non si chiede niente', () async {

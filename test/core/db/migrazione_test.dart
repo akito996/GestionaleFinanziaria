@@ -8,7 +8,7 @@ import 'package:sqlite3/sqlite3.dart' as sql;
 
 void main() {
   test(
-    'migrazione v1 → v15: dati conservati, nuove tabelle e categorie',
+    'migrazione v1 → v16: dati conservati, nuove tabelle e categorie',
     () async {
       // Lo schema delle tabelle già presenti in v1 non è cambiato: si crea un archivio
       // attuale e lo si riporta com'era in v1 (senza le aggiunte della v2).
@@ -85,12 +85,12 @@ void main() {
       expect(await db.select(db.obiettivi).get(), isEmpty);
       expect(portafogli.single.preferito, isFalse);
       expect(portafogli.single.gruppo, isNull);
-      expect(grezzo.userVersion, 15);
+      expect(grezzo.userVersion, 16);
     },
   );
 
   test(
-    'migrazione v7 → v15: spese ripartite, maxi rata, entrate previste, report',
+    'migrazione v7 → v16: spese ripartite, maxi rata, entrate previste, report',
     () async {
       final grezzo = sql.sqlite3.openInMemory();
       final v8 = Archivio.conEsecutore(
@@ -134,10 +134,10 @@ void main() {
       expect(voce.natura, NaturaVoce.spesa); // le voci esistenti sono spese
       expect(await db.select(db.report).get(), isEmpty);
       expect(await db.select(db.prestiti).get(), isEmpty);
-      expect(grezzo.userVersion, 15);
+      expect(grezzo.userVersion, 16);
     },
   );
-  test('migrazione v11 → v15: le entrate previste chiedono conferma', () async {
+  test('migrazione v11 → v16: le entrate previste chiedono conferma', () async {
     final grezzo = sql.sqlite3.openInMemory();
     final v11 = Archivio.conEsecutore(
       NativeDatabase.opened(grezzo, closeUnderlyingOnClose: false),
@@ -196,11 +196,11 @@ void main() {
     );
     expect(await db.select(db.occorrenze).get(), isEmpty);
     expect(await db.select(db.notificheLette).get(), isEmpty);
-    expect(grezzo.userVersion, 15);
+    expect(grezzo.userVersion, 16);
   });
 
   test(
-    'migrazione v13 → v15: portafogli condivisi e autore dei movimenti',
+    'migrazione v13 → v16: portafogli condivisi e autore dei movimenti',
     () async {
       final grezzo = sql.sqlite3.openInMemory();
       final v13 = Archivio.conEsecutore(
@@ -253,7 +253,36 @@ void main() {
       expect(movimento.modificatoDa, isNull);
       expect(await db.select(db.portafogliCondivisi).get(), isEmpty);
       expect(await db.select(db.membri).get(), isEmpty);
-      expect(grezzo.userVersion, 15);
+      expect(grezzo.userVersion, 16);
     },
   );
+
+  test('migrazione v15 → v16: ora dell\'invito dei membri', () async {
+    final grezzo = sql.sqlite3.openInMemory();
+    final v15 = Archivio.conEsecutore(
+      NativeDatabase.opened(grezzo, closeUnderlyingOnClose: false),
+    );
+    await v15
+        .into(v15.membri)
+        .insert(
+          MembriCompanion.insert(
+            id: 'm1',
+            aggiornatoIl: '1',
+            portafoglioId: 'p1',
+            email: 'a@example.com',
+            ruolo: RuoloMembro.membro,
+            stato: StatoMembro.invitato,
+          ),
+        );
+    await v15.close();
+    grezzo
+      ..execute('ALTER TABLE membri DROP COLUMN invitato_il')
+      ..userVersion = 15;
+    final db = Archivio.conEsecutore(NativeDatabase.opened(grezzo));
+    addTearDown(db.close);
+    final membro = await db.select(db.membri).getSingle();
+    expect(membro.email, 'a@example.com');
+    expect(membro.invitatoIl, isNull);
+    expect(grezzo.userVersion, 16);
+  });
 }

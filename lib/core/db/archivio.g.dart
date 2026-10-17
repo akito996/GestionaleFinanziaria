@@ -12023,6 +12023,17 @@ class $MembriTable extends Membri with TableInfo<$MembriTable, Membro> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _invitatoIlMeta = const VerificationMeta(
+    'invitatoIl',
+  );
+  @override
+  late final GeneratedColumn<String> invitatoIl = GeneratedColumn<String>(
+    'invitato_il',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -12038,6 +12049,7 @@ class $MembriTable extends Membri with TableInfo<$MembriTable, Membro> {
     chiaveFirma,
     verificato,
     quota,
+    invitatoIl,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -12150,6 +12162,12 @@ class $MembriTable extends Membri with TableInfo<$MembriTable, Membro> {
         quota.isAcceptableOrUnknown(data['quota']!, _quotaMeta),
       );
     }
+    if (data.containsKey('invitato_il')) {
+      context.handle(
+        _invitatoIlMeta,
+        invitatoIl.isAcceptableOrUnknown(data['invitato_il']!, _invitatoIlMeta),
+      );
+    }
     return context;
   }
 
@@ -12211,6 +12229,10 @@ class $MembriTable extends Membri with TableInfo<$MembriTable, Membro> {
         DriftSqlType.int,
         data['${effectivePrefix}quota'],
       ),
+      invitatoIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}invitato_il'],
+      ),
     );
   }
 
@@ -12253,6 +12275,10 @@ class Membro extends DataClass implements Insertable<Membro> {
   /// Quota del totale in centesimi di punto (5000 = 50%); vuota = non
   /// indicata (consegna 2).
   final int? quota;
+
+  /// Quando è partito l'ultimo invito (UTC, ISO 8601): ha un'ora per
+  /// accettare.
+  final String? invitatoIl;
   const Membro({
     required this.id,
     required this.aggiornatoIl,
@@ -12267,6 +12293,7 @@ class Membro extends DataClass implements Insertable<Membro> {
     this.chiaveFirma,
     required this.verificato,
     this.quota,
+    this.invitatoIl,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -12291,6 +12318,9 @@ class Membro extends DataClass implements Insertable<Membro> {
     map['verificato'] = Variable<bool>(verificato);
     if (!nullToAbsent || quota != null) {
       map['quota'] = Variable<int>(quota);
+    }
+    if (!nullToAbsent || invitatoIl != null) {
+      map['invitato_il'] = Variable<String>(invitatoIl);
     }
     return map;
   }
@@ -12318,6 +12348,9 @@ class Membro extends DataClass implements Insertable<Membro> {
       quota: quota == null && nullToAbsent
           ? const Value.absent()
           : Value(quota),
+      invitatoIl: invitatoIl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(invitatoIl),
     );
   }
 
@@ -12340,6 +12373,7 @@ class Membro extends DataClass implements Insertable<Membro> {
       chiaveFirma: serializer.fromJson<String?>(json['chiaveFirma']),
       verificato: serializer.fromJson<bool>(json['verificato']),
       quota: serializer.fromJson<int?>(json['quota']),
+      invitatoIl: serializer.fromJson<String?>(json['invitatoIl']),
     );
   }
   @override
@@ -12359,6 +12393,7 @@ class Membro extends DataClass implements Insertable<Membro> {
       'chiaveFirma': serializer.toJson<String?>(chiaveFirma),
       'verificato': serializer.toJson<bool>(verificato),
       'quota': serializer.toJson<int?>(quota),
+      'invitatoIl': serializer.toJson<String?>(invitatoIl),
     };
   }
 
@@ -12376,6 +12411,7 @@ class Membro extends DataClass implements Insertable<Membro> {
     Value<String?> chiaveFirma = const Value.absent(),
     bool? verificato,
     Value<int?> quota = const Value.absent(),
+    Value<String?> invitatoIl = const Value.absent(),
   }) => Membro(
     id: id ?? this.id,
     aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
@@ -12392,6 +12428,7 @@ class Membro extends DataClass implements Insertable<Membro> {
     chiaveFirma: chiaveFirma.present ? chiaveFirma.value : this.chiaveFirma,
     verificato: verificato ?? this.verificato,
     quota: quota.present ? quota.value : this.quota,
+    invitatoIl: invitatoIl.present ? invitatoIl.value : this.invitatoIl,
   );
   Membro copyWithCompanion(MembriCompanion data) {
     return Membro(
@@ -12418,6 +12455,9 @@ class Membro extends DataClass implements Insertable<Membro> {
           ? data.verificato.value
           : this.verificato,
       quota: data.quota.present ? data.quota.value : this.quota,
+      invitatoIl: data.invitatoIl.present
+          ? data.invitatoIl.value
+          : this.invitatoIl,
     );
   }
 
@@ -12436,7 +12476,8 @@ class Membro extends DataClass implements Insertable<Membro> {
           ..write('chiaveScambio: $chiaveScambio, ')
           ..write('chiaveFirma: $chiaveFirma, ')
           ..write('verificato: $verificato, ')
-          ..write('quota: $quota')
+          ..write('quota: $quota, ')
+          ..write('invitatoIl: $invitatoIl')
           ..write(')'))
         .toString();
   }
@@ -12456,6 +12497,7 @@ class Membro extends DataClass implements Insertable<Membro> {
     chiaveFirma,
     verificato,
     quota,
+    invitatoIl,
   );
   @override
   bool operator ==(Object other) =>
@@ -12473,7 +12515,8 @@ class Membro extends DataClass implements Insertable<Membro> {
           other.chiaveScambio == this.chiaveScambio &&
           other.chiaveFirma == this.chiaveFirma &&
           other.verificato == this.verificato &&
-          other.quota == this.quota);
+          other.quota == this.quota &&
+          other.invitatoIl == this.invitatoIl);
 }
 
 class MembriCompanion extends UpdateCompanion<Membro> {
@@ -12490,6 +12533,7 @@ class MembriCompanion extends UpdateCompanion<Membro> {
   final Value<String?> chiaveFirma;
   final Value<bool> verificato;
   final Value<int?> quota;
+  final Value<String?> invitatoIl;
   final Value<int> rowid;
   const MembriCompanion({
     this.id = const Value.absent(),
@@ -12505,6 +12549,7 @@ class MembriCompanion extends UpdateCompanion<Membro> {
     this.chiaveFirma = const Value.absent(),
     this.verificato = const Value.absent(),
     this.quota = const Value.absent(),
+    this.invitatoIl = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   MembriCompanion.insert({
@@ -12521,6 +12566,7 @@ class MembriCompanion extends UpdateCompanion<Membro> {
     this.chiaveFirma = const Value.absent(),
     this.verificato = const Value.absent(),
     this.quota = const Value.absent(),
+    this.invitatoIl = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        aggiornatoIl = Value(aggiornatoIl),
@@ -12542,6 +12588,7 @@ class MembriCompanion extends UpdateCompanion<Membro> {
     Expression<String>? chiaveFirma,
     Expression<bool>? verificato,
     Expression<int>? quota,
+    Expression<String>? invitatoIl,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -12558,6 +12605,7 @@ class MembriCompanion extends UpdateCompanion<Membro> {
       if (chiaveFirma != null) 'chiave_firma': chiaveFirma,
       if (verificato != null) 'verificato': verificato,
       if (quota != null) 'quota': quota,
+      if (invitatoIl != null) 'invitato_il': invitatoIl,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -12576,6 +12624,7 @@ class MembriCompanion extends UpdateCompanion<Membro> {
     Value<String?>? chiaveFirma,
     Value<bool>? verificato,
     Value<int?>? quota,
+    Value<String?>? invitatoIl,
     Value<int>? rowid,
   }) {
     return MembriCompanion(
@@ -12592,6 +12641,7 @@ class MembriCompanion extends UpdateCompanion<Membro> {
       chiaveFirma: chiaveFirma ?? this.chiaveFirma,
       verificato: verificato ?? this.verificato,
       quota: quota ?? this.quota,
+      invitatoIl: invitatoIl ?? this.invitatoIl,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -12638,6 +12688,9 @@ class MembriCompanion extends UpdateCompanion<Membro> {
     if (quota.present) {
       map['quota'] = Variable<int>(quota.value);
     }
+    if (invitatoIl.present) {
+      map['invitato_il'] = Variable<String>(invitatoIl.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -12660,6 +12713,7 @@ class MembriCompanion extends UpdateCompanion<Membro> {
           ..write('chiaveFirma: $chiaveFirma, ')
           ..write('verificato: $verificato, ')
           ..write('quota: $quota, ')
+          ..write('invitatoIl: $invitatoIl, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -24434,6 +24488,7 @@ typedef $$MembriTableCreateCompanionBuilder = MembriCompanion Function({
   Value<String?> chiaveFirma,
   Value<bool> verificato,
   Value<int?> quota,
+  Value<String?> invitatoIl,
   Value<int> rowid,
 });
 typedef $$MembriTableUpdateCompanionBuilder = MembriCompanion Function({
@@ -24450,6 +24505,7 @@ typedef $$MembriTableUpdateCompanionBuilder = MembriCompanion Function({
   Value<String?> chiaveFirma,
   Value<bool> verificato,
   Value<int?> quota,
+  Value<String?> invitatoIl,
   Value<int> rowid,
 });
 
@@ -24523,6 +24579,11 @@ class $$MembriTableFilterComposer extends Composer<_$Archivio, $MembriTable> {
 
   ColumnFilters<int> get quota => $composableBuilder(
     column: $table.quota,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get invitatoIl => $composableBuilder(
+    column: $table.invitatoIl,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -24599,6 +24660,11 @@ class $$MembriTableOrderingComposer extends Composer<_$Archivio, $MembriTable> {
     column: $table.quota,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get invitatoIl => $composableBuilder(
+    column: $table.invitatoIl,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$MembriTableAnnotationComposer
@@ -24658,6 +24724,11 @@ class $$MembriTableAnnotationComposer
 
   GeneratedColumn<int> get quota =>
       $composableBuilder(column: $table.quota, builder: (column) => column);
+
+  GeneratedColumn<String> get invitatoIl => $composableBuilder(
+    column: $table.invitatoIl,
+    builder: (column) => column,
+  );
 }
 
 class $$MembriTableTableManager
@@ -24701,6 +24772,7 @@ class $$MembriTableTableManager
                 Value<String?> chiaveFirma = const Value.absent(),
                 Value<bool> verificato = const Value.absent(),
                 Value<int?> quota = const Value.absent(),
+                Value<String?> invitatoIl = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MembriCompanion(
                 id: id,
@@ -24716,6 +24788,7 @@ class $$MembriTableTableManager
                 chiaveFirma: chiaveFirma,
                 verificato: verificato,
                 quota: quota,
+                invitatoIl: invitatoIl,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -24733,6 +24806,7 @@ class $$MembriTableTableManager
                 Value<String?> chiaveFirma = const Value.absent(),
                 Value<bool> verificato = const Value.absent(),
                 Value<int?> quota = const Value.absent(),
+                Value<String?> invitatoIl = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MembriCompanion.insert(
                 id: id,
@@ -24748,6 +24822,7 @@ class $$MembriTableTableManager
                 chiaveFirma: chiaveFirma,
                 verificato: verificato,
                 quota: quota,
+                invitatoIl: invitatoIl,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

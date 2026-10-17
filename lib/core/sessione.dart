@@ -363,6 +363,7 @@ class Sessione extends ChangeNotifier {
     _obiettivi = null;
     _statistiche = null;
     _report = null;
+    _condivisi?.chiudi();
     _condivisi = null;
     _sync?.chiudi();
     _sync = null;

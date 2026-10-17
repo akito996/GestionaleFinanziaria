@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart' show sha256;
@@ -23,6 +24,9 @@ enum EsitoInvito {
   /// La persona è già nel portafoglio.
   giaPresente,
 
+  /// Già invitata ma non ancora entrata: l'invito è stato rimandato.
+  rimandato,
+
   /// È l'email del proprietario stesso.
   seiTu,
   annullato,
@@ -30,6 +34,9 @@ enum EsitoInvito {
 
 /// Esito di "Unisciti a un portafoglio condiviso".
 enum EsitoIngresso {
+  /// L'invito è scaduto (nessuna risposta entro un'ora).
+  scaduto,
+
   /// Entrato: il portafoglio è già qui.
   entrato,
 
@@ -83,7 +90,33 @@ class PortafogliCondivisiServizio {
     required this._identita,
     required this.accesso,
     DriveCondiviso Function(http.Client client)? creaDrive,
-  }) : _creaDrive = creaDrive ?? DriveCondiviso.new;
+    DateTime Function()? adesso,
+  }) : _creaDrive = creaDrive ?? DriveCondiviso.new,
+       _adesso = adesso ?? DateTime.now;
+
+  final DateTime Function() _adesso;
+
+  /// Tempo per accettare un invito: poi scade e il proprietario lo sa.
+  static const durataInvito = Duration(hours: 1);
+
+  final _avvisi = StreamController<String>.broadcast();
+
+  /// Messaggi per il proprietario (es. un invito scaduto senza risposta).
+  Stream<String> get avvisi => _avvisi.stream;
+
+  /// Entro quando deve accettare [m] (`null` se non è in attesa).
+  DateTime? scadenzaInvito(Membro m) => scadenzaDi(m);
+
+  /// Come [scadenzaInvito], senza servizio (per le schermate).
+  static DateTime? scadenzaDi(Membro m) {
+    final quando = m.invitatoIl;
+    if (m.stato != StatoMembro.invitato || quando == null) {
+      return null;
+    }
+    return DateTime.tryParse(quando)?.add(durataInvito);
+  }
+
+  void chiudi() => _avvisi.close();
 
   final Archivio _db;
   final Contabilita _contabilita;
@@ -100,8 +133,16 @@ class PortafogliCondivisiServizio {
 
   OrologioLogico get _orologio => _contabilita.orologio;
 
-  static String nomeFileMembro(String membroId) =>
-      'wallecy_membro_${membroId.substring(0, 8)}.json';
+  /// Il file di una persona porta il nome del suo account Google
+  /// (es. "wallecy_mario.rossi.json"): si capisce subito di chi è.
+  static String nomeFilePersona(String email) {
+    final nome = email
+        .split('@')
+        .first
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9._-]+'), '_');
+    return 'wallecy_${nome.isEmpty ? 'persona' : nome}.json';
+  }
 
   static String nomeCartella(String nome, String id) {
     final pulito = nome
@@ -212,21 +253,39 @@ class PortafogliCondivisiServizio {
       final gia = presenti
           .where((m) => m.email == indirizzo && m.stato != StatoMembro.uscito)
           .firstOrNull;
+      if (gia?.ruolo == RuoloMembro.proprietario) {
+        return EsitoInvito.seiTu;
+      }
+      if (gia != null && gia.stato == StatoMembro.attivo) {
+        return EsitoInvito.giaPresente;
+      }
       if (gia != null) {
-        return gia.ruolo == RuoloMembro.proprietario
-            ? EsitoInvito.seiTu
-            : EsitoInvito.giaPresente;
+        // Già invitata ma non entrata (email persa, invito interrotto o
+        // scaduto): la condivisione si rifà e ricomincia l'ora per accettare.
+        await drive.condividi(pc.cartellaId, indirizzo, messaggio: _invito);
+        await (_db.update(_db.membri)..where((m) => m.id.equals(gia.id))).write(
+          MembriCompanion(
+            stato: const Value(StatoMembro.invitato),
+            invitatoIl: Value(_adesso().toUtc().toIso8601String()),
+            aggiornatoIl: Value(_orologio.adesso()),
+          ),
+        );
+        await _scriviRegistro(drive, pc);
+        return EsitoInvito.rimandato;
       }
       final id = nuovoId();
-      final fileId = await drive.scrivi(
+      final fileId = await drive.creaFile(
         pc.cartellaId,
-        nomeFileMembro(id),
+        nomeFilePersona(indirizzo),
         jsonEncode({
           'formato': formato,
           'portafoglio': portafoglioId,
           'membro': id,
         }),
       );
+      // Prima la condivisione su Drive, poi la persona qui: se l'invito si
+      // interrompe, non resta una persona "da confermare" senza cartella.
+      await drive.condividi(pc.cartellaId, indirizzo, messaggio: _invito);
       await _db
           .into(_db.membri)
           .insert(
@@ -238,22 +297,21 @@ class PortafogliCondivisiServizio {
               ruolo: RuoloMembro.membro,
               stato: StatoMembro.invitato,
               fileId: Value(fileId),
+              invitatoIl: Value(_adesso().toUtc().toIso8601String()),
             ),
           );
-      await drive.condividi(
-        pc.cartellaId,
-        indirizzo,
-        messaggio:
-            'Ti ho invitato a un portafoglio condiviso di WalleCy. Apri '
-            'WalleCy, Impostazioni, Portafogli condivisi, e premi "Unisciti". '
-            'Nella finestra di Google scegli tutti i file della cartella.',
-      );
       await _scriviRegistro(drive, pc);
       return EsitoInvito.invitato;
     } finally {
       drive.chiudi();
     }
   }
+
+  static const _invito =
+      'Ti ho invitato a un portafoglio condiviso di WalleCy. Apri WalleCy, '
+      'Impostazioni, Portafogli condivisi, e premi "Unisciti". Nella finestra '
+      'di Google apri "Condivisi con me", poi questa cartella, e scegli tutti '
+      'i file che contiene.';
 
   Future<PortafoglioCondiviso> _primaCondivisione(
     DriveCondiviso drive,
@@ -267,13 +325,13 @@ class PortafogliCondivisiServizio {
     );
     final io = _identita();
     final mioId = nuovoId();
-    final mioFile = await drive.scrivi(
+    final email = await drive.mioIndirizzo() ?? '';
+    final mioFile = await drive.creaFile(
       cartella.id,
-      nomeFileMembro(mioId),
+      nomeFilePersona(email),
       jsonEncode(_intestazioneFile(portafoglioId, mioId, io)),
     );
     final chiave = _sodium.randombytes.buf(Cifratore.lunghezzaChiave);
-    final email = await drive.mioIndirizzo() ?? '';
     await _db.transaction(() async {
       await _db
           .into(_db.portafogliCondivisi)
@@ -471,6 +529,9 @@ class PortafogliCondivisiServizio {
       if (voce == null || mioFile is! String) {
         return EsitoIngresso.nonInvitato;
       }
+      if (voce['stato'] == StatoMembro.scaduto) {
+        return EsitoIngresso.scaduto;
+      }
       final io = _identita();
       try {
         await drive.aggiorna(
@@ -658,6 +719,41 @@ class PortafogliCondivisiServizio {
             ),
           );
           cambiato = true;
+        }
+      }
+      // Chi non ha risposto entro un'ora: invito scaduto, cartella non più
+      // condivisa, avviso al proprietario. Si può invitare di nuovo.
+      final ora = _adesso();
+      for (final m in await membri(pc.portafoglioId)) {
+        final scadenza = scadenzaInvito(m);
+        if (scadenza == null || ora.isBefore(scadenza)) {
+          continue;
+        }
+        try {
+          await drive.togliCondivisione(pc.cartellaId, m.email);
+        } on ErroreDriveCondiviso catch (e) {
+          debugPrint('Condivisione non tolta a ${m.email}: $e');
+        }
+        await (_db.update(_db.membri)..where((x) => x.id.equals(m.id))).write(
+          MembriCompanion(
+            stato: const Value(StatoMembro.scaduto),
+            aggiornatoIl: Value(_orologio.adesso()),
+          ),
+        );
+        cambiato = true;
+        final nome =
+            (await (_db.select(_db.portafogli)
+                      ..where((p) => p.id.equals(pc.portafoglioId)))
+                    .getSingleOrNull())
+                ?.nome ??
+            '';
+        if (!_avvisi.isClosed) {
+          _avvisi.add(
+            'La condivisione di «$nome» con ${m.email} non è riuscita: '
+            'nessuna risposta entro un\'ora. Il portafoglio funziona '
+            'normalmente; puoi invitarla di nuovo quando vuoi dall\'icona '
+            'delle persone.',
+          );
         }
       }
       if (cambiato) {

@@ -116,7 +116,7 @@ class Archivio extends _$Archivio {
   Archivio.conEsecutore(super.e);
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -227,6 +227,11 @@ class Archivio extends _$Archivio {
           await m.createTable(membri);
         }
         await m.createTable(righeCondivise);
+      }
+      // v16: ora dell'invito (un'ora per accettare). Prima della v15 la
+      // tabella nasce già con la colonna.
+      if (da < 16 && da >= 15) {
+        await m.addColumn(membri, membri.invitatoIl);
       }
     },
     beforeOpen: (_) async {

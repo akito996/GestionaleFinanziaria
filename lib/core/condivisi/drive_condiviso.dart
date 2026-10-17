@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -45,7 +46,12 @@ final class ErroreDriveCondiviso implements Exception {
 /// Tutto sta in un'unica cartella «WalleCy» nel Drive dell'utente, con una
 /// sottocartella per ogni condivisione: niente cartelle sparse nella radice.
 class DriveCondiviso {
-  DriveCondiviso(this._client);
+  /// Ogni richiesta ha un tempo massimo ([attesa]): con la rete lenta o una
+  /// connessione appesa l'app non resta ad aspettare per sempre.
+  DriveCondiviso(
+    http.Client client, {
+    Duration attesa = const Duration(seconds: 30),
+  }) : _client = _ConAttesa(client, attesa);
 
   final http.Client _client;
 
@@ -220,6 +226,31 @@ class DriveCondiviso {
     };
   }
 
+  /// Toglie a [email] l'accesso alla cartella o al file (invito scaduto).
+  Future<void> togliCondivisione(String id, String email) async {
+    final elenco = await _client.get(
+      _api
+          .resolve('files/$id/permissions')
+          .replace(
+            queryParameters: {
+              'fields': 'permissions(id,emailAddress)',
+              'pageSize': '100',
+            },
+          ),
+    );
+    final permessi =
+        (await _json(elenco))['permissions'] as List<Object?>? ?? const [];
+    for (final p in permessi.cast<Map<String, Object?>>()) {
+      if ((p['emailAddress'] as String?)?.toLowerCase() ==
+          email.toLowerCase()) {
+        final r = await _client.delete(
+          _api.resolve('files/$id/permissions/${p['id']}'),
+        );
+        await _json(r);
+      }
+    }
+  }
+
   /// Il file [nome] nella cartella, se l'app lo vede.
   Future<String?> trovaFile(String cartellaId, String nome) async =>
       (await _cerca(
@@ -234,6 +265,13 @@ class DriveCondiviso {
       await aggiorna(esistente, testo);
       return esistente;
     }
+    return creaFile(cartellaId, nome, testo);
+  }
+
+  /// Un file **nuovo** nella cartella, anche se ce n'è già uno con lo stesso
+  /// nome (così il file di una persona non sovrascrive mai quello di
+  /// un'altra). Restituisce l'id.
+  Future<String> creaFile(String cartellaId, String nome, String testo) async {
     const confine = 'wallecy-confine';
     final corpo =
         '--$confine\r\n'
@@ -341,4 +379,36 @@ class DriveCondiviso {
   }
 
   void chiudi() => _client.close();
+}
+
+/// Client con un tempo massimo per tutta la richiesta (risposta compresa).
+class _ConAttesa extends http.BaseClient {
+  _ConAttesa(this._interno, this._attesa);
+
+  final http.Client _interno;
+  final Duration _attesa;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest richiesta) async {
+    try {
+      final risposta = await _interno.send(richiesta).timeout(_attesa);
+      final byte = await risposta.stream.toBytes().timeout(_attesa);
+      return http.StreamedResponse(
+        Stream.value(byte),
+        risposta.statusCode,
+        contentLength: byte.length,
+        request: risposta.request,
+        headers: risposta.headers,
+        reasonPhrase: risposta.reasonPhrase,
+      );
+    } on TimeoutException {
+      throw const ErroreDriveCondiviso(
+        408,
+        'Google Drive non risponde: controlla la connessione e riprova.',
+      );
+    }
+  }
+
+  @override
+  void close() => _interno.close();
 }

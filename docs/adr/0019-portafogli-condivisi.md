@@ -126,6 +126,13 @@ Scelta dell'utente: **Qualità/Prezzo** (le altre: proprietario come "centro" ch
 - **Traduzione** tra archivi: categorie per percorso ("Alimentari › Spesa", create se mancano), tipi per effetto; un trasferimento da o verso un portafoglio personale arriva agli altri come entrata o uscita.
 - **Fiducia**: chiave del proprietario fissata alla prima lettura del registro (se cambia, il registro si rifiuta); codice di sicurezza con QR nella scheda "Persone".
 - Gira ogni 5 minuti con la sincronizzazione, senza chiedere niente a Google (se manca il consenso, salta); "Aggiorna ora" nella pagina dei portafogli condivisi. Su Windows il permesso drive.file resta nell'archivio cifrato.
+- **Correzioni dopo la prima prova vera (17/10/2026)**:
+  - il modulo del nuovo portafoglio si chiude subito; la condivisione prosegue con un avviso in basso finché non ha finito;
+  - ogni richiesta a Drive ha un tempo massimo di 30 secondi;
+  - prima si condivide la cartella, poi si registra la persona: un invito interrotto non lascia una persona "da confermare" senza cartella;
+  - **un'ora per accettare** (richiesta dell'utente): nel dettaglio del portafoglio l'avviso "In attesa di risposta… fino alle HH:MM"; dopo un'ora senza risposta l'invito scade, la cartella non è più condivisa con quella persona, il proprietario riceve l'avviso "Condivisione non riuscita" e può invitarla di nuovo ("Invita di nuovo"). Se la condivisione non parte per niente, lo stesso avviso subito. In ogni caso il portafoglio si usa normalmente;
+  - file di ogni persona con il nome del suo account (`wallecy_<account>.json`), creati sempre nuovi (mai sovrascritti);
+  - database v16: `membri.invitato_il`, stato `scaduto`.
 - Da fare (consegne 2 e 3): quote nel totale e voci assegnate, vista per membro, impedire nell'interfaccia di modificare le voci altrui, badge in Panoramica, notifiche, uscita e rimozione con cambio di chiave, scansione del QR con la fotocamera.
 
 ## Consegne

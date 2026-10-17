@@ -188,6 +188,7 @@ class _GuscioState extends State<Guscio> {
   Timer? _sincronia;
   AppLifecycleListener? _ciclo;
   BloccoAutomatico? _blocco;
+  StreamSubscription<String>? _avvisiCondivisi;
 
   @override
   void initState() {
@@ -211,6 +212,36 @@ class _GuscioState extends State<Guscio> {
     );
     // In secondo piano troppo a lungo: l'archivio si blocca (Impostazioni).
     _blocco = BloccoAutomatico(widget.sessione);
+    // Portafogli condivisi: un giro subito e gli avvisi per il proprietario
+    // (es. invito scaduto senza risposta).
+    _avvisiCondivisi = widget.sessione.condivisi.avvisi.listen(
+      _avvisoCondiviso,
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.sessione.fase == FaseSessione.sbloccata) {
+        widget.sessione.condivisi.sincronizza().ignore();
+      }
+    });
+  }
+
+  void _avvisoCondiviso(String testo) {
+    if (!mounted) {
+      return;
+    }
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.group_off_outlined),
+        title: const Text('Condivisione non riuscita'),
+        content: Text(testo),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    ).ignore();
   }
 
   void _sincronizza() {
@@ -241,6 +272,7 @@ class _GuscioState extends State<Guscio> {
     _sincronia?.cancel();
     _ciclo?.dispose();
     _blocco?.dispose();
+    _avvisiCondivisi?.cancel();
     super.dispose();
   }
 

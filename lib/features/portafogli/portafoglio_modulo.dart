@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../core/db/archivio.dart';
@@ -110,6 +112,7 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
     final saldo = _saldo.text.trim().isEmpty ? 0 : Importo.leggi(_saldo.text)!;
     final contabilita = widget.sessione.contabilita;
     setState(() => _salvataggio = true);
+    String? daCondividere;
     try {
       if (widget.esistente == null) {
         final id = await contabilita.creaPortafoglio(
@@ -121,8 +124,8 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
         if (_preferito) {
           await contabilita.impostaPreferito(id, true);
         }
-        if (_condiviso && mounted) {
-          await invitaPersona(context, widget.sessione, id, _email.text);
+        if (_condiviso) {
+          daCondividere = id;
         }
       } else {
         await contabilita.modificaPortafoglio(
@@ -138,7 +141,17 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
         await contabilita.impostaPreferito(id, _preferito);
       }
       if (mounted) {
-        Navigator.of(context).pop(true);
+        // Letto prima della chiusura: poi il modulo non c'è più.
+        final email = _email.text;
+        final navigatore = Navigator.of(context)..pop(true);
+        final id = daCondividere;
+        if (id != null) {
+          // Il modulo si chiude subito: la condivisione prosegue con il suo
+          // avviso (e l'eventuale errore) sulla pagina sotto.
+          unawaited(
+            invitaPersona(navigatore.context, widget.sessione, id, email),
+          );
+        }
       }
     } catch (e, stack) {
       if (mounted) {

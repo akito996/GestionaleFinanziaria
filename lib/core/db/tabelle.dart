@@ -456,6 +456,10 @@ class Membri extends Table with ColonneSincronizzate {
   /// Quota del totale in centesimi di punto (5000 = 50%); vuota = non
   /// indicata (consegna 2).
   IntColumn get quota => integer().nullable()();
+
+  /// Quando è partito l'ultimo invito (UTC, ISO 8601): ha un'ora per
+  /// accettare.
+  TextColumn get invitatoIl => text().nullable()();
 }
 
 /// L'ultima versione **firmata** di ogni riga di un portafoglio condiviso
@@ -500,6 +504,10 @@ abstract final class StatoMembro {
 
   /// Uscito o tolto dal proprietario.
   static const uscito = 'uscito';
+
+  /// Non ha accettato in tempo: la cartella non gli è più condivisa; si può
+  /// invitare di nuovo.
+  static const scaduto = 'scaduto';
 }
 
 /// Impostazioni locali del dispositivo (non sincronizzate): id dispositivo, contatori, ...

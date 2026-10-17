@@ -39,6 +39,12 @@ class DriveFinto {
   /// Condivisioni: cartella o file → utenti con permesso di scrittura.
   final permessi = <String, Set<String>>{};
   final condivisioni = <({String id, String email, String? messaggio})>[];
+
+  /// Google rifiuta la prossima condivisione (es. rete caduta).
+  bool rifiutaCondivisione = false;
+
+  /// Condivisioni tolte (inviti scaduti).
+  final revoche = <({String id, String utente})>[];
   var richieste = 0;
   var _n = 0;
 
@@ -113,6 +119,10 @@ class DriveFinto {
         );
         return _ok({'id': crea(utente, nuovo)});
       case 'POST' when percorso.endsWith('/permissions'):
+        if (rifiutaCondivisione) {
+          rifiutaCondivisione = false;
+          return http.Response('backend error', 500);
+        }
         final cartella = percorso.split('/')[4];
         final email = (jsonDecode(r.body) as Map)['emailAddress'] as String;
         condivisioni.add((
@@ -127,13 +137,24 @@ class DriveFinto {
         return _ok({
           'permissions': [
             {
+              'id': 'proprietario',
               'emailAddress': '${elementi[cartella]!.proprietario}@example.com',
               'role': 'owner',
             },
-            for (final c in condivisioni.where((c) => c.id == cartella))
-              {'emailAddress': c.email, 'role': 'writer'},
+            for (final u in permessi[cartella] ?? const <String>{})
+              {
+                'id': 'p-$u',
+                'emailAddress': '$u@example.com',
+                'role': 'writer',
+              },
           ],
         });
+      case 'DELETE' when percorso.contains('/permissions/'):
+        final parti = percorso.split('/');
+        final utente = parti.last.replaceFirst('p-', '');
+        permessi[parti[4]]?.remove(utente);
+        revoche.add((id: parti[4], utente: utente));
+        return http.Response('', 204);
       case 'POST' when percorso == '/upload/drive/v3/files':
         final parti = r.body.split('\r\n\r\n');
         final meta =
