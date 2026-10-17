@@ -131,8 +131,8 @@ Future<void> condivisioneNonRiuscita(BuildContext context, String motivo) =>
         title: const Text('Condivisione non riuscita'),
         content: Text(
           '$motivo\n\nIl portafoglio c\'è e si usa normalmente: puoi '
-          'condividerlo più tardi dall\'icona delle persone, nel suo '
-          'dettaglio.',
+          'condividerlo più tardi: aprilo e scegli «Condividi con altre '
+          'persone» dal menu ☰.',
         ),
         actions: [
           FilledButton(
@@ -219,7 +219,8 @@ class _ModuloInvitoState extends State<_ModuloInvito> {
 }
 
 /// Le persone di un portafoglio condiviso, nel suo dettaglio. Niente se il
-/// portafoglio non è condiviso.
+/// portafoglio non è condiviso. Quando tutti hanno accettato è chiusa (solo
+/// con chi è condiviso); si apre e si chiude con le frecce.
 class SchedaPersone extends StatefulWidget {
   const SchedaPersone({
     super.key,
@@ -243,6 +244,25 @@ class _SchedaPersoneState extends State<SchedaPersone> {
   late final Stream<List<VistaCondiviso>> _flusso = sessione.condivisi
       .osserva();
 
+  /// Aperta o chiusa: decisa alla prima apertura (aperta solo se c'è
+  /// qualcosa da fare), poi la cambia l'utente.
+  bool? _aperta;
+
+  /// "Con mario@gmail.com", "Con mario@gmail.com e altre 2 persone".
+  static String _conChi(VistaCondiviso vista) {
+    final altri = [
+      for (final m in vista.membri)
+        if (m.fileId != vista.info.mioFileId && m.stato != StatoMembro.uscito)
+          m.email,
+    ];
+    return switch (altri.length) {
+      0 => 'Nessun\'altra persona',
+      1 => 'Con ${altri.first}',
+      2 => 'Con ${altri.first} e ${altri.last}',
+      _ => 'Con ${altri.first} e altre ${altri.length - 1} persone',
+    };
+  }
+
   @override
   Widget build(BuildContext context) => StreamBuilder<List<VistaCondiviso>>(
     stream: _flusso,
@@ -260,7 +280,12 @@ class _SchedaPersoneState extends State<SchedaPersone> {
           if (PortafogliCondivisiServizio.scadenzaDi(m) case final scade?)
             (m.email, scade),
       ];
+      final aperta = _aperta ??=
+          inAttesa.isNotEmpty ||
+          vista.info.chiave.isEmpty ||
+          vista.membri.any((m) => m.stato == StatoMembro.scaduto);
       return Card(
+        clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -290,8 +315,11 @@ class _SchedaPersoneState extends State<SchedaPersone> {
             ListTile(
               leading: const Icon(Icons.group_outlined),
               title: const Text('Portafoglio condiviso'),
+              onTap: () => setState(() => _aperta = !aperta),
               subtitle: Text(
-                vista.info.chiave.isEmpty
+                !aperta
+                    ? _conChi(vista)
+                    : vista.info.chiave.isEmpty
                     ? 'In attesa che l\'app del proprietario ti consegni '
                           'la chiave.'
                     : proprietario
@@ -300,84 +328,96 @@ class _SchedaPersoneState extends State<SchedaPersone> {
                     : 'Le voci le modificano chi le inserisce e il '
                           'proprietario.',
               ),
-              trailing: proprietario
-                  ? IconButton(
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (proprietario && aperta)
+                    IconButton(
                       tooltip: 'Invita una persona',
                       icon: const Icon(Icons.person_add_alt_1_outlined),
                       onPressed: () =>
                           apriInvito(context, sessione, portafoglioId),
-                    )
-                  : null,
+                    ),
+                  IconButton(
+                    tooltip: aperta ? 'Mostra meno' : 'Mostra di più',
+                    icon: Icon(aperta ? Icons.expand_less : Icons.expand_more),
+                    onPressed: () => setState(() => _aperta = !aperta),
+                  ),
+                ],
+              ),
             ),
-            for (final m in vista.membri)
-              ListTile(
-                dense: true,
-                leading: Icon(
-                  m.ruolo == RuoloMembro.proprietario
-                      ? Icons.star_outline
-                      : Icons.person_outline,
-                ),
-                title: Text(
-                  m.stato == StatoMembro.invitato
-                      ? '${m.email} (da confermare)'
-                      : m.email,
-                ),
-                subtitle: Text(_statoPersona(vista.info, m)),
-                trailing: m.fileId == vista.info.mioFileId
-                    ? null
-                    : proprietario &&
-                          (m.stato == StatoMembro.invitato ||
-                              m.stato == StatoMembro.scaduto)
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (m.stato == StatoMembro.invitato)
+            if (aperta) ...[
+              for (final m in vista.membri)
+                ListTile(
+                  dense: true,
+                  leading: Icon(
+                    m.ruolo == RuoloMembro.proprietario
+                        ? Icons.star_outline
+                        : Icons.person_outline,
+                  ),
+                  title: Text(
+                    m.stato == StatoMembro.invitato
+                        ? '${m.email} (da confermare)'
+                        : m.email,
+                  ),
+                  subtitle: Text(_statoPersona(vista.info, m)),
+                  trailing: m.fileId == vista.info.mioFileId
+                      ? null
+                      : proprietario &&
+                            (m.stato == StatoMembro.invitato ||
+                                m.stato == StatoMembro.scaduto)
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (m.stato == StatoMembro.invitato)
+                              IconButton(
+                                tooltip: 'Copia il link d\'invito',
+                                icon: const Icon(Icons.link),
+                                onPressed: () => _copiaLink(m),
+                              ),
                             IconButton(
-                              tooltip: 'Copia il link d\'invito',
-                              icon: const Icon(Icons.link),
-                              onPressed: () => _copiaLink(m),
+                              tooltip: 'Invita di nuovo',
+                              icon: const Icon(Icons.forward_to_inbox_outlined),
+                              onPressed: () => invitaPersona(
+                                context,
+                                sessione,
+                                portafoglioId,
+                                m.email,
+                              ),
                             ),
-                          IconButton(
-                            tooltip: 'Invita di nuovo',
-                            icon: const Icon(Icons.forward_to_inbox_outlined),
-                            onPressed: () => invitaPersona(
-                              context,
-                              sessione,
-                              portafoglioId,
-                              m.email,
-                            ),
-                          ),
-                        ],
-                      )
-                    : Icon(
-                        m.verificato
-                            ? Icons.verified_user_outlined
-                            : Icons.gpp_maybe_outlined,
-                        color: m.verificato
-                            ? schema.primary
-                            : schema.onSurfaceVariant,
-                      ),
-                onTap: m.fileId == vista.info.mioFileId || m.chiaveFirma == null
-                    ? null
-                    : () => apriCodiceSicurezza(context, sessione, m),
-              ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: () => interrompiCondivisione(
-                  context,
-                  sessione,
-                  portafoglioId,
-                  proprietario: proprietario,
+                          ],
+                        )
+                      : Icon(
+                          m.verificato
+                              ? Icons.verified_user_outlined
+                              : Icons.gpp_maybe_outlined,
+                          color: m.verificato
+                              ? schema.primary
+                              : schema.onSurfaceVariant,
+                        ),
+                  onTap:
+                      m.fileId == vista.info.mioFileId || m.chiaveFirma == null
+                      ? null
+                      : () => apriCodiceSicurezza(context, sessione, m),
                 ),
-                icon: const Icon(Icons.link_off),
-                label: Text(
-                  proprietario
-                      ? 'Interrompi la condivisione'
-                      : 'Esci dalla condivisione',
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () => interrompiCondivisione(
+                    context,
+                    sessione,
+                    portafoglioId,
+                    proprietario: proprietario,
+                  ),
+                  icon: const Icon(Icons.link_off),
+                  label: Text(
+                    proprietario
+                        ? 'Interrompi la condivisione'
+                        : 'Esci dalla condivisione',
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       );

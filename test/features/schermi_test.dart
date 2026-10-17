@@ -90,7 +90,13 @@ void main() {
       final sb = (b.renderObject! as RenderBox).size;
       return sa.width * sa.height >= sb.width * sb.height ? a : b;
     });
+    final posizione = (pagina as StatefulElement).state as ScrollableState;
     for (var i = 0; i < 12; i++) {
+      // Già in cima: un altro trascinamento verso il basso sarebbe
+      // "trascina per aggiornare".
+      if (passo > 0 && posizione.position.extentBefore == 0) {
+        break;
+      }
       await tester.drag(
         find.byElementPredicate((e) => e == pagina),
         Offset(0, passo),

@@ -11,6 +11,7 @@ import '../comuni/blocco_automatico.dart';
 import '../comuni/errori.dart';
 import '../comuni/layout.dart';
 import '../portafogli/portafoglio_pagina.dart';
+import '../sync/sync_pagina.dart';
 
 /// Impostazioni › Portafogli condivisi (ADR-019): quelli di cui fai parte e
 /// "Unisciti" per entrare in un portafoglio a cui sei stato invitato.
@@ -199,8 +200,15 @@ class _PortafogliCondivisiPaginaState extends State<PortafogliCondivisiPagina> {
   }
 
   Future<void> _aggiorna() => _lavoro(() async {
-    await widget.sessione.condivisi.sincronizza(interattivo: true);
-    _avvisa('Portafogli condivisi aggiornati.');
+    final condivisi = widget.sessione.condivisi;
+    await condivisi.sincronizza(interattivo: true);
+    final stato = condivisi.stato.value;
+    _avvisa(switch (stato.fase) {
+      FaseCondivisi.errore => 'Aggiornamento non riuscito: ${stato.messaggio}',
+      FaseCondivisi.accessoRichiesto =>
+        'Serve l\'accesso a Google: tocca di nuovo e accetta.',
+      _ => 'Portafogli condivisi aggiornati.',
+    });
   });
 
   @override
@@ -230,58 +238,62 @@ class _PortafogliCondivisiPaginaState extends State<PortafogliCondivisiPagina> {
       stream: _flusso,
       builder: (context, snapshot) {
         final elenco = snapshot.data ?? const [];
-        return LayoutBuilder(
-          builder: (context, vincoli) => ListView(
-            padding: marginiPagina(vincoli),
-            children: [
-              if (_occupato) const LinearProgressIndicator(),
-              const Text(
-                'Un portafoglio condiviso lo vedono e lo usano più persone, '
-                'ognuna con il proprio WalleCy e il proprio account Google. '
-                'Per condividerne uno, aprilo e tocca l\'icona delle persone. '
-                'Se ti hanno invitato, premi «Unisciti».',
-              ),
-              const SizedBox(height: 16),
-              _NuoviInviti(
-                inviti: _inviti,
-                occupato: _occupato,
-                onAccetta: (i) => _unisciti(invito: i),
-                onIgnora: (i) =>
-                    widget.sessione.condivisi.togliInvito(i.registroId),
-              ),
-              if (elenco.isEmpty && snapshot.hasData)
-                const Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Text(
-                    'Ancora nessun portafoglio condiviso.',
-                    textAlign: TextAlign.center,
-                  ),
+        return AggiornaTrascinando(
+          sessione: widget.sessione,
+          child: LayoutBuilder(
+            builder: (context, vincoli) => ListView(
+              padding: marginiPagina(vincoli),
+              children: [
+                if (_occupato) const LinearProgressIndicator(),
+                const Text(
+                  'Un portafoglio condiviso lo vedono e lo usano più persone, '
+                  'ognuna con il proprio WalleCy e il proprio account Google. '
+                  'Per condividerne uno, aprilo e scegli «Condividi con altre '
+                  'persone» dal menu ☰. '
+                  'Se ti hanno invitato, premi «Unisciti».',
                 ),
-              for (final v in elenco)
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.group_outlined),
-                    title: Text(
-                      v.nome.isEmpty ? 'Portafoglio in arrivo' : v.nome,
-                    ),
-                    subtitle: Text(
-                      [
-                        v.info.ruolo == RuoloMembro.proprietario
-                            ? 'Sei il proprietario'
-                            : 'Sei un membro',
-                        '${v.membri.length} persone',
-                        if (v.info.chiave.isEmpty)
-                          'in attesa della chiave dal proprietario: '
-                              'tocca per aggiornare'
-                        else if (v.nome.isEmpty)
-                          'non ancora arrivato: tocca per completare',
-                      ].join(' · '),
-                    ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: _occupato ? null : () => _apri(v),
-                  ),
+                const SizedBox(height: 16),
+                _NuoviInviti(
+                  inviti: _inviti,
+                  occupato: _occupato,
+                  onAccetta: (i) => _unisciti(invito: i),
+                  onIgnora: (i) =>
+                      widget.sessione.condivisi.togliInvito(i.registroId),
                 ),
-            ],
+                if (elenco.isEmpty && snapshot.hasData)
+                  const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text(
+                      'Ancora nessun portafoglio condiviso.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                for (final v in elenco)
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.group_outlined),
+                      title: Text(
+                        v.nome.isEmpty ? 'Portafoglio in arrivo' : v.nome,
+                      ),
+                      subtitle: Text(
+                        [
+                          v.info.ruolo == RuoloMembro.proprietario
+                              ? 'Sei il proprietario'
+                              : 'Sei un membro',
+                          '${v.membri.length} persone',
+                          if (v.info.chiave.isEmpty)
+                            'in attesa della chiave dal proprietario: '
+                                'tocca per aggiornare'
+                          else if (v.nome.isEmpty)
+                            'non ancora arrivato: tocca per completare',
+                        ].join(' · '),
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: _occupato ? null : () => _apri(v),
+                    ),
+                  ),
+              ],
+            ),
           ),
         );
       },

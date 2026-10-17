@@ -377,6 +377,18 @@ class DriveCondiviso {
     return (utente?['emailAddress'] as String?)?.toLowerCase();
   }
 
+  /// Numero di versione di un file (cresce a ogni modifica): una richiesta
+  /// piccola per sapere se va riletto. `null` se Drive non lo dice.
+  Future<String?> versione(String fileId) async {
+    final r = await _client.get(
+      _api
+          .resolve('files/$fileId')
+          .replace(queryParameters: {'fields': 'version'}),
+    );
+    final versione = (await _json(r))['version'];
+    return versione == null ? null : '$versione';
+  }
+
   /// Contenuto di un file di testo.
   Future<String> leggi(String fileId) async {
     final r = await _client.get(

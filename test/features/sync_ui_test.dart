@@ -137,6 +137,19 @@ void main() {
       await tester.runAsync(() => Sincronizzatore.idArchivioRemoto(drive)),
       pc.idArchivio,
     );
+
+    // Fuori dalla pagina: ⟳ sincronizza subito, la nuvola sta nel menu ☰.
+    await tocca(tester, find.byType(BackButton));
+    await attendi(tester, find.byTooltip('Sincronizza ora').hitTestable());
+    await tocca(tester, find.byTooltip('Sincronizza ora').hitTestable().first);
+    await attendi(tester, find.text('Tutto aggiornato'));
+    await tocca(tester, find.byTooltip('Altri strumenti').hitTestable().first);
+    await attendi(tester, find.text('Sincronizzazione').hitTestable());
+    expect(find.textContaining('Sincronizzato'), findsWidgets);
+    await tocca(tester, find.text('Sincronizzazione').hitTestable().first);
+    await attendi(tester, find.text('PC, telefono e tablet sempre allineati'));
+    // Fine dell'animazione di apertura prima di bloccare.
+    await tester.pump(const Duration(seconds: 1));
     await chiudi(tester, pc);
   });
 

@@ -18,6 +18,7 @@ import 'elimina_portafoglio.dart';
 import 'portafoglio_modulo.dart';
 import '../comuni/avvisi.dart';
 import '../condivisi/condividi_portafoglio.dart';
+import '../sync/sync_pagina.dart';
 
 /// Dettaglio di un portafoglio: saldo e movimenti, con modifica e archiviazione.
 class PortafoglioPagina extends StatelessWidget {
@@ -95,31 +96,46 @@ class PortafoglioPagina extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(
             title: Text(p.portafoglio.nome),
+            // In alto solo ⟳; il resto nel menu ☰.
             actions: [
-              IconButton(
-                tooltip: 'Condividi con altre persone',
-                icon: const Icon(Icons.group_add_outlined),
-                onPressed: () => apriInvito(context, sessione, portafoglioId),
-              ),
-              IconButton(
-                tooltip: 'Modifica portafoglio',
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: () => apriModuloPortafoglio(
-                  context,
-                  sessione,
-                  esistente: p.portafoglio,
-                ),
-              ),
-              IconButton(
-                tooltip: 'Archivia portafoglio',
-                icon: const Icon(Icons.archive_outlined),
-                onPressed: () => _archivia(context, p),
-              ),
-              IconButton(
-                tooltip: 'Elimina portafoglio',
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () =>
-                    apriEliminaPortafoglio(context, sessione, p.portafoglio),
+              PulsanteSincronizza(sessione: sessione),
+              MenuStrumenti(
+                sessione: sessione,
+                notifiche: false,
+                strumenti: [
+                  Strumento(
+                    icona: const Icon(Icons.group_add_outlined),
+                    titolo: 'Condividi con altre persone',
+                    descrizione: 'Invita qualcuno a usarlo insieme a te',
+                    azione: () => apriInvito(context, sessione, portafoglioId),
+                  ),
+                  Strumento(
+                    icona: const Icon(Icons.edit_outlined),
+                    titolo: 'Modifica portafoglio',
+                    descrizione: 'Nome, tipo, valuta e saldo di partenza',
+                    azione: () => apriModuloPortafoglio(
+                      context,
+                      sessione,
+                      esistente: p.portafoglio,
+                    ),
+                  ),
+                  Strumento(
+                    icona: const Icon(Icons.archive_outlined),
+                    titolo: 'Archivia portafoglio',
+                    descrizione: 'Sparisce dagli elenchi, i movimenti restano',
+                    azione: () => _archivia(context, p),
+                  ),
+                  Strumento(
+                    icona: const Icon(Icons.delete_outline),
+                    titolo: 'Elimina portafoglio',
+                    descrizione: 'Scegli tu cosa fare dei suoi movimenti',
+                    azione: () => apriEliminaPortafoglio(
+                      context,
+                      sessione,
+                      p.portafoglio,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -140,84 +156,89 @@ class PortafoglioPagina extends StatelessWidget {
             ),
             builder: (context, snapshot) {
               final movimenti = snapshot.data ?? const [];
-              return LayoutBuilder(
-                builder: (context, vincoli) => ListView(
-                  padding: marginiPagina(vincoli, sopra: 0),
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        children: [
-                          Text(
-                            p.tipo.nome,
-                            style: Theme.of(context).textTheme.labelLarge,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            Importo.formatta(p.saldo, p.portafoglio.valuta),
-                            style: Theme.of(context).textTheme.displaySmall
-                                ?.copyWith(
-                                  color: p.saldo < 0
-                                      ? Theme.of(context).colorScheme.error
-                                      : null,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
-                        children: [
-                          AvvisiCarte(
-                            sessione: sessione,
-                            portafoglioId: portafoglioId,
-                          ),
-                          AvvisoObiettivi(
-                            sessione: sessione,
-                            portafoglioId: portafoglioId,
-                            saldo: p.saldo,
-                            valuta: p.portafoglio.valuta,
-                          ),
-                          SchedaInArrivo(
-                            sessione: sessione,
-                            portafoglioId: portafoglioId,
-                            giorni: 30,
-                            titolo: 'Prossimi movimenti su questo portafoglio',
-                            chiave: 'inarrivo.$portafoglioId',
-                            escludiOrigini: const {'carta'},
-                          ),
-                          SchedaPersone(
-                            sessione: sessione,
-                            portafoglioId: portafoglioId,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: _AndamentoSaldo(
-                        sessione: sessione,
-                        portafoglioId: portafoglioId,
-                        valuta: p.portafoglio.valuta,
-                      ),
-                    ),
-                    const Divider(height: 1),
-                    if (movimenti.isEmpty && snapshot.hasData)
-                      const Padding(
-                        padding: EdgeInsets.all(32),
-                        child: Text(
-                          'Nessun movimento. Premi "+ Movimento" per aggiungerne uno.',
-                          textAlign: TextAlign.center,
+              // Trascinando verso il basso si sincronizza subito.
+              return AggiornaTrascinando(
+                sessione: sessione,
+                child: LayoutBuilder(
+                  builder: (context, vincoli) => ListView(
+                    padding: marginiPagina(vincoli, sopra: 0),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          children: [
+                            Text(
+                              p.tipo.nome,
+                              style: Theme.of(context).textTheme.labelLarge,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              Importo.formatta(p.saldo, p.portafoglio.valuta),
+                              style: Theme.of(context).textTheme.displaySmall
+                                  ?.copyWith(
+                                    color: p.saldo < 0
+                                        ? Theme.of(context).colorScheme.error
+                                        : null,
+                                  ),
+                            ),
+                          ],
                         ),
                       ),
-                    for (final m in movimenti)
-                      RigaMovimento(
-                        sessione: sessione,
-                        dettaglio: m,
-                        portafoglioId: portafoglioId,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          children: [
+                            AvvisiCarte(
+                              sessione: sessione,
+                              portafoglioId: portafoglioId,
+                            ),
+                            AvvisoObiettivi(
+                              sessione: sessione,
+                              portafoglioId: portafoglioId,
+                              saldo: p.saldo,
+                              valuta: p.portafoglio.valuta,
+                            ),
+                            SchedaInArrivo(
+                              sessione: sessione,
+                              portafoglioId: portafoglioId,
+                              giorni: 30,
+                              titolo:
+                                  'Prossimi movimenti su questo portafoglio',
+                              chiave: 'inarrivo.$portafoglioId',
+                              escludiOrigini: const {'carta'},
+                            ),
+                            SchedaPersone(
+                              sessione: sessione,
+                              portafoglioId: portafoglioId,
+                            ),
+                          ],
+                        ),
                       ),
-                  ],
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: _AndamentoSaldo(
+                          sessione: sessione,
+                          portafoglioId: portafoglioId,
+                          valuta: p.portafoglio.valuta,
+                        ),
+                      ),
+                      const Divider(height: 1),
+                      if (movimenti.isEmpty && snapshot.hasData)
+                        const Padding(
+                          padding: EdgeInsets.all(32),
+                          child: Text(
+                            'Nessun movimento. Premi "+ Movimento" per aggiungerne uno.',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      for (final m in movimenti)
+                        RigaMovimento(
+                          sessione: sessione,
+                          dettaglio: m,
+                          portafoglioId: portafoglioId,
+                        ),
+                    ],
+                  ),
                 ),
               );
             },

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show SocketException;
 
 import 'package:crypto/crypto.dart' show sha256;
 import 'package:drift/drift.dart';
@@ -63,6 +64,28 @@ final class CondivisoNonValido implements Exception {
 
   @override
   String toString() => 'Portafoglio condiviso non valido: $motivo';
+}
+
+/// Com'è andato l'ultimo giro dei portafogli condivisi.
+enum FaseCondivisi {
+  /// Nessun portafoglio condiviso su questo dispositivo.
+  nessuno,
+  aggiornati,
+
+  /// Manca il consenso di Google: serve un tocco su ⟳ (o "Aggiorna ora").
+  accessoRichiesto,
+  errore,
+}
+
+@immutable
+class StatoCondivisi {
+  const StatoCondivisi(this.fase, {this.ultima, this.messaggio});
+
+  final FaseCondivisi fase;
+
+  /// Ultimo giro riuscito.
+  final DateTime? ultima;
+  final String? messaggio;
 }
 
 /// Un portafoglio condiviso con le sue persone (per le schermate).
@@ -136,10 +159,118 @@ class PortafogliCondivisiServizio {
   StreamSubscription<List<Membro>>? _osservaEx;
 
   void chiudi() {
+    _chiuso = true;
     _avvisi.close();
     _osservaEx?.cancel();
     _exMembri.dispose();
+    stato.dispose();
   }
+
+  bool _chiuso = false;
+
+  /// Ogni quanto si controllano i portafogli condivisi con l'app aperta. Il
+  /// controllo è leggero: si chiede a Drive solo il numero di versione dei
+  /// file e si scarica soltanto ciò che è cambiato.
+  static const intervallo = Duration(minutes: 1);
+
+  /// Com'è andato l'ultimo giro (icona ⟳, pagina della sincronizzazione).
+  final stato = ValueNotifier(const StatoCondivisi(FaseCondivisi.nessuno));
+
+  /// C'è (di nuovo) un portafoglio condiviso: partono i controlli di ogni
+  /// minuto, senza aspettare il prossimo giro completo.
+  void _ciSono() {
+    if (stato.value.fase == FaseCondivisi.nessuno) {
+      _imposta(StatoCondivisi(FaseCondivisi.aggiornati, ultima: _adesso()));
+    }
+  }
+
+  void _imposta(StatoCondivisi nuovo) {
+    if (!_chiuso) {
+      stato.value = nuovo;
+    }
+  }
+
+  /// `true` se su questo dispositivo c'è almeno un portafoglio condiviso.
+  Future<bool> presenti() async =>
+      (await (_db.select(_db.portafogliCondivisi)
+                ..where((c) => c.eliminato.equals(false))
+                ..limit(1))
+              .get())
+          .isNotEmpty;
+
+  /// Avvisa a ogni modifica di movimenti o portafogli in questo archivio:
+  /// con [daInviare] si capisce se c'è qualcosa da mandare subito agli altri.
+  Stream<void> get modificheLocali => _db
+      .tableUpdates(
+        TableUpdateQuery.onAllTables([_db.movimenti, _db.portafogli]),
+      )
+      .map((_) {});
+
+  /// `true` se in un portafoglio condiviso c'è una modifica fatta qui e non
+  /// ancora mandata agli altri (si confronta l'orologio delle righe).
+  Future<bool> daInviare() async {
+    final righe = await _db
+        .customSelect(
+          'SELECT 1 AS da_inviare_condivisi FROM portafogli_condivisi pc '
+          'JOIN movimenti m ON m.portafoglio_id = pc.portafoglio_id '
+          'OR m.portafoglio_destinazione_id = pc.portafoglio_id '
+          "LEFT JOIN righe_condivise r ON r.id = pc.portafoglio_id || ':' || m.id "
+          "WHERE pc.eliminato = 0 AND pc.chiave <> '' "
+          'AND (r.id IS NULL OR r.riga_aggiornata_il <> m.aggiornato_il) '
+          'UNION ALL '
+          'SELECT 1 FROM portafogli_condivisi pc '
+          'JOIN portafogli p ON p.id = pc.portafoglio_id '
+          "LEFT JOIN righe_condivise r ON r.id = pc.portafoglio_id || ':' || p.id "
+          "WHERE pc.eliminato = 0 AND pc.chiave <> '' "
+          "AND (pc.ruolo = '${RuoloMembro.proprietario}' OR p.eliminato = 1) "
+          'AND (r.id IS NULL OR r.riga_aggiornata_il <> p.aggiornato_il) '
+          'LIMIT 1',
+          readsFrom: {
+            _db.portafogliCondivisi,
+            _db.movimenti,
+            _db.portafogli,
+            _db.righeCondivise,
+          },
+        )
+        .get();
+    return righe.isNotEmpty;
+  }
+
+  /// Versione di ogni file già letto e unito: se Drive dice la stessa, il
+  /// file non si scarica di nuovo.
+  final _versioni = <String, String>{};
+
+  /// Un file da unire è rimandato (es. firmato da una persona non ancora
+  /// nota): va riletto al prossimo giro anche se non cambia.
+  bool _rimandato = false;
+
+  /// Il contenuto di un file, o `null` se non è cambiato dall'ultima volta.
+  Future<String?> _leggiSeCambiato(DriveCondiviso drive, String fileId) async {
+    final versione = await drive.versione(fileId);
+    if (versione != null && _versioni[fileId] == versione) {
+      return null;
+    }
+    final testo = await drive.leggi(fileId);
+    if (versione != null) {
+      // La versione letta PRIMA del contenuto: se nel frattempo il file è
+      // cambiato, al prossimo giro si rilegge.
+      _versioni[fileId] = versione;
+    }
+    return testo;
+  }
+
+  /// Un errore spiegato in breve.
+  static String _leggibile(Object e) => switch (e) {
+    SocketException() ||
+    http.ClientException() => 'nessuna connessione a Internet',
+    ErroreDriveCondiviso(stato: 408) => 'Google Drive non risponde',
+    ErroreDriveCondiviso(stato: 401) => "serve di nuovo l'accesso a Google",
+    ErroreDriveCondiviso(stato: 403 || 404) =>
+      'un file del portafoglio non è raggiungibile su Google Drive',
+    ErroreDriveCondiviso(:final stato) => 'Google Drive ha risposto $stato',
+    CondivisoNonValido(:final motivo) => motivo,
+    _ => '$e',
+  };
 
   // ------------------------------------------------- fine della condivisione
 
@@ -372,6 +503,7 @@ class PortafogliCondivisiServizio {
       final pc =
           await di(portafoglioId) ??
           await _primaCondivisione(drive, portafoglioId);
+      _ciSono();
       final presenti = await membri(portafoglioId);
       final gia = presenti
           .where((m) => m.email == indirizzo && m.stato != StatoMembro.uscito)
@@ -807,6 +939,7 @@ class PortafogliCondivisiServizio {
             );
       }
       final pc = (await di(portafoglioId))!;
+      _ciSono();
       await _aggiornaMembri(pc, registro, mieChiavi: io);
       await togliInvito(pc.registroId);
       await _sincronizzaUno(drive, pc);
@@ -909,38 +1042,94 @@ class PortafogliCondivisiServizio {
 
   // ------------------------------------------------------ sincronizzazione
 
+  Future<void>? _giro;
+  Future<void>? _ancora;
+  bool _ancoraInterattivo = false;
+
   /// Un giro su tutti i portafogli condivisi. Senza [interattivo] non chiede
-  /// niente a Google: se manca il consenso, salta.
-  Future<void> sincronizza({bool interattivo = false}) async {
-    final elenco = await (_db.select(
-      _db.portafogliCondivisi,
-    )..where((c) => c.eliminato.equals(false))).get();
-    if (elenco.isEmpty) {
-      return;
+  /// niente a Google: se manca il consenso, salta (e [stato] lo dice).
+  ///
+  /// Un giro alla volta: se ne arriva un altro mentre uno è in corso, si fa
+  /// subito dopo (uno solo, anche se lo chiedono in tanti).
+  Future<void> sincronizza({bool interattivo = false}) {
+    final inCorso = _giro;
+    if (inCorso != null) {
+      _ancoraInterattivo |= interattivo;
+      return _ancora ??= inCorso.then((_) {
+        final i = _ancoraInterattivo;
+        _ancora = null;
+        _ancoraInterattivo = false;
+        return sincronizza(interattivo: i);
+      });
     }
-    final http.Client? client;
+    final giro = _sincronizzaTutti(interattivo: interattivo);
+    _giro = giro;
+    giro.whenComplete(() => _giro = null).ignore();
+    return giro;
+  }
+
+  Future<void> _sincronizzaTutti({required bool interattivo}) async {
     try {
-      client = await accesso.client(interattivo: interattivo);
-    } on Object catch (e) {
-      // Google non raggiungibile o consenso tolto: si riprova al prossimo giro.
-      debugPrint('Portafogli condivisi: accesso a Google non riuscito: $e');
-      return;
-    }
-    if (client == null) {
-      return;
-    }
-    final drive = _creaDrive(client);
-    try {
-      for (final pc in elenco) {
-        try {
-          await _sincronizzaUno(drive, pc);
-        } on Object catch (e) {
-          // Un portafoglio con problemi non ferma gli altri.
-          debugPrint('Portafoglio condiviso ${pc.portafoglioId}: $e');
-        }
+      final elenco = await (_db.select(
+        _db.portafogliCondivisi,
+      )..where((c) => c.eliminato.equals(false))).get();
+      if (elenco.isEmpty) {
+        _imposta(const StatoCondivisi(FaseCondivisi.nessuno));
+        return;
       }
-    } finally {
-      drive.chiudi();
+      final ultima = stato.value.ultima;
+      final http.Client? client;
+      try {
+        client = await accesso.client(interattivo: interattivo);
+      } on Object catch (e) {
+        // Google non raggiungibile o consenso tolto: si riprova al prossimo
+        // giro.
+        debugPrint('Portafogli condivisi: accesso a Google non riuscito: $e');
+        _imposta(
+          StatoCondivisi(
+            FaseCondivisi.errore,
+            ultima: ultima,
+            messaggio: _leggibile(e),
+          ),
+        );
+        return;
+      }
+      if (client == null) {
+        _imposta(
+          StatoCondivisi(FaseCondivisi.accessoRichiesto, ultima: ultima),
+        );
+        return;
+      }
+      final drive = _creaDrive(client);
+      final problemi = <String>[];
+      try {
+        for (final pc in elenco) {
+          try {
+            await _sincronizzaUno(drive, pc);
+          } on Object catch (e) {
+            // Un portafoglio con problemi non ferma gli altri; i suoi file si
+            // rileggono tutti al prossimo giro.
+            _versioni.clear();
+            debugPrint('Portafoglio condiviso ${pc.portafoglioId}: $e');
+            final nome = await _nomePortafoglio(pc.portafoglioId);
+            problemi.add('«$nome»: ${_leggibile(e)}');
+          }
+        }
+      } finally {
+        drive.chiudi();
+      }
+      _imposta(
+        problemi.isEmpty
+            ? StatoCondivisi(FaseCondivisi.aggiornati, ultima: _adesso())
+            : StatoCondivisi(
+                FaseCondivisi.errore,
+                ultima: ultima,
+                messaggio: problemi.join('\n'),
+              ),
+      );
+    } on Object catch (e) {
+      // Archivio bloccato a metà giro: si riprende allo sblocco.
+      debugPrint('Portafogli condivisi: giro interrotto: $e');
     }
   }
 
@@ -962,9 +1151,9 @@ class PortafogliCondivisiServizio {
     var persone = await membri(pc.portafoglioId);
     // 1. Registro: il membro aggiorna le persone e prende la sua chiave.
     if (!proprietario && pc.registroId.isNotEmpty) {
-      final String testo;
+      final String? testo;
       try {
-        testo = await drive.leggi(pc.registroId);
+        testo = await _leggiSeCambiato(drive, pc.registroId);
       } on ErroreDriveCondiviso catch (e) {
         if (e.stato == 403 || e.stato == 404) {
           // La cartella non è più condivisa (o è stata eliminata).
@@ -973,38 +1162,63 @@ class PortafogliCondivisiServizio {
         }
         rethrow;
       }
-      final registro = _verificaRegistro(
-        testo,
-        proprietario: persone
-            .where((m) => m.ruolo == RuoloMembro.proprietario)
-            .firstOrNull,
-      );
-      if (registro['concluso'] == true) {
-        await _finita(pc);
-        return;
-      }
-      await _aggiornaMembri(pc, registro);
-      persone = await membri(pc.portafoglioId);
-      if (pc.chiave.isEmpty) {
-        final mia = (registro['membri']! as List<Object?>)
-            .cast<Map<String, Object?>>()
-            .where((m) => m['file'] == pc.mioFileId)
-            .firstOrNull;
-        final sigillata = mia?['chiave'];
-        if (sigillata is String) {
-          final chiave = _identita().apri(base64.decode(sigillata));
-          await (_db.update(
-            _db.portafogliCondivisi,
-          )..where((c) => c.id.equals(pc.id))).write(
-            PortafogliCondivisiCompanion(
-              chiave: Value(base64.encode(chiave)),
-              aggiornatoIl: Value(_orologio.adesso()),
-            ),
-          );
-          pc = (await di(pc.portafoglioId))!;
+      if (testo != null) {
+        await _dalRegistro(pc, testo, persone);
+        final aggiornato = await di(pc.portafoglioId);
+        if (aggiornato == null) {
+          return; // condivisione conclusa dal proprietario
         }
+        pc = aggiornato;
+        persone = await membri(pc.portafoglioId);
       }
     }
+    await _passiSuccessivi(drive, pc, persone, proprietario: proprietario);
+  }
+
+  /// Il registro cambiato (membro): persone, fine della condivisione e la
+  /// propria chiave del portafoglio.
+  Future<void> _dalRegistro(
+    PortafoglioCondiviso pc,
+    String testo,
+    List<Membro> persone,
+  ) async {
+    final registro = _verificaRegistro(
+      testo,
+      proprietario: persone
+          .where((m) => m.ruolo == RuoloMembro.proprietario)
+          .firstOrNull,
+    );
+    if (registro['concluso'] == true) {
+      await _finita(pc);
+      return;
+    }
+    await _aggiornaMembri(pc, registro);
+    if (pc.chiave.isEmpty) {
+      final mia = (registro['membri']! as List<Object?>)
+          .cast<Map<String, Object?>>()
+          .where((m) => m['file'] == pc.mioFileId)
+          .firstOrNull;
+      final sigillata = mia?['chiave'];
+      if (sigillata is String) {
+        final chiave = _identita().apri(base64.decode(sigillata));
+        await (_db.update(
+          _db.portafogliCondivisi,
+        )..where((c) => c.id.equals(pc.id))).write(
+          PortafogliCondivisiCompanion(
+            chiave: Value(base64.encode(chiave)),
+            aggiornatoIl: Value(_orologio.adesso()),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _passiSuccessivi(
+    DriveCondiviso drive,
+    PortafoglioCondiviso pc,
+    List<Membro> persone, {
+    required bool proprietario,
+  }) async {
     // 2. Proprietario: chi ha pubblicato le chiavi diventa attivo.
     if (proprietario) {
       var cambiato = false;
@@ -1015,7 +1229,11 @@ class PortafogliCondivisiServizio {
         }
         final Map<String, Object?> file;
         try {
-          file = jsonDecode(await drive.leggi(fileId)) as Map<String, Object?>;
+          final testo = await _leggiSeCambiato(drive, fileId);
+          if (testo == null) {
+            continue;
+          }
+          file = jsonDecode(testo) as Map<String, Object?>;
         } on ErroreDriveCondiviso {
           continue;
         }
@@ -1063,8 +1281,8 @@ class PortafogliCondivisiServizio {
           _avvisi.add(
             'La condivisione di «$nome» con ${m.email} non è riuscita: '
             'nessuna risposta entro un\'ora. Il portafoglio funziona '
-            'normalmente; puoi invitarla di nuovo quando vuoi dall\'icona '
-            'delle persone.',
+            'normalmente; puoi invitarla di nuovo quando vuoi con «Invita di '
+            'nuovo», nella scheda del portafoglio.',
           );
         }
       }
@@ -1090,8 +1308,11 @@ class PortafogliCondivisiServizio {
           continue;
         }
         try {
-          final file =
-              jsonDecode(await drive.leggi(fileId)) as Map<String, Object?>;
+          final testo = await _leggiSeCambiato(drive, fileId);
+          if (testo == null) {
+            continue; // non è cambiato dall'ultimo giro
+          }
+          final file = jsonDecode(testo) as Map<String, Object?>;
           // Un membro è uscito: resta "ex membro", la cartella non gli è
           // più condivisa.
           if (proprietario &&
@@ -1129,7 +1350,11 @@ class PortafogliCondivisiServizio {
           final righe =
               ((jsonDecode(utf8.decode(chiaro)) as Map)['righe'] as List)
                   .cast<Map<String, Object?>>();
+          _rimandato = false;
           await _unisci(pc, righe, persone);
+          if (_rimandato) {
+            _versioni.remove(fileId);
+          }
         } on ErroreDriveCondiviso {
           // File non (ancora) accessibile: le sue righe arrivano dal
           // proprietario, che ricopia tutto.
@@ -1365,7 +1590,12 @@ class PortafogliCondivisiServizio {
       final firma = riga['firma'];
       final firmatario = perId[riga['firmatario']];
       final chiaveFirma = firmatario?.chiaveFirma;
-      if (testo is! String || firma is! String || chiaveFirma == null) {
+      if (testo is! String || firma is! String) {
+        continue;
+      }
+      if (chiaveFirma == null) {
+        // Persona non ancora nota qui: si riprova al prossimo giro.
+        _rimandato = true;
         continue;
       }
       final valida = IdentitaPersona.firmaValida(
@@ -1420,6 +1650,7 @@ class PortafogliCondivisiServizio {
         if (contenuto['tipo'] == 'portafoglio') {
           await _applicaPortafoglio(contenuto, locale);
         } else if (!await _applicaMovimento(pc, contenuto, locale)) {
+          _rimandato = true;
           continue; // il portafoglio non è ancora qui: al prossimo giro
         }
         await _db

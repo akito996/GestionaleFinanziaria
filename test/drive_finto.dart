@@ -23,6 +23,9 @@ class ElementoFinto {
 
   /// Nel cestino: si legge ancora per id, non compare negli elenchi.
   bool cestinato = false;
+
+  /// Come il campo "version" di Drive: cresce a ogni modifica.
+  int versione = 1;
 }
 
 /// Google Drive finto in memoria, condiviso da più account (l'utente "x" ha
@@ -49,6 +52,9 @@ class DriveFinto {
   /// Condivisioni tolte (inviti scaduti).
   final revoche = <({String id, String utente})>[];
   var richieste = 0;
+
+  /// Contenuti scaricati (alt=media), per contare le letture evitate.
+  var letture = 0;
   var _n = 0;
 
   String radice(String utente) => 'root:$utente';
@@ -179,7 +185,9 @@ class DriveFinto {
       case 'PATCH' when !vede(utente, id) || !puoScrivere(utente, id):
         return _manca;
       case 'PATCH' when percorso.startsWith('/upload/'):
-        elementi[id]!.testo = utf8.decode(r.bodyBytes);
+        elementi[id]!
+          ..testo = utf8.decode(r.bodyBytes)
+          ..versione += 1;
         return _ok();
       case 'PATCH' when r.body.contains('"trashed":true'):
         elementi[id]!.cestinato = true;
@@ -218,9 +226,13 @@ class DriveFinto {
       case 'GET' when !vede(utente, id):
         return _manca;
       case 'GET' when q['alt'] == 'media':
+        letture++;
         return http.Response.bytes(utf8.encode(elementi[id]!.testo), 200);
       case 'GET':
         final e = elementi[id]!;
+        if (q['fields'] == 'version') {
+          return _ok({'version': '${e.versione}'});
+        }
         return _ok({
           'name': e.nome,
           'mimeType': e.cartella ? tipoCartella : 'text/plain',

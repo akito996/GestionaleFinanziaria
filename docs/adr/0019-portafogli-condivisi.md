@@ -147,6 +147,13 @@ Scelta dell'utente: **Qualità/Prezzo** (le altre: proprietario come "centro" ch
   - dopo la fine il portafoglio **resta su ogni dispositivo** come portafoglio normale; le voci di chi non fa più parte della condivisione restano, **in grigio** con la scritta "ex membro";
   - **eliminare** un portafoglio condiviso: prima l'avviso "È un portafoglio condiviso" (si perdono tutti i suoi dati; per il proprietario la cartella va nel cestino e la condivisione finisce per tutti), poi la conferma normale; se la chiusura su Drive non riesce, non si elimina niente;
   - un portafoglio eliminato (anche con una versione precedente dell'app) sparisce dall'elenco dei condivisi e la sua condivisione si chiude da sola al primo giro.
+- **Sincronizzazione più rapida** (terza prova vera, 17/10/2026: le voci del membro non arrivavano subito al proprietario, perché i due telefoni controllavano solo ogni 5 minuti). Scelta consigliata **Qualità/Prezzo**:
+  - **le proprie modifiche partono dopo circa 3 secondi**: a ogni cambio di movimenti o portafogli l'app controlla se c'è qualcosa di nuovo in un portafoglio condiviso (`daInviare`, confronto degli orologi) e fa un giro;
+  - **quelle degli altri si controllano ogni minuto** con l'app aperta, oltre che all'apertura e al ritorno nell'app. Il controllo è leggero: a Drive si chiede solo il numero di versione dei file (`fields=version`), e si scarica solo un file cambiato. Un file con righe rimandate (persona non ancora nota, portafoglio non ancora arrivato) si rilegge comunque;
+  - un giro alla volta: le richieste che arrivano durante un giro diventano un solo giro subito dopo;
+  - se il consenso di Google manca, o un giro non riesce, lo **si vede**: ⟳ diventa rosso e la pagina della sincronizzazione lo spiega (prima saltava senza dire niente);
+  - le altre scelte: **Prestazione**, controllo ogni 10-15 secondi (più batteria e traffico; le notifiche istantanee vorrebbero un server, non gratis); **Economica**, solo a mano (⟳ e trascina) più i 5 minuti.
+- **Interfaccia** (stessa richiesta): nel dettaglio del portafoglio in alto restano solo ⟳ e il menu ☰ (Condividi con altre persone, Modifica, Archivia, Elimina). La scheda "Portafoglio condiviso" è **chiusa** quando tutti hanno accettato ("Con mario@gmail.com") e si apre con le frecce; resta aperta se qualcuno deve ancora rispondere.
 - Da fare (consegne 2 e 3): quote nel totale e voci assegnate, vista per membro, impedire nell'interfaccia di modificare le voci altrui, badge in Panoramica, notifiche, rimozione di un membro con cambio di chiave, scansione del QR con la fotocamera.
 
 ## Consegne

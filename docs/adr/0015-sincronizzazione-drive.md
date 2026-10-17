@@ -54,3 +54,10 @@ Tra le tre scelte proposte l'utente ha preso **Qualità/Prezzo**: modifiche per 
 - ⚠️ Sulla stessa riga cambiata su due dispositivi tra due sincronizzazioni resta solo la modifica più recente (scelta Qualità/Prezzo).
 - ⚠️ Finché l'app Google è in modalità "Test", il consenso scade ogni 7 giorni e la pagina chiede di riaccedere. Per toglierlo bisogna pubblicarla: servono le pagine home e privacy su GitHub Pages.
 - 🔜 Unione campo per campo e controllo ogni minuto (opzione Prestazione): il `formato` versionato lo permette senza rifare i dati su Drive.
+
+## Aggiornamento del 17/10/2026: sincronizzare quando si vuole
+Richiesta dell'utente dopo la prova dei portafogli condivisi:
+- in alto c'è **⟳ "Sincronizza ora"** (archivio e portafogli condivisi insieme). Gira mentre lavora e diventa rosso se c'è qualcosa da sistemare. Se la sincronizzazione è spenta, apre la pagina per accenderla;
+- la **nuvola** con lo stato è passata nel **menu ☰**, alla voce "Sincronizzazione";
+- **trascinando verso il basso** una pagina (sezioni, dettaglio del portafoglio, portafogli condivisi) si sincronizza subito. Sul PC si usa **F5**;
+- avvisa solo se qualcosa non va, con il pulsante "Dettagli". Dal pulsante ⟳ conferma anche "Tutto aggiornato".

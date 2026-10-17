@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/condivisi/portafogli_condivisi.dart';
 import '../../core/db/notifiche.dart';
 import '../../core/db/tabelle.dart';
 import '../../core/sessione.dart';
@@ -42,10 +43,11 @@ class Strumento {
   final VoidCallback azione;
 }
 
-/// In alto a destra in ogni sezione: la nuvola della sincronizzazione, la
+/// In alto a destra in ogni sezione: ⟳ per sincronizzare subito, la
 /// campanella (solo se c'è una notifica da vedere), il lucchetto (archivio
 /// aperto: tocca per bloccarlo) e il menu ☰ con gli altri strumenti
-/// (notifiche e quelli della pagina, es. Esporta e Personalizza).
+/// (sincronizzazione, notifiche e quelli della pagina, es. Esporta e
+/// Personalizza).
 class PulsanteBlocca extends StatelessWidget {
   const PulsanteBlocca({
     super.key,
@@ -71,7 +73,7 @@ class PulsanteBlocca extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (sincronizzazione) IconaSync(sessione: sessione),
+        if (sincronizzazione) PulsanteSincronizza(sessione: sessione),
         if (campanella) CampanellaNotifiche(sessione: sessione),
         IconButton(
           tooltip: 'Archivio aperto: tocca per bloccarlo',
@@ -83,9 +85,10 @@ class PulsanteBlocca extends StatelessWidget {
           // Tocco lungo: versione, licenza e codice sorgente.
           onLongPress: () => apriInformazioni(context),
         ),
-        if (campanella || strumenti.isNotEmpty)
+        if (sincronizzazione || campanella || strumenti.isNotEmpty)
           MenuStrumenti(
             sessione: sessione,
+            sincronizzazione: sincronizzazione,
             notifiche: campanella,
             strumenti: strumenti,
           ),
@@ -94,17 +97,20 @@ class PulsanteBlocca extends StatelessWidget {
   }
 }
 
-/// Il menu ☰: "Notifiche" (con quante sono da vedere) e gli strumenti della
-/// pagina, ognuno con una riga che spiega a cosa serve.
+/// Il menu ☰: "Sincronizzazione" (la nuvola, con lo stato), "Notifiche"
+/// (con quante sono da vedere) e gli strumenti della pagina, ognuno con una
+/// riga che spiega a cosa serve.
 class MenuStrumenti extends StatefulWidget {
   const MenuStrumenti({
     super.key,
     required this.sessione,
+    this.sincronizzazione = false,
     required this.notifiche,
     required this.strumenti,
   });
 
   final Sessione sessione;
+  final bool sincronizzazione;
   final bool notifiche;
   final List<Strumento> strumenti;
 
@@ -135,10 +141,23 @@ class _MenuStrumentiState extends State<MenuStrumenti> {
         return PopupMenuButton<int>(
           tooltip: 'Altri strumenti',
           icon: const Icon(Icons.menu),
-          onSelected: (i) => i < 0
-              ? apriPannelloNotifiche(context, widget.sessione)
-              : widget.strumenti[i].azione(),
+          onSelected: (i) => switch (i) {
+            -2 => apriSincronizzazione(context, widget.sessione),
+            -1 => apriPannelloNotifiche(context, widget.sessione),
+            _ => widget.strumenti[i].azione(),
+          },
           itemBuilder: (context) => [
+            if (widget.sincronizzazione)
+              PopupMenuItem(
+                value: -2,
+                child: () {
+                  final (icona, stato) = voceSincronizzazione(
+                    context,
+                    widget.sessione,
+                  );
+                  return riga(icona, 'Sincronizzazione', stato);
+                }(),
+              ),
             if (widget.notifiche)
               PopupMenuItem(
                 value: -1,
@@ -190,6 +209,9 @@ class _GuscioState extends State<Guscio> {
   AppLifecycleListener? _ciclo;
   BloccoAutomatico? _blocco;
   StreamSubscription<String>? _avvisiCondivisi;
+  Timer? _condivisi;
+  StreamSubscription<void>? _modifiche;
+  Timer? _invio;
 
   @override
   void initState() {
@@ -211,6 +233,16 @@ class _GuscioState extends State<Guscio> {
       onPause: _sincronizza,
       onResume: _sincronizza,
     );
+    // Portafogli condivisi: un controllo leggero ogni minuto e, dopo una
+    // modifica qui, l'invio agli altri entro pochi secondi.
+    _condivisi = Timer.periodic(
+      PortafogliCondivisiServizio.intervallo,
+      (_) => _sincronizzaCondivisi(soloSeCiSono: true),
+    );
+    _modifiche = widget.sessione.condivisi.modificheLocali.listen((_) {
+      _invio?.cancel();
+      _invio = Timer(const Duration(seconds: 3), _inviaModifiche);
+    });
     // In secondo piano troppo a lungo: l'archivio si blocca (Impostazioni).
     _blocco = BloccoAutomatico(widget.sessione);
     // Portafogli condivisi: un giro subito e gli avvisi per il proprietario
@@ -290,10 +322,44 @@ class _GuscioState extends State<Guscio> {
   void _sincronizza() {
     if (widget.sessione.fase == FaseSessione.sbloccata) {
       widget.sessione.sync.sincronizza().ignore();
-      // Portafogli condivisi (ADR-019): solo se ce ne sono, senza chiedere
-      // niente a Google.
-      widget.sessione.condivisi.sincronizza().ignore();
     }
+    _sincronizzaCondivisi();
+  }
+
+  /// Portafogli condivisi (ADR-019): solo se ce ne sono, senza chiedere
+  /// niente a Google.
+  ///
+  /// Con [soloSeCiSono] (il controllo di ogni minuto) salta se l'ultimo giro
+  /// non ne ha trovati: chi non ne ha non fa lavoro in più.
+  void _sincronizzaCondivisi({bool soloSeCiSono = false}) {
+    if (widget.sessione.fase != FaseSessione.sbloccata) {
+      return;
+    }
+    final condivisi = widget.sessione.condivisi;
+    if (soloSeCiSono && condivisi.stato.value.fase == FaseCondivisi.nessuno) {
+      return;
+    }
+    condivisi.sincronizza().ignore();
+  }
+
+  /// Una modifica fatta qui: se riguarda un portafoglio condiviso, parte
+  /// subito per gli altri.
+  Future<void> _inviaModifiche() async {
+    if (widget.sessione.fase != FaseSessione.sbloccata) {
+      return;
+    }
+    final condivisi = widget.sessione.condivisi;
+    if (condivisi.stato.value.fase == FaseCondivisi.nessuno) {
+      return; // nessun portafoglio condiviso
+    }
+    try {
+      if (!await condivisi.daInviare()) {
+        return;
+      }
+    } on Object {
+      return; // archivio bloccato nel frattempo
+    }
+    condivisi.sincronizza().ignore();
   }
 
   Future<void> _avvisi() async {
@@ -324,6 +390,9 @@ class _GuscioState extends State<Guscio> {
     _ciclo?.dispose();
     _blocco?.dispose();
     _avvisiCondivisi?.cancel();
+    _condivisi?.cancel();
+    _modifiche?.cancel();
+    _invio?.cancel();
     widget.sessione.invitoInArrivo.removeListener(_invitoArrivato);
     super.dispose();
   }
@@ -453,7 +522,12 @@ class _GuscioState extends State<Guscio> {
       CategoriePagina(sessione: widget.sessione),
       ImpostazioniPagina(sessione: widget.sessione),
     ];
-    final corpo = IndexedStack(index: _sezione, children: pagine);
+    // Trascinando verso il basso (o con F5 sul PC) si sincronizza subito.
+    final corpo = AggiornaTrascinando(
+      sessione: widget.sessione,
+      sottoBarra: true,
+      child: IndexedStack(index: _sezione, children: pagine),
+    );
 
     return PopScope(
       canPop: false,
@@ -462,7 +536,13 @@ class _GuscioState extends State<Guscio> {
           _indietro();
         }
       },
-      child: _struttura(corpo),
+      child: CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.f5): () =>
+              sincronizzaOra(context, widget.sessione, conferma: true),
+        },
+        child: _struttura(corpo),
+      ),
     );
   }
 

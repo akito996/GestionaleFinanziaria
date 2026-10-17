@@ -524,6 +524,56 @@ void main() {
     final prima = drive.richieste;
     await prop.condivisi.sincronizza();
     expect(drive.richieste, prima);
+    // Ma si vede: l'icona ⟳ chiede un tocco.
+    expect(prop.condivisi.stato.value.fase, FaseCondivisi.accessoRichiesto);
+    await prop.condivisi.sincronizza(interattivo: true);
+    expect(prop.condivisi.stato.value.fase, FaseCondivisi.aggiornati);
+  });
+
+  test('controllo leggero: si scarica solo il file cambiato; le modifiche '
+      'partono subito', () async {
+    final drive = DriveFinto();
+    final (:prop, :memb, :w, pane: _) = await uniti(drive);
+    for (var i = 0; i < 2; i++) {
+      await prop.condivisi.sincronizza();
+      await memb.condivisi.sincronizza();
+    }
+    // Niente di nuovo: solo i numeri di versione, nessun file scaricato.
+    final prima = drive.letture;
+    await prop.condivisi.sincronizza();
+    await memb.condivisi.sincronizza();
+    expect(drive.letture, prima);
+    expect(prop.condivisi.stato.value.fase, FaseCondivisi.aggiornati);
+    expect(await memb.condivisi.daInviare(), isFalse);
+
+    // Il membro aggiunge una spesa: è da inviare, al giro parte.
+    final pizza = await memb.c.registraMovimento(
+      tipoId: await memb.tipoSpesa(),
+      portafoglioId: w,
+      importo: 5000,
+      valuta: 'EUR',
+      data: DateTime(2026, 10, 17),
+      descrizione: 'Pizza x2',
+    );
+    expect(await memb.condivisi.daInviare(), isTrue);
+    await memb.condivisi.sincronizza();
+    expect(await memb.condivisi.daInviare(), isFalse);
+
+    // Il proprietario scarica solo il file del membro.
+    final dopo = drive.letture;
+    await prop.condivisi.sincronizza();
+    expect(drive.letture - dopo, 1);
+    expect((await prop.movimento(pizza)).importoMinimo, 5000);
+    // Ricevere una voce non la rende "da inviare".
+    expect(await prop.condivisi.daInviare(), isFalse);
+
+    // Più richieste insieme: un giro alla volta, nessun errore.
+    await Future.wait([
+      prop.condivisi.sincronizza(),
+      prop.condivisi.sincronizza(),
+      prop.condivisi.sincronizza(),
+    ]);
+    expect(prop.condivisi.stato.value.fase, FaseCondivisi.aggiornati);
   });
 
   test('JSON canonico: le chiavi in ordine, a ogni livello', () {

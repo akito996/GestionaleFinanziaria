@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gestionale_finanziaria/app.dart';
 import 'package:gestionale_finanziaria/core/crypto/derivazione.dart';
+import 'package:gestionale_finanziaria/core/db/contabilita.dart';
 import 'package:gestionale_finanziaria/core/db/deposito_locale.dart';
 import 'package:gestionale_finanziaria/core/db/tabelle.dart';
 import 'package:gestionale_finanziaria/core/sessione.dart';
@@ -204,8 +205,11 @@ void main() {
   ) async {
     await avvia(tester);
     await tocca(tester, find.text('Salvadanaio'));
-    await attendi(tester, find.byTooltip('Archivia portafoglio'));
-    await tocca(tester, find.byTooltip('Archivia portafoglio'));
+    // In alto solo ⟳ e il menu ☰ con le azioni del portafoglio.
+    await attendi(tester, find.text('Andamento del saldo'));
+    expect(find.byTooltip('Archivia portafoglio'), findsNothing);
+    await tocca(tester, find.byTooltip('Altri strumenti').hitTestable());
+    await tocca(tester, find.text('Archivia portafoglio').hitTestable());
     await tocca(tester, find.widgetWithText(FilledButton, 'Archivia'));
     // Si aspetta l'archivio, non il messaggio (sparisce da solo).
     for (var i = 0; i < 100; i++) {
@@ -229,22 +233,44 @@ void main() {
     // Elimina "Contanti" con il suo movimento, poi Annulla.
     await tocca(tester, find.text('Panoramica').hitTestable());
     await tocca(tester, find.text('Contanti'));
-    await attendi(tester, find.byTooltip('Elimina portafoglio'));
-    await tocca(tester, find.byTooltip('Elimina portafoglio'));
+    await attendi(tester, find.text('Andamento del saldo'));
+    await tocca(tester, find.byTooltip('Altri strumenti').hitTestable());
+    await tocca(tester, find.text('Elimina portafoglio').hitTestable());
     await attendi(tester, find.textContaining('ha 1 movimento'));
     await tocca(tester, find.text('Elimina il portafoglio'));
     await tocca(tester, find.widgetWithText(FilledButton, 'Elimina'));
     await attendi(tester, find.text('"Contanti" eliminato'));
     // "Contanti" resta come tipo del Salvadanaio: si controlla l'archivio.
-    Future<List<String>> portafogli() async => [
-      for (final p in (await tester.runAsync(
-        () => sessione.contabilita.osservaPortafogli().first,
-      ))!)
-        p.portafoglio.nome,
-    ];
+    // Letto nella zona del test, facendo avanzare entrambe le zone: una
+    // lettura con runAsync può bloccarsi dietro una query della schermata.
+    Future<List<String>> portafogli() async {
+      List<PortafoglioConSaldo>? elenco;
+      sessione.contabilita
+          .osservaPortafogli()
+          .first
+          .then((e) => elenco = e)
+          .ignore();
+      // Quasi senza far passare il tempo finto: l'avviso con "Annulla"
+      // deve restare visibile.
+      for (var i = 0; i < 200 && elenco == null; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        await tester.pump(const Duration(milliseconds: 1));
+      }
+      return [for (final p in elenco!) p.portafoglio.nome];
+    }
+
     expect(await portafogli(), ['Salvadanaio']);
-    await tocca(tester, find.text('Annulla'));
-    expect(await portafogli(), containsAll(['Contanti', 'Salvadanaio']));
+    // L'avviso può essere ancora in entrata: si tocca quando è visibile.
+    await attendi(tester, find.text('Annulla').hitTestable());
+    await tocca(tester, find.text('Annulla').hitTestable());
+    // Il ripristino finisce in sottofondo: si riguarda finché non c'è.
+    var dopo = await portafogli();
+    for (var i = 0; i < 20 && !dopo.contains('Contanti'); i++) {
+      dopo = await portafogli();
+    }
+    expect(dopo, containsAll(['Contanti', 'Salvadanaio']));
     await chiudi(tester);
   });
 }

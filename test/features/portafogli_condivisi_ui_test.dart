@@ -127,7 +127,11 @@ void main() {
       );
 
       // Di nuovo la stessa persona: "Persona già presente".
-      await tocca(tester, find.byTooltip('Condividi con altre persone'));
+      await tocca(tester, find.byTooltip('Altri strumenti').hitTestable());
+      await tocca(
+        tester,
+        find.text('Condividi con altre persone').hitTestable(),
+      );
       await tester.enterText(
         nelDialogo(find.byType(TextFormField)),
         'memb@example.com',
@@ -426,8 +430,37 @@ void main() {
       findsWidgets,
     );
 
-    // Eliminarlo: prima l'avviso sul portafoglio condiviso.
-    await tocca(tester, find.byTooltip('Elimina portafoglio'));
+    // Nessuno in attesa: la scheda delle persone è chiusa, si apre con la
+    // freccia.
+    expect(find.text("Nessun'altra persona"), findsOneWidget);
+    expect(find.text('Interrompi la condivisione'), findsNothing);
+    await tocca(tester, find.byTooltip('Mostra di più'));
+    await attendi(tester, find.text('Interrompi la condivisione'));
+    await tocca(tester, find.byTooltip('Mostra meno'));
+    expect(find.text('Interrompi la condivisione'), findsNothing);
+
+    // Trascinando verso il basso si sincronizza subito.
+    final prima = drive.richieste;
+    await tester.drag(
+      find.text('Andamento del saldo'),
+      const Offset(0, 400),
+      touchSlopY: 20,
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    for (var i = 0; i < 100 && drive.richieste == prima; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(drive.richieste, greaterThan(prima));
+    await tester.pump(const Duration(seconds: 1));
+
+    // Eliminarlo (dal menu ☰): prima l'avviso sul portafoglio condiviso.
+    expect(find.byTooltip('Elimina portafoglio'), findsNothing);
+    await tocca(tester, find.byTooltip('Altri strumenti').hitTestable());
+    await tocca(tester, find.text('Elimina portafoglio').hitTestable());
     await attendi(tester, find.text('Elimina il portafoglio'));
     await tocca(tester, find.text('Elimina il portafoglio'));
     await attendi(tester, find.text('È un portafoglio condiviso'));
