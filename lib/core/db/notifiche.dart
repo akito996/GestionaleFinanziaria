@@ -23,7 +23,10 @@ enum TipoNotifica {
   registrata('Registrata'),
 
   /// Promemoria senza portafoglio (niente da registrare).
-  promemoria('Promemoria');
+  promemoria('Promemoria'),
+
+  /// Voce inserita da un'altra persona in un portafoglio condiviso.
+  condivisa('Portafoglio condiviso');
 
   const TipoNotifica(this.etichetta);
 
@@ -43,6 +46,8 @@ class Notifica {
     this.entrata = false,
     this.scadenza,
     this.maxi,
+    this.autore,
+    this.portafoglio,
   });
 
   /// Identifica la notifica (stato "letta"): `scadenza:<id>:<giorno>`,
@@ -65,6 +70,10 @@ class Notifica {
 
   /// Per le decisioni sulla maxi rata.
   final AvvisoMaxi? maxi;
+
+  /// Per le voci dei portafogli condivisi: chi l'ha inserita e dove.
+  final String? autore;
+  final String? portafoglio;
 
   /// Resta visibile finché l'utente non decide.
   bool get richiedeAzione =>
@@ -115,6 +124,9 @@ class NotificheServizio {
 
   /// Per quanti giorni resta l'avviso "registrata da sola" non letta.
   static const giorniRegistrate = 7;
+
+  /// Per quanti giorni compare una voce arrivata da un portafoglio condiviso.
+  static const giorniCondivise = 7;
 
   /// Chiavi delle notifiche già lette o gestite (confermate, spostate,
   /// annullate), aggiornate quando cambiano.
@@ -211,6 +223,7 @@ class NotificheServizio {
         ),
       );
     }
+    notifiche.addAll(await _vociCondivise(lette));
     // Prima quelle da decidere (la più vecchia in cima), poi le non lette.
     notifiche.sort((x, y) {
       final azione = (x.richiedeAzione ? 0 : 1) - (y.richiedeAzione ? 0 : 1);
@@ -232,10 +245,76 @@ class NotificheServizio {
           _db.notificheLette,
           _db.prestiti,
           _db.carteCredito,
+          _db.righeCondivise,
+          _db.membri,
+          _db.portafogliCondivisi,
+          _db.movimenti,
         },
       )
       .watch()
       .ricalcola((_) => elenco());
+
+  /// Voci inserite da altre persone nei portafogli condivisi (ADR-019),
+  /// arrivate negli ultimi [giorniCondivise] giorni. Non quelle che c'erano
+  /// già quando la condivisione è cominciata qui (l'orologio dell'autore è
+  /// prima di quello della condivisione), né le mie (anche da altri miei
+  /// dispositivi).
+  Future<List<Notifica>> _vociCondivise(Set<String> lette) async {
+    final limite =
+        (_adesso().toUtc().microsecondsSinceEpoch -
+                const Duration(days: giorniCondivise).inMicroseconds)
+            .toString()
+            .padLeft(17, '0');
+    final righe = await _db
+        .customSelect(
+          'SELECT m.id AS id, m.descrizione AS descrizione, '
+          'm.importo_minimo AS importo, m.valuta AS valuta, m.data AS data, '
+          't.effetto AS effetto, t.nome AS tipo, p.nome AS portafoglio, '
+          'au.nome AS nome, au.email AS email '
+          'FROM righe_condivise r '
+          'JOIN portafogli_condivisi pc ON pc.portafoglio_id = r.portafoglio_id '
+          'AND pc.eliminato = 0 '
+          'JOIN movimenti m ON m.id = r.riga_id AND m.eliminato = 0 '
+          'JOIN membri au ON au.id = m.inserito_da '
+          'JOIN membri io ON io.portafoglio_id = pc.portafoglio_id '
+          'AND io.file_id = pc.mio_file_id '
+          'JOIN portafogli p ON p.id = pc.portafoglio_id '
+          'JOIN definizioni_tipo t ON t.id = m.tipo_id '
+          "WHERE r.tipo = 'movimento' AND m.inserito_da <> io.id "
+          'AND r.aggiornato_il > pc.aggiornato_il '
+          'AND r.riga_aggiornata_il >= ?',
+          variables: [Variable.withString(limite)],
+          readsFrom: {
+            _db.righeCondivise,
+            _db.portafogliCondivisi,
+            _db.movimenti,
+            _db.membri,
+            _db.portafogli,
+            _db.definizioniTipo,
+          },
+        )
+        .get();
+    return [
+      for (final r in righe)
+        if ('condivisa:${r.read<String>('id')}' case final chiave)
+          Notifica(
+            chiave: chiave,
+            tipo: TipoNotifica.condivisa,
+            titolo: r.read<String>('descrizione').isEmpty
+                ? r.read<String>('tipo')
+                : r.read<String>('descrizione'),
+            data: Contabilita.daGiorno(r.read<String>('data')),
+            letta: lette.contains(chiave),
+            importo: r.read<int>('importo'),
+            valuta: r.read<String>('valuta'),
+            entrata: r.read<String?>('effetto') == EffettoSaldo.entrata,
+            autore: r.read<String>('nome').trim().isNotEmpty
+                ? r.read<String>('nome').trim()
+                : r.read<String>('email').split('@').first,
+            portafoglio: r.read<String>('portafoglio'),
+          ),
+    ];
+  }
 
   // ---------------------------------------------------------------- azioni
 

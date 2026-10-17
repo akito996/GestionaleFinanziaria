@@ -54,3 +54,8 @@ Per il comportamento senza scelta l'utente ha preso l'opzione **Prestazione**: s
 - ✅ Scelte e letture pronte per la sincronizzazione (id deterministici, cancellazioni morbide).
 - ⚠️ Le scadenze "da confermare" più vecchie di 30 giorni non vengono più proposte.
 - 🔜 Notifiche di sistema su Android (con la build Android: canali, permesso POST_NOTIFICATIONS).
+
+## Aggiornamento del 17/10/2026: voci dei portafogli condivisi
+Nuovo tipo di notifica **"Portafoglio condiviso"**: una voce inserita da un'altra persona in un portafoglio condiviso (ADR-019), arrivata negli ultimi 7 giorni.
+- La chiave è `condivisa:<id movimento>`, una per voce, e lo stato "letta" è quello di sempre.
+- Si calcola dalle righe firmate ricevute (`righe_condivise`). Sono escluse le proprie voci e quelle che c'erano già prima che la condivisione cominciasse su questo dispositivo.

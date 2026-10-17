@@ -13352,6 +13352,422 @@ class RigheCondiviseCompanion extends UpdateCompanion<RigaCondivisa> {
   }
 }
 
+class $ProfiliTable extends Profili with TableInfo<$ProfiliTable, Profilo> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProfiliTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _aggiornatoIlMeta = const VerificationMeta(
+    'aggiornatoIl',
+  );
+  @override
+  late final GeneratedColumn<String> aggiornatoIl = GeneratedColumn<String>(
+    'aggiornato_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eliminatoMeta = const VerificationMeta(
+    'eliminato',
+  );
+  @override
+  late final GeneratedColumn<bool> eliminato = GeneratedColumn<bool>(
+    'eliminato',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("eliminato" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _nomeMeta = const VerificationMeta('nome');
+  @override
+  late final GeneratedColumn<String> nome = GeneratedColumn<String>(
+    'nome',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _emailMeta = const VerificationMeta('email');
+  @override
+  late final GeneratedColumn<String> email = GeneratedColumn<String>(
+    'email',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _nomeCondivisioneMeta = const VerificationMeta(
+    'nomeCondivisione',
+  );
+  @override
+  late final GeneratedColumn<String> nomeCondivisione = GeneratedColumn<String>(
+    'nome_condivisione',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    aggiornatoIl,
+    eliminato,
+    nome,
+    email,
+    nomeCondivisione,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'profili';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Profilo> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('aggiornato_il')) {
+      context.handle(
+        _aggiornatoIlMeta,
+        aggiornatoIl.isAcceptableOrUnknown(
+          data['aggiornato_il']!,
+          _aggiornatoIlMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_aggiornatoIlMeta);
+    }
+    if (data.containsKey('eliminato')) {
+      context.handle(
+        _eliminatoMeta,
+        eliminato.isAcceptableOrUnknown(data['eliminato']!, _eliminatoMeta),
+      );
+    }
+    if (data.containsKey('nome')) {
+      context.handle(
+        _nomeMeta,
+        nome.isAcceptableOrUnknown(data['nome']!, _nomeMeta),
+      );
+    }
+    if (data.containsKey('email')) {
+      context.handle(
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
+    }
+    if (data.containsKey('nome_condivisione')) {
+      context.handle(
+        _nomeCondivisioneMeta,
+        nomeCondivisione.isAcceptableOrUnknown(
+          data['nome_condivisione']!,
+          _nomeCondivisioneMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Profilo map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Profilo(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      aggiornatoIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}aggiornato_il'],
+      )!,
+      eliminato: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}eliminato'],
+      )!,
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      )!,
+      email: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}email'],
+      )!,
+      nomeCondivisione: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome_condivisione'],
+      )!,
+    );
+  }
+
+  @override
+  $ProfiliTable createAlias(String alias) {
+    return $ProfiliTable(attachedDatabase, alias);
+  }
+}
+
+class Profilo extends DataClass implements Insertable<Profilo> {
+  final String id;
+  final String aggiornatoIl;
+  final bool eliminato;
+
+  /// Nome e cognome.
+  final String nome;
+
+  /// L'email dell'account Google usato per sincronizzare.
+  final String email;
+
+  /// Vuoto = il codice dell'archivio (GF-XXXX-XXXX).
+  final String nomeCondivisione;
+  const Profilo({
+    required this.id,
+    required this.aggiornatoIl,
+    required this.eliminato,
+    required this.nome,
+    required this.email,
+    required this.nomeCondivisione,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['aggiornato_il'] = Variable<String>(aggiornatoIl);
+    map['eliminato'] = Variable<bool>(eliminato);
+    map['nome'] = Variable<String>(nome);
+    map['email'] = Variable<String>(email);
+    map['nome_condivisione'] = Variable<String>(nomeCondivisione);
+    return map;
+  }
+
+  ProfiliCompanion toCompanion(bool nullToAbsent) {
+    return ProfiliCompanion(
+      id: Value(id),
+      aggiornatoIl: Value(aggiornatoIl),
+      eliminato: Value(eliminato),
+      nome: Value(nome),
+      email: Value(email),
+      nomeCondivisione: Value(nomeCondivisione),
+    );
+  }
+
+  factory Profilo.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Profilo(
+      id: serializer.fromJson<String>(json['id']),
+      aggiornatoIl: serializer.fromJson<String>(json['aggiornatoIl']),
+      eliminato: serializer.fromJson<bool>(json['eliminato']),
+      nome: serializer.fromJson<String>(json['nome']),
+      email: serializer.fromJson<String>(json['email']),
+      nomeCondivisione: serializer.fromJson<String>(json['nomeCondivisione']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'aggiornatoIl': serializer.toJson<String>(aggiornatoIl),
+      'eliminato': serializer.toJson<bool>(eliminato),
+      'nome': serializer.toJson<String>(nome),
+      'email': serializer.toJson<String>(email),
+      'nomeCondivisione': serializer.toJson<String>(nomeCondivisione),
+    };
+  }
+
+  Profilo copyWith({
+    String? id,
+    String? aggiornatoIl,
+    bool? eliminato,
+    String? nome,
+    String? email,
+    String? nomeCondivisione,
+  }) => Profilo(
+    id: id ?? this.id,
+    aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+    eliminato: eliminato ?? this.eliminato,
+    nome: nome ?? this.nome,
+    email: email ?? this.email,
+    nomeCondivisione: nomeCondivisione ?? this.nomeCondivisione,
+  );
+  Profilo copyWithCompanion(ProfiliCompanion data) {
+    return Profilo(
+      id: data.id.present ? data.id.value : this.id,
+      aggiornatoIl: data.aggiornatoIl.present
+          ? data.aggiornatoIl.value
+          : this.aggiornatoIl,
+      eliminato: data.eliminato.present ? data.eliminato.value : this.eliminato,
+      nome: data.nome.present ? data.nome.value : this.nome,
+      email: data.email.present ? data.email.value : this.email,
+      nomeCondivisione: data.nomeCondivisione.present
+          ? data.nomeCondivisione.value
+          : this.nomeCondivisione,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Profilo(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('nome: $nome, ')
+          ..write('email: $email, ')
+          ..write('nomeCondivisione: $nomeCondivisione')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, aggiornatoIl, eliminato, nome, email, nomeCondivisione);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Profilo &&
+          other.id == this.id &&
+          other.aggiornatoIl == this.aggiornatoIl &&
+          other.eliminato == this.eliminato &&
+          other.nome == this.nome &&
+          other.email == this.email &&
+          other.nomeCondivisione == this.nomeCondivisione);
+}
+
+class ProfiliCompanion extends UpdateCompanion<Profilo> {
+  final Value<String> id;
+  final Value<String> aggiornatoIl;
+  final Value<bool> eliminato;
+  final Value<String> nome;
+  final Value<String> email;
+  final Value<String> nomeCondivisione;
+  final Value<int> rowid;
+  const ProfiliCompanion({
+    this.id = const Value.absent(),
+    this.aggiornatoIl = const Value.absent(),
+    this.eliminato = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.email = const Value.absent(),
+    this.nomeCondivisione = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProfiliCompanion.insert({
+    required String id,
+    required String aggiornatoIl,
+    this.eliminato = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.email = const Value.absent(),
+    this.nomeCondivisione = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       aggiornatoIl = Value(aggiornatoIl);
+  static Insertable<Profilo> custom({
+    Expression<String>? id,
+    Expression<String>? aggiornatoIl,
+    Expression<bool>? eliminato,
+    Expression<String>? nome,
+    Expression<String>? email,
+    Expression<String>? nomeCondivisione,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (aggiornatoIl != null) 'aggiornato_il': aggiornatoIl,
+      if (eliminato != null) 'eliminato': eliminato,
+      if (nome != null) 'nome': nome,
+      if (email != null) 'email': email,
+      if (nomeCondivisione != null) 'nome_condivisione': nomeCondivisione,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProfiliCompanion copyWith({
+    Value<String>? id,
+    Value<String>? aggiornatoIl,
+    Value<bool>? eliminato,
+    Value<String>? nome,
+    Value<String>? email,
+    Value<String>? nomeCondivisione,
+    Value<int>? rowid,
+  }) {
+    return ProfiliCompanion(
+      id: id ?? this.id,
+      aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+      eliminato: eliminato ?? this.eliminato,
+      nome: nome ?? this.nome,
+      email: email ?? this.email,
+      nomeCondivisione: nomeCondivisione ?? this.nomeCondivisione,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (aggiornatoIl.present) {
+      map['aggiornato_il'] = Variable<String>(aggiornatoIl.value);
+    }
+    if (eliminato.present) {
+      map['eliminato'] = Variable<bool>(eliminato.value);
+    }
+    if (nome.present) {
+      map['nome'] = Variable<String>(nome.value);
+    }
+    if (email.present) {
+      map['email'] = Variable<String>(email.value);
+    }
+    if (nomeCondivisione.present) {
+      map['nome_condivisione'] = Variable<String>(nomeCondivisione.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProfiliCompanion(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('nome: $nome, ')
+          ..write('email: $email, ')
+          ..write('nomeCondivisione: $nomeCondivisione, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ImpostazioniTable extends Impostazioni
     with TableInfo<$ImpostazioniTable, Impostazione> {
   @override
@@ -13590,6 +14006,7 @@ abstract class _$Archivio extends GeneratedDatabase {
       $PortafogliCondivisiTable(this);
   late final $MembriTable membri = $MembriTable(this);
   late final $RigheCondiviseTable righeCondivise = $RigheCondiviseTable(this);
+  late final $ProfiliTable profili = $ProfiliTable(this);
   late final $ImpostazioniTable impostazioni = $ImpostazioniTable(this);
   late final Index movimentiPianificatiUnici = Index(
     'movimenti_pianificati_unici',
@@ -13621,6 +14038,7 @@ abstract class _$Archivio extends GeneratedDatabase {
     portafogliCondivisi,
     membri,
     righeCondivise,
+    profili,
     impostazioni,
     movimentiPianificatiUnici,
   ];
@@ -25168,6 +25586,229 @@ typedef $$RigheCondiviseTableProcessedTableManager =
       RigaCondivisa,
       PrefetchHooks Function()
     >;
+typedef $$ProfiliTableCreateCompanionBuilder = ProfiliCompanion Function({
+  required String id,
+  required String aggiornatoIl,
+  Value<bool> eliminato,
+  Value<String> nome,
+  Value<String> email,
+  Value<String> nomeCondivisione,
+  Value<int> rowid,
+});
+typedef $$ProfiliTableUpdateCompanionBuilder = ProfiliCompanion Function({
+  Value<String> id,
+  Value<String> aggiornatoIl,
+  Value<bool> eliminato,
+  Value<String> nome,
+  Value<String> email,
+  Value<String> nomeCondivisione,
+  Value<int> rowid,
+});
+
+class $$ProfiliTableFilterComposer extends Composer<_$Archivio, $ProfiliTable> {
+  $$ProfiliTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nomeCondivisione => $composableBuilder(
+    column: $table.nomeCondivisione,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ProfiliTableOrderingComposer
+    extends Composer<_$Archivio, $ProfiliTable> {
+  $$ProfiliTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nome => $composableBuilder(
+    column: $table.nome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nomeCondivisione => $composableBuilder(
+    column: $table.nomeCondivisione,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ProfiliTableAnnotationComposer
+    extends Composer<_$Archivio, $ProfiliTable> {
+  $$ProfiliTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get eliminato =>
+      $composableBuilder(column: $table.eliminato, builder: (column) => column);
+
+  GeneratedColumn<String> get nome =>
+      $composableBuilder(column: $table.nome, builder: (column) => column);
+
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<String> get nomeCondivisione => $composableBuilder(
+    column: $table.nomeCondivisione,
+    builder: (column) => column,
+  );
+}
+
+class $$ProfiliTableTableManager
+    extends
+        RootTableManager<
+          _$Archivio,
+          $ProfiliTable,
+          Profilo,
+          $$ProfiliTableFilterComposer,
+          $$ProfiliTableOrderingComposer,
+          $$ProfiliTableAnnotationComposer,
+          $$ProfiliTableCreateCompanionBuilder,
+          $$ProfiliTableUpdateCompanionBuilder,
+          (Profilo, BaseReferences<_$Archivio, $ProfiliTable, Profilo>),
+          Profilo,
+          PrefetchHooks Function()
+        > {
+  $$ProfiliTableTableManager(_$Archivio db, $ProfiliTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProfiliTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProfiliTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProfiliTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> aggiornatoIl = const Value.absent(),
+                Value<bool> eliminato = const Value.absent(),
+                Value<String> nome = const Value.absent(),
+                Value<String> email = const Value.absent(),
+                Value<String> nomeCondivisione = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProfiliCompanion(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                nome: nome,
+                email: email,
+                nomeCondivisione: nomeCondivisione,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String aggiornatoIl,
+                Value<bool> eliminato = const Value.absent(),
+                Value<String> nome = const Value.absent(),
+                Value<String> email = const Value.absent(),
+                Value<String> nomeCondivisione = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProfiliCompanion.insert(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                nome: nome,
+                email: email,
+                nomeCondivisione: nomeCondivisione,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ProfiliTable, Profilo>(table),
+                  BaseReferences<_$Archivio, $ProfiliTable, Profilo>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ProfiliTableProcessedTableManager =
+    ProcessedTableManager<
+      _$Archivio,
+      $ProfiliTable,
+      Profilo,
+      $$ProfiliTableFilterComposer,
+      $$ProfiliTableOrderingComposer,
+      $$ProfiliTableAnnotationComposer,
+      $$ProfiliTableCreateCompanionBuilder,
+      $$ProfiliTableUpdateCompanionBuilder,
+      (Profilo, BaseReferences<_$Archivio, $ProfiliTable, Profilo>),
+      Profilo,
+      PrefetchHooks Function()
+    >;
 typedef $$ImpostazioniTableCreateCompanionBuilder =
     ImpostazioniCompanion Function({
       required String chiave,
@@ -25366,6 +26007,8 @@ class $ArchivioManager {
       $$MembriTableTableManager(_db, _db.membri);
   $$RigheCondiviseTableTableManager get righeCondivise =>
       $$RigheCondiviseTableTableManager(_db, _db.righeCondivise);
+  $$ProfiliTableTableManager get profili =>
+      $$ProfiliTableTableManager(_db, _db.profili);
   $$ImpostazioniTableTableManager get impostazioni =>
       $$ImpostazioniTableTableManager(_db, _db.impostazioni);
 }

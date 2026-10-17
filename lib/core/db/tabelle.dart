@@ -510,6 +510,21 @@ abstract final class StatoMembro {
   static const scaduto = 'scaduto';
 }
 
+/// Chi usa l'archivio (Impostazioni › Account): una sola riga (id "io") che
+/// viaggia tra i propri dispositivi. Il nome nelle condivisioni è quello che
+/// vedono le altre persone accanto alle voci dei portafogli condivisi.
+@DataClassName('Profilo')
+class Profili extends Table with ColonneSincronizzate {
+  /// Nome e cognome.
+  TextColumn get nome => text().withDefault(const Constant(''))();
+
+  /// L'email dell'account Google usato per sincronizzare.
+  TextColumn get email => text().withDefault(const Constant(''))();
+
+  /// Vuoto = il codice dell'archivio (GF-XXXX-XXXX).
+  TextColumn get nomeCondivisione => text().withDefault(const Constant(''))();
+}
+
 /// Impostazioni locali del dispositivo (non sincronizzate): id dispositivo, contatori, ...
 @DataClassName('Impostazione')
 class Impostazioni extends Table {

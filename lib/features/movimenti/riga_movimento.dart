@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/condivisi/portafogli_condivisi.dart';
 import '../../core/db/contabilita.dart';
 import '../../core/db/tabelle.dart';
 import '../../core/importo.dart';
@@ -78,24 +79,33 @@ class RigaMovimento extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Voce di una persona che non fa più parte del portafoglio condiviso:
-    // resta, in grigio, segnata come "ex membro" (ADR-019).
-    final ex = sessione.condivisiSeAperto?.exMembri;
-    final autore = dettaglio.movimento.inseritoDa;
-    if (ex == null || autore == null) {
-      return _riga(context, exMembro: false);
+    // Portafogli condivisi (ADR-019): chi ha inserito la voce, con il suo
+    // nome nelle condivisioni. Le voci di chi non fa più parte del
+    // portafoglio restano, in grigio, segnate come "ex membro".
+    final autori = sessione.condivisiSeAperto?.autori;
+    final id = dettaglio.movimento.inseritoDa;
+    if (autori == null || id == null) {
+      return _riga(context);
     }
-    return ValueListenableBuilder<Set<String>>(
-      valueListenable: ex,
-      builder: (context, exMembri, _) {
-        final exMembro = exMembri.contains(autore);
-        final riga = _riga(context, exMembro: exMembro);
-        return exMembro ? Opacity(opacity: 0.5, child: riga) : riga;
+    return ValueListenableBuilder<Map<String, AutoreVoce>>(
+      valueListenable: autori,
+      builder: (context, elenco, _) {
+        final autore = elenco[id];
+        final riga = _riga(context, autore: autore);
+        return autore?.ex ?? false ? Opacity(opacity: 0.5, child: riga) : riga;
       },
     );
   }
 
-  Widget _riga(BuildContext context, {required bool exMembro}) {
+  /// "Mario · ", "Mario (tu) · ", "ex membro · Mario · ".
+  static String _chi(AutoreVoce? autore) => switch (autore) {
+    null => '',
+    (ex: true, :final nome, io: _) => 'ex membro · $nome · ',
+    (ex: false, :final nome, io: true) => '$nome (tu) · ',
+    (ex: false, :final nome, io: false) => '$nome · ',
+  };
+
+  Widget _riga(BuildContext context, {AutoreVoce? autore}) {
     final m = dettaglio.movimento;
     final effetto = dettaglio.tipo.effetto;
     final colore = coloreEffetto(context, effetto);
@@ -127,7 +137,7 @@ class RigaMovimento extends StatelessWidget {
       ),
       title: Text(titolo, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text(
-        '${exMembro ? 'ex membro · ' : ''}'
+        '${_chi(autore)}'
         '${dettaglio.categoria == null ? '' : '${dettaglio.categoria!.nome} · '}'
         '$portafogli · '
         '${dataLeggibile(context, Contabilita.daGiorno(m.data))}',

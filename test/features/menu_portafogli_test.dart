@@ -200,6 +200,39 @@ void main() {
     await chiudi(tester);
   });
 
+  testWidgets('Impostazioni › Account: nome, email e nome nelle condivisioni', (
+    tester,
+  ) async {
+    await avvia(tester);
+    await tocca(tester, find.text('Impostazioni').hitTestable());
+    await attendi(tester, find.text('Il tuo account'));
+    // Senza un nome scelto, nelle condivisioni c'è il codice dell'archivio.
+    expect(
+      find.textContaining('Nelle condivisioni: ${sessione.idArchivio}'),
+      findsOneWidget,
+    );
+    await tocca(tester, find.text('Il tuo account'));
+    await attendi(tester, find.widgetWithText(TextField, 'Nome e cognome'));
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Nome e cognome'),
+      'Mario Rossi',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Email'),
+      'Mario.Rossi@Gmail.com',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Nome nelle condivisioni'),
+      '  Mario  ',
+    );
+    await tocca(tester, find.text('Salva'));
+    await attendi(tester, find.text('Mario Rossi'));
+    expect(find.textContaining('mario.rossi@gmail.com'), findsOneWidget);
+    expect(find.textContaining('Nelle condivisioni: Mario'), findsOneWidget);
+    expect(await tester.runAsync(sessione.account.nomeCondivisione), 'Mario');
+    await chiudi(tester);
+  });
+
   testWidgets('archivia, ritrova in Impostazioni ed elimina con Annulla', (
     tester,
   ) async {

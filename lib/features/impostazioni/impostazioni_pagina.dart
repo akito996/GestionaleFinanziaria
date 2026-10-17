@@ -11,6 +11,7 @@ import '../movimenti/riga_movimento.dart';
 import '../portafogli/portafogli_archiviati_pagina.dart';
 import '../sblocco/sblocco_rapido.dart';
 import '../sync/sync_pagina.dart';
+import 'account_pagina.dart';
 
 /// "Subito", "Dopo 1 minuto", "Dopo 1 ora", "Mai".
 String testoBloccoAutomatico(Duration? durata) => switch (durata) {
@@ -130,6 +131,10 @@ class _ImpostazioniPaginaState extends State<ImpostazioniPagina> {
             builder: (context, vincoli) => ListView(
               padding: marginiPagina(vincoli),
               children: [
+                Text('Account', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                VoceAccount(sessione: widget.sessione),
+                const SizedBox(height: 24),
                 Text(
                   'Sicurezza di questo dispositivo',
                   style: Theme.of(context).textTheme.titleMedium,

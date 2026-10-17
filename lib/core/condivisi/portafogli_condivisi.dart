@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:sodium/sodium.dart';
 
+import '../account.dart';
 import '../crypto/cifratura.dart';
 import '../db/archivio.dart';
 import '../db/contabilita.dart';
@@ -88,6 +89,9 @@ class StatoCondivisi {
   final String? messaggio;
 }
 
+/// Chi ha inserito una voce: nome da mostrare, ex membro, sono io.
+typedef AutoreVoce = ({String nome, bool ex, bool io});
+
 /// Un portafoglio condiviso con le sue persone (per le schermate).
 typedef VistaCondiviso = ({
   PortafoglioCondiviso info,
@@ -115,8 +119,17 @@ class PortafogliCondivisiServizio {
     required this.accesso,
     DriveCondiviso Function(http.Client client)? creaDrive,
     DateTime Function()? adesso,
+    Future<String> Function()? nomeCondivisione,
+    this._emailTrovata,
   }) : _creaDrive = creaDrive ?? DriveCondiviso.new,
-       _adesso = adesso ?? DateTime.now;
+       _adesso = adesso ?? DateTime.now,
+       _nomeMio = nomeCondivisione ?? (() async => '');
+
+  /// Il mio nome nelle condivisioni (Impostazioni › Account).
+  final Future<String> Function() _nomeMio;
+
+  /// L'email del mio account Google, scoperta da Drive.
+  final void Function(String email)? _emailTrovata;
 
   final DateTime Function() _adesso;
 
@@ -158,11 +171,56 @@ class PortafogliCondivisiServizio {
   final _exMembri = ValueNotifier<Set<String>>(const {});
   StreamSubscription<List<Membro>>? _osservaEx;
 
+  /// Chi ha inserito le voci dei portafogli condivisi: per ogni persona il
+  /// nome nelle condivisioni (o, se non c'è, l'inizio dell'email), se è ex
+  /// membro e se sono io.
+  ValueListenable<Map<String, AutoreVoce>> get autori {
+    _osservaAutori ??= _db
+        .customSelect(
+          'SELECT m.id AS id, m.email AS email, m.nome AS nome, '
+          'm.stato AS stato, MAX(m.file_id IS NOT NULL AND '
+          'm.file_id = pc.mio_file_id) AS io '
+          'FROM membri m LEFT JOIN portafogli_condivisi pc '
+          'ON pc.portafoglio_id = m.portafoglio_id GROUP BY m.id',
+          readsFrom: {_db.membri, _db.portafogliCondivisi},
+        )
+        .watch()
+        .listen((righe) {
+          _autori.value = {
+            for (final r in righe)
+              r.read<String>('id'): (
+                nome: nomeVisibile(
+                  r.read<String>('nome'),
+                  r.read<String>('email'),
+                ),
+                ex:
+                    r.read<String>('stato') == StatoMembro.uscito ||
+                    r.read<String>('stato') == StatoMembro.scaduto,
+                io: (r.read<int?>('io') ?? 0) == 1,
+              ),
+          };
+        });
+    return _autori;
+  }
+
+  final _autori = ValueNotifier<Map<String, AutoreVoce>>(const {});
+  StreamSubscription<List<QueryRow>>? _osservaAutori;
+
+  /// Il nome da mostrare: quello scelto o l'inizio dell'email.
+  static String nomeVisibile(String nome, String email) =>
+      nome.trim().isNotEmpty ? nome.trim() : email.split('@').first;
+
+  /// Un nome arrivato da un file o dal registro: senza spazi in più né
+  /// caratteri di controllo, al massimo 40 caratteri.
+  static String _nomePulito(Object? valore) => ProfiloAccount.pulito(valore);
+
   void chiudi() {
     _chiuso = true;
     _avvisi.close();
     _osservaEx?.cancel();
     _exMembri.dispose();
+    _osservaAutori?.cancel();
+    _autori.dispose();
     stato.dispose();
   }
 
@@ -315,7 +373,12 @@ class PortafogliCondivisiServizio {
       await drive.aggiorna(
         fileId,
         jsonEncode({
-          ..._intestazioneFile(pc.portafoglioId, mio.id, _identita()),
+          ..._intestazioneFile(
+            pc.portafoglioId,
+            mio.id,
+            _identita(),
+            nome: await _nomeMio(),
+          ),
           'uscito': true,
         }),
       );
@@ -699,10 +762,12 @@ class PortafogliCondivisiServizio {
     final io = _identita();
     final mioId = nuovoId();
     final email = await drive.mioIndirizzo() ?? '';
+    _emailTrovata?.call(email);
+    final nome = await _nomeMio();
     final mioFile = await drive.creaFile(
       cartella.id,
       nomeFilePersona(email),
-      jsonEncode(_intestazioneFile(portafoglioId, mioId, io)),
+      jsonEncode(_intestazioneFile(portafoglioId, mioId, io, nome: nome)),
     );
     final chiave = _sodium.randombytes.buf(Cifratore.lunghezzaChiave);
     await _db.transaction(() async {
@@ -728,6 +793,7 @@ class PortafogliCondivisiServizio {
               aggiornatoIl: _orologio.adesso(),
               portafoglioId: portafoglioId,
               email: email,
+              nome: Value(nome),
               ruolo: RuoloMembro.proprietario,
               stato: StatoMembro.attivo,
               fileId: Value(mioFile),
@@ -745,13 +811,16 @@ class PortafogliCondivisiServizio {
   Map<String, Object?> _intestazioneFile(
     String portafoglioId,
     String membroId,
-    IdentitaPersona io,
-  ) => {
+    IdentitaPersona io, {
+    String nome = '',
+  }) => {
     'formato': formato,
     'portafoglio': portafoglioId,
     'membro': membroId,
     'scambio': base64.encode(io.pubblicaScambio),
     'firma': base64.encode(io.pubblicaFirma),
+    // Il nome nelle condivisioni: lo vedono gli altri accanto alle voci.
+    if (nome.isNotEmpty) 'nome': nome,
   };
 
   /// Il registro dalle persone locali, firmato dal proprietario. La chiave
@@ -771,6 +840,7 @@ class PortafogliCondivisiServizio {
         // Registro illeggibile: si riparte.
       }
     }
+    final nomeMio = await _nomeMio();
     final contenuto = {
       'formato': formato,
       'portafoglio': pc.portafoglioId,
@@ -781,6 +851,7 @@ class PortafogliCondivisiServizio {
           {
             'id': m.id,
             'email': m.email,
+            'nome': m.fileId == pc.mioFileId ? nomeMio : m.nome,
             'ruolo': m.ruolo,
             'stato': m.stato,
             'file': m.fileId,
@@ -898,6 +969,9 @@ class PortafogliCondivisiServizio {
       final registro = _verificaRegistro(await drive.leggi(registroId));
       final portafoglioId = registro['portafoglio']! as String;
       final mia = await drive.mioIndirizzo();
+      if (mia != null) {
+        _emailTrovata?.call(mia);
+      }
       final voci = (registro['membri']! as List<Object?>)
           .cast<Map<String, Object?>>();
       final voce = voci
@@ -915,7 +989,12 @@ class PortafogliCondivisiServizio {
         await drive.aggiorna(
           mioFile,
           jsonEncode(
-            _intestazioneFile(portafoglioId, voce['id']! as String, io),
+            _intestazioneFile(
+              portafoglioId,
+              voce['id']! as String,
+              io,
+              nome: await _nomeMio(),
+            ),
           ),
         );
       } on ErroreDriveCondiviso {
@@ -998,6 +1077,7 @@ class PortafogliCondivisiServizio {
     IdentitaPersona? mieChiavi,
   }) async {
     final locali = {for (final m in await membri(pc.portafoglioId)) m.id: m};
+    final nomeMio = await _nomeMio();
     for (final v
         in (registro['membri']! as List<Object?>)
             .cast<Map<String, Object?>>()) {
@@ -1012,6 +1092,7 @@ class PortafogliCondivisiServizio {
       final locale = locali[id];
       final dati = MembriCompanion(
         email: Value(v['email'] as String? ?? ''),
+        nome: Value(mio ? nomeMio : _nomePulito(v['nome'])),
         ruolo: Value(v['ruolo'] as String? ?? RuoloMembro.membro),
         stato: Value(v['stato'] as String? ?? StatoMembro.invitato),
         fileId: Value(v['file'] as String?),
@@ -1030,6 +1111,7 @@ class PortafogliCondivisiServizio {
               ),
             );
       } else if (locale.stato != dati.stato.value ||
+          locale.nome != dati.nome.value ||
           locale.chiaveScambio != dati.chiaveScambio.value ||
           locale.chiaveFirma != dati.chiaveFirma.value ||
           locale.fileId != dati.fileId.value) {
@@ -1302,6 +1384,7 @@ class PortafogliCondivisiServizio {
         ...persone.where((m) => m.ruolo == RuoloMembro.proprietario),
         ...persone.where((m) => m.ruolo != RuoloMembro.proprietario),
       ];
+      var nomiCambiati = false;
       for (final m in ordinate) {
         final fileId = m.fileId;
         if (fileId == null || m.stato == StatoMembro.invitato) {
@@ -1313,6 +1396,20 @@ class PortafogliCondivisiServizio {
             continue; // non è cambiato dall'ultimo giro
           }
           final file = jsonDecode(testo) as Map<String, Object?>;
+          // Il nome nelle condivisioni dal suo file (il proprietario lo
+          // ricopia nel registro per chi non vede quel file).
+          final nome = _nomePulito(file['nome']);
+          if (m.fileId != pc.mioFileId && nome.isNotEmpty && nome != m.nome) {
+            await (_db.update(
+              _db.membri,
+            )..where((x) => x.id.equals(m.id))).write(
+              MembriCompanion(
+                nome: Value(nome),
+                aggiornatoIl: Value(_orologio.adesso()),
+              ),
+            );
+            nomiCambiati = true;
+          }
           // Un membro è uscito: resta "ex membro", la cartella non gli è
           // più condivisa.
           if (proprietario &&
@@ -1360,6 +1457,9 @@ class PortafogliCondivisiServizio {
           // proprietario, che ricopia tutto.
         }
       }
+      if (nomiCambiati && proprietario) {
+        await _scriviRegistro(drive, pc);
+      }
       // 4. Le mie modifiche e il mio file.
       final mio = persone.where((m) => m.fileId == pc.mioFileId).firstOrNull;
       if (mio != null) {
@@ -1393,7 +1493,18 @@ class PortafogliCondivisiServizio {
           'firmatario': r.firmatario,
         },
     ];
-    final impronta = sha256.convert(utf8.encode(jsonEncode(elenco))).toString();
+    final nome = await _nomeMio();
+    if (mio.nome != nome) {
+      await (_db.update(_db.membri)..where((x) => x.id.equals(mio.id))).write(
+        MembriCompanion(
+          nome: Value(nome),
+          aggiornatoIl: Value(_orologio.adesso()),
+        ),
+      );
+    }
+    final impronta = sha256
+        .convert(utf8.encode(jsonEncode({'righe': elenco, 'nome': nome})))
+        .toString();
     final chiaveImpronta = 'condivisi.scritto.${pc.portafoglioId}';
     final scritta = await (_db.select(
       _db.impostazioni,
@@ -1409,7 +1520,7 @@ class PortafogliCondivisiServizio {
     await drive.aggiorna(
       pc.mioFileId!,
       jsonEncode({
-        ..._intestazioneFile(pc.portafoglioId, mio.id, _identita()),
+        ..._intestazioneFile(pc.portafoglioId, mio.id, _identita(), nome: nome),
         'dati': base64.encode(cifrato),
       }),
     );

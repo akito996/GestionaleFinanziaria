@@ -27,6 +27,7 @@ class RigheSincronizzate {
   /// cui le altre fanno riferimento). I report e le impostazioni restano del
   /// dispositivo: ognuno li ricalcola dai dati.
   static const tabelle = [
+    'profili',
     'definizioni_tipo',
     'portafogli',
     'portafogli_condivisi',

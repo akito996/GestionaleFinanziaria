@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:sodium/sodium_sumo.dart';
 
+import 'account.dart';
 import 'condivisi/accesso_drive_file.dart';
 import 'condivisi/identita_persona.dart';
 import 'condivisi/invito.dart';
@@ -106,6 +107,10 @@ class Sessione extends ChangeNotifier {
       AccessoDriveFile.perPiattaforma(_credenzialiCondivisi);
 
   PortafogliCondivisiServizio? _condivisi;
+  ProfiloAccount? _account;
+
+  /// Il profilo (Impostazioni › Account): solo ad archivio aperto.
+  ProfiloAccount get account => _account!;
 
   /// Un link d'invito arrivato (anche ad archivio bloccato): lo prende la
   /// schermata principale dopo lo sblocco.
@@ -377,6 +382,7 @@ class Sessione extends ChangeNotifier {
     _report = null;
     _condivisi?.chiudi();
     _condivisi = null;
+    _account = null;
     _sync?.chiudi();
     _sync = null;
     _archivio = null;
@@ -545,12 +551,19 @@ class Sessione extends ChangeNotifier {
         _costoVita!,
         _statistiche!,
       );
+      final account = _account = ProfiloAccount(
+        archivio,
+        _contabilita!.orologio,
+        idArchivio: idArchivio,
+      );
       _condivisi = PortafogliCondivisiServizio(
         db: archivio,
         contabilita: _contabilita!,
         sodium: sodium,
         identita: () => identita,
         accesso: accessoDriveFile,
+        nomeCondivisione: account.nomeCondivisione,
+        emailTrovata: (email) => account.emailSeManca(email).ignore(),
       );
       if (prima != null) {
         await prima(archivio, _contabilita!.orologio);

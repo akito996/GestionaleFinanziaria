@@ -61,6 +61,7 @@ const categorieProposte = [
     PortafogliCondivisi,
     Membri,
     RigheCondivise,
+    Profili,
     Impostazioni,
   ],
 )
@@ -116,7 +117,7 @@ class Archivio extends _$Archivio {
   Archivio.conEsecutore(super.e);
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -232,6 +233,10 @@ class Archivio extends _$Archivio {
       // tabella nasce già con la colonna.
       if (da < 16 && da >= 15) {
         await m.addColumn(membri, membri.invitatoIl);
+      }
+      // v17: il profilo (nome, email, nome nelle condivisioni).
+      if (da < 17) {
+        await m.createTable(profili);
       }
     },
     beforeOpen: (_) async {

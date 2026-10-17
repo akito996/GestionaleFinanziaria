@@ -35,6 +35,8 @@ String sottotitoloNotifica(BuildContext context, Notifica n) {
           : 'Si registra da sola $giorno',
     TipoNotifica.registrata => 'Registrata da sola $giorno',
     TipoNotifica.promemoria => 'Promemoria · $giorno',
+    TipoNotifica.condivisa =>
+      'Inserita da ${n.autore} in «${n.portafoglio}» · $giorno',
   };
   final s = n.scadenza;
   final spostata = s != null && s.scelta?.stato == StatoOccorrenza.spostata
@@ -49,6 +51,7 @@ IconData _icona(TipoNotifica tipo) => switch (tipo) {
   TipoNotifica.inArrivo => Icons.schedule,
   TipoNotifica.registrata => Icons.task_alt,
   TipoNotifica.promemoria => Icons.sticky_note_2_outlined,
+  TipoNotifica.condivisa => Icons.group_outlined,
 };
 
 // --------------------------------------------------------------- azioni

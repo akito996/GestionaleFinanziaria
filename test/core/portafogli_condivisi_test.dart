@@ -9,6 +9,9 @@ import 'package:gestionale_finanziaria/core/condivisi/invito.dart';
 import 'package:gestionale_finanziaria/core/condivisi/portafogli_condivisi.dart';
 import 'package:gestionale_finanziaria/core/db/archivio.dart';
 import 'package:gestionale_finanziaria/core/db/contabilita.dart';
+import 'package:gestionale_finanziaria/core/db/notifiche.dart';
+import 'package:gestionale_finanziaria/core/db/pianificatore.dart';
+import 'package:gestionale_finanziaria/core/db/prestiti.dart';
 import 'package:gestionale_finanziaria/core/db/tabelle.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -62,6 +65,7 @@ void main() {
     String utente,
     int seme, {
     DateTime Function()? adesso,
+    String Function()? nome,
   }) async {
     final db = Archivio.inMemoria();
     addTearDown(db.close);
@@ -82,6 +86,7 @@ void main() {
         identita: () => io,
         accesso: accesso,
         adesso: adesso,
+        nomeCondivisione: nome == null ? null : () async => nome(),
       ),
     );
   }
@@ -90,8 +95,9 @@ void main() {
   Future<({_Persona prop, String w, String pane})> conPortafoglio(
     DriveFinto drive, {
     DateTime Function()? adesso,
+    String Function()? nome,
   }) async {
-    final prop = await persona(drive, 'prop', 1, adesso: adesso);
+    final prop = await persona(drive, 'prop', 1, adesso: adesso, nome: nome);
     final tipi = {
       for (final t in await prop.c.tipi(AmbitoTipo.portafoglio)) t.nome: t.id,
     };
@@ -574,6 +580,93 @@ void main() {
       prop.condivisi.sincronizza(),
     ]);
     expect(prop.condivisi.stato.value.fase, FaseCondivisi.aggiornati);
+  });
+
+  test('nomi nelle condivisioni: viaggiano, accanto alle voci e nelle '
+      'notifiche', () async {
+    final drive = DriveFinto();
+    var nomeMembro = 'Yueping';
+    final (:prop, :w, :pane) = await conPortafoglio(drive, nome: () => 'Akito');
+    final memb = await persona(drive, 'memb', 2, nome: () => nomeMembro);
+    await prop.condivisi.invita(w, 'memb@example.com');
+    final cartella = drive
+        .conNome(PortafogliCondivisiServizio.nomeCartella('Casa', w))
+        .single;
+    memb.accesso.sceglie = (e) => e.padre == cartella;
+    await memb.condivisi.unisciti();
+    for (var i = 0; i < 2; i++) {
+      await prop.condivisi.sincronizza();
+      await memb.condivisi.sincronizza();
+    }
+    final pizza = await memb.c.registraMovimento(
+      tipoId: await memb.tipoSpesa(),
+      portafoglioId: w,
+      importo: 5000,
+      valuta: 'EUR',
+      data: DateTime.now(),
+      descrizione: 'Pizza x2',
+    );
+    await memb.condivisi.sincronizza();
+    await prop.condivisi.sincronizza();
+    await memb.condivisi.sincronizza();
+
+    Future<Map<String, AutoreVoce>> autori(_Persona p) async {
+      p.condivisi.autori;
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      return p.condivisi.autori.value;
+    }
+
+    // Dal proprietario: la pizza è di Yueping, il pane è suo.
+    final daProp = await autori(prop);
+    expect(daProp[(await prop.movimento(pizza)).inseritoDa], (
+      nome: 'Yueping',
+      ex: false,
+      io: false,
+    ));
+    expect(daProp[(await prop.movimento(pane)).inseritoDa], (
+      nome: 'Akito',
+      ex: false,
+      io: true,
+    ));
+    // Dal membro: il nome del proprietario arriva anche a lui.
+    final daMemb = await autori(memb);
+    expect(daMemb[(await memb.movimento(pane)).inseritoDa]!.nome, 'Akito');
+    expect(daMemb[(await memb.movimento(pizza)).inseritoDa]!.io, isTrue);
+
+    // Notifiche: il proprietario vede la voce nuova del membro; il membro
+    // non riceve quelle che c'erano già prima del suo ingresso.
+    NotificheServizio notifiche(_Persona p) {
+      final pianificatore = Pianificatore(p.db, p.c.orologio);
+      return NotificheServizio(
+        p.db,
+        p.c.orologio,
+        pianificatore,
+        PrestitiServizio(p.db, p.c.orologio, pianificatore),
+      );
+    }
+
+    final perProp = (await notifiche(
+      prop,
+    ).elenco()).where((n) => n.tipo == TipoNotifica.condivisa).toList();
+    expect(perProp.single.titolo, 'Pizza x2');
+    expect(perProp.single.autore, 'Yueping');
+    expect(perProp.single.portafoglio, 'Casa');
+    expect(perProp.single.importo, 5000);
+    expect(
+      (await notifiche(
+        memb,
+      ).elenco()).where((n) => n.tipo == TipoNotifica.condivisa),
+      isEmpty,
+    );
+
+    // Il membro cambia nome: al giro dopo lo vede anche il proprietario.
+    nomeMembro = 'Yue';
+    await memb.condivisi.sincronizza();
+    await prop.condivisi.sincronizza();
+    expect(
+      (await autori(prop))[(await prop.movimento(pizza)).inseritoDa]!.nome,
+      'Yue',
+    );
   });
 
   test('JSON canonico: le chiavi in ordine, a ogni livello', () {

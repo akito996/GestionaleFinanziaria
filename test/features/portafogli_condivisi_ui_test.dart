@@ -424,6 +424,8 @@ void main() {
     await tocca(tester, find.text('Casa'));
     await attendi(tester, find.text('Spesa del membro'));
     await attendi(tester, find.textContaining('ex membro · '));
+    // Chi l'ha inserita: senza nome scelto, l'inizio della sua email.
+    expect(find.textContaining('ex membro · memb · '), findsWidgets);
     expect(
       find.ancestor(
         of: find.text('Spesa del membro'),
