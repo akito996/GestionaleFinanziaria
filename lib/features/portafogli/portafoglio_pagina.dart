@@ -21,7 +21,7 @@ import '../condivisi/condividi_portafoglio.dart';
 import '../sync/sync_pagina.dart';
 
 /// Dettaglio di un portafoglio: saldo e movimenti, con modifica e archiviazione.
-class PortafoglioPagina extends StatelessWidget {
+class PortafoglioPagina extends StatefulWidget {
   const PortafoglioPagina({
     super.key,
     required this.sessione,
@@ -30,6 +30,22 @@ class PortafoglioPagina extends StatelessWidget {
 
   final Sessione sessione;
   final String portafoglioId;
+
+  @override
+  State<PortafoglioPagina> createState() => _PortafoglioPaginaState();
+}
+
+class _PortafoglioPaginaState extends State<PortafoglioPagina> {
+  Sessione get sessione => widget.sessione;
+  String get portafoglioId => widget.portafoglioId;
+
+  // Preparati una volta: a ogni cambio di saldo la pagina si ridisegna senza
+  // rifare le ricerche da capo.
+  late final _portafogli = sessione.contabilita.osservaPortafogli();
+  late final _movimenti = sessione.contabilita.osservaMovimenti(
+    portafoglioId: portafoglioId,
+    limite: 500,
+  );
 
   Future<void> _archivia(BuildContext context, PortafoglioConSaldo p) async {
     final conferma = await showDialog<bool>(
@@ -81,9 +97,8 @@ class PortafoglioPagina extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final contabilita = sessione.contabilita;
     return StreamBuilder<List<PortafoglioConSaldo>>(
-      stream: contabilita.osservaPortafogli(),
+      stream: _portafogli,
       builder: (context, snapshot) {
         final p = snapshot.data
             ?.where((p) => p.portafoglio.id == portafoglioId)
@@ -150,95 +165,125 @@ class PortafoglioPagina extends StatelessWidget {
             label: const Text('Movimento'),
           ),
           body: StreamBuilder<List<MovimentoDettaglio>>(
-            stream: contabilita.osservaMovimenti(
-              portafoglioId: portafoglioId,
-              limite: 500,
-            ),
+            stream: _movimenti,
             builder: (context, snapshot) {
               final movimenti = snapshot.data ?? const [];
               // Trascinando verso il basso si sincronizza subito.
               return AggiornaTrascinando(
                 sessione: sessione,
                 child: LayoutBuilder(
-                  builder: (context, vincoli) => ListView(
-                    padding: marginiPagina(vincoli, sopra: 0),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          children: [
-                            Text(
-                              p.tipo.nome,
-                              style: Theme.of(context).textTheme.labelLarge,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              Importo.formatta(p.saldo, p.portafoglio.valuta),
-                              style: Theme.of(context).textTheme.displaySmall
-                                  ?.copyWith(
-                                    color: p.saldo < 0
-                                        ? Theme.of(context).colorScheme.error
-                                        : null,
+                  builder: (context, vincoli) {
+                    final margini = marginiPagina(vincoli, sopra: 0);
+                    return CustomScrollView(
+                      slivers: [
+                        SliverPadding(
+                          padding: margini.copyWith(bottom: 0),
+                          sliver: SliverList.list(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      p.tipo.nome,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      Importo.formatta(
+                                        p.saldo,
+                                        p.portafoglio.valuta,
+                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .displaySmall
+                                          ?.copyWith(
+                                            color: p.saldo < 0
+                                                ? Theme.of(context)
+                                                      .colorScheme
+                                                      .error
+                                                : null,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: Column(
+                                  children: [
+                                    AvvisiCarte(
+                                      sessione: sessione,
+                                      portafoglioId: portafoglioId,
+                                    ),
+                                    AvvisoObiettivi(
+                                      sessione: sessione,
+                                      portafoglioId: portafoglioId,
+                                      saldo: p.saldo,
+                                      valuta: p.portafoglio.valuta,
+                                    ),
+                                    SchedaInArrivo(
+                                      sessione: sessione,
+                                      portafoglioId: portafoglioId,
+                                      giorni: 30,
+                                      titolo: 'Prossimi movimenti su questo portafoglio',
+                                      chiave: 'inarrivo.$portafoglioId',
+                                      escludiOrigini: const {'carta'},
+                                    ),
+                                    SchedaPersone(
+                                      sessione: sessione,
+                                      portafoglioId: portafoglioId,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  0,
+                                  16,
+                                  16,
+                                ),
+                                child: _AndamentoSaldo(
+                                  sessione: sessione,
+                                  portafoglioId: portafoglioId,
+                                  valuta: p.portafoglio.valuta,
+                                ),
+                              ),
+                              const Divider(height: 1),
+                              if (movimenti.isEmpty && snapshot.hasData)
+                                const Padding(
+                                  padding: EdgeInsets.all(32),
+                                  child: Text(
+                                    'Nessun movimento. Premi "+ Movimento" per aggiungerne uno.',
+                                    textAlign: TextAlign.center,
                                   ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Column(
-                          children: [
-                            AvvisiCarte(
-                              sessione: sessione,
-                              portafoglioId: portafoglioId,
-                            ),
-                            AvvisoObiettivi(
-                              sessione: sessione,
-                              portafoglioId: portafoglioId,
-                              saldo: p.saldo,
-                              valuta: p.portafoglio.valuta,
-                            ),
-                            SchedaInArrivo(
-                              sessione: sessione,
-                              portafoglioId: portafoglioId,
-                              giorni: 30,
-                              titolo:
-                                  'Prossimi movimenti su questo portafoglio',
-                              chiave: 'inarrivo.$portafoglioId',
-                              escludiOrigini: const {'carta'},
-                            ),
-                            SchedaPersone(
-                              sessione: sessione,
-                              portafoglioId: portafoglioId,
-                            ),
-                          ],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        child: _AndamentoSaldo(
-                          sessione: sessione,
-                          portafoglioId: portafoglioId,
-                          valuta: p.portafoglio.valuta,
-                        ),
-                      ),
-                      const Divider(height: 1),
-                      if (movimenti.isEmpty && snapshot.hasData)
-                        const Padding(
-                          padding: EdgeInsets.all(32),
-                          child: Text(
-                            'Nessun movimento. Premi "+ Movimento" per aggiungerne uno.',
-                            textAlign: TextAlign.center,
+                                ),
+                            ],
                           ),
                         ),
-                      for (final m in movimenti)
-                        RigaMovimento(
-                          sessione: sessione,
-                          dettaglio: m,
-                          portafoglioId: portafoglioId,
+                        // Le righe si costruiscono solo quando entrano in
+                        // vista: anche con centinaia di movimenti la pagina
+                        // si apre e scorre fluida.
+                        SliverPadding(
+                          padding: margini.copyWith(top: 0),
+                          sliver: SliverList.builder(
+                            itemCount: movimenti.length,
+                            itemBuilder: (context, i) => RigaMovimento(
+                              key: ValueKey(movimenti[i].movimento.id),
+                              sessione: sessione,
+                              dettaglio: movimenti[i],
+                              portafoglioId: portafoglioId,
+                            ),
+                          ),
                         ),
-                    ],
-                  ),
+                      ],
+                    );
+                  },
                 ),
               );
             },

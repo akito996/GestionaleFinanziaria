@@ -47,3 +47,25 @@ Simboli a parte: Windows 1,5 MB, Android 2,9 MB.
 - ✅ Download e spazio occupato più bassi senza togliere funzioni.
 - ⚠️ L'elenco delle chiamate negli errori delle build di release è in forma compatta: per leggerlo servono i simboli della stessa build.
 - 🔜 MSI di release (con compressione) nella pipeline di rilascio.
+
+## Aggiornamento del 17/10/2026: velocità, fluidità, batteria e peso
+Richiesta dell'utente: ottimizzare velocità, fluidità, uso della batteria e peso dell'app.
+
+**Già a posto** (verificato): l'archivio lavora in un isolate a parte (`NativeDatabase.createInBackground`); Argon2id e le operazioni sulle chiavi girano fuori dal thread grafico (`Isolate.run`, `runIsolated`); le build di release Android usano R8.
+
+**Fatto (senza controindicazioni):**
+- **Batteria**: con l'app in secondo piano i controlli periodici si fermano: scadenze ogni 15 minuti, sincronizzazione ogni 5, portafogli condivisi ogni minuto. Al ritorno ripartono, con un giro subito. Prima continuavano finché Android non congelava l'app.
+- **Fluidità**:
+  - nel dettaglio del portafoglio le righe dei movimenti (fino a 500) si costruiscono solo quando entrano in vista (`SliverList.builder`);
+  - le ricerche sono preparate una volta sola: un cambio di saldo non rifà tutte le ricerche da capo;
+  - nella sezione Movimenti si mostrano 100 movimenti alla volta invece di 300, con "Mostra altri".
+
+**Peso, misurato il 17/10/2026:** Windows 19,2 MB da scaricare e 45,4 MB installata; APK arm64 48,3 MB, armeabi-v7a 41,4 MB. Dal 13/10 l'APK è cresciuto di circa 15 MB, soprattutto per la lettura delle foto (ADR-014): la libreria Tesseract e il modello italiano `tessdata_best`, che pesa da solo **8,9 MB** (`tessdata_fast`: 2,7 MB).
+
+Le tre scelte per il peso, **in attesa della decisione dell'utente**:
+
+| Scelta | Cosa cambia | APK arm64 (stima) |
+|---|---|---|
+| **Qualità/Prezzo** (consigliata) | Il modello preciso si scarica solo al primo uso della lettura foto, verificato con SHA-256. Serve Internet una volta sola | circa 40 MB |
+| **Prestazione** | Modello veloce incorporato: funziona subito, anche senza Internet. Quello preciso si scarica la prima volta e da lì si usa quello | circa 42 MB |
+| **Economica** | Solo il modello veloce incorporato: sempre senza Internet, ma un po' meno preciso sugli scontrini difficili | circa 42 MB |

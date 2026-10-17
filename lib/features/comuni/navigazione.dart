@@ -216,29 +216,24 @@ class _GuscioState extends State<Guscio> {
   @override
   void initState() {
     super.initState();
-    // Se l'app resta aperta, le scadenze del giorno si registrano comunque.
-    _controllo = Timer.periodic(
-      const Duration(minutes: 15),
-      (_) => _registra(),
-    );
     // All'apertura: le decisioni da prendere (es. maxi rata in arrivo).
     WidgetsBinding.instance.addPostFrameCallback((_) => _avvisi());
-    // Sincronizzazione con gli altri dispositivi: ogni 5 minuti, quando l'app
-    // va in secondo piano (invia le ultime modifiche) e quando torna.
-    _sincronia = Timer.periodic(
-      Sincronizzazione.intervallo,
-      (_) => _sincronizza(),
-    );
+    // Controlli periodici solo con l'app in vista: in secondo piano si
+    // fermano (batteria) e al ritorno ripartono, con un giro subito.
+    _avviaTimer();
+    // Sincronizzazione con gli altri dispositivi: quando l'app va in secondo
+    // piano (invia le ultime modifiche) e quando torna.
     _ciclo = AppLifecycleListener(
       onPause: _sincronizza,
       onResume: _sincronizza,
+      onHide: _fermaTimer,
+      onShow: () {
+        _avviaTimer();
+        _registra().ignore();
+      },
     );
-    // Portafogli condivisi: un controllo leggero ogni minuto e, dopo una
-    // modifica qui, l'invio agli altri entro pochi secondi.
-    _condivisi = Timer.periodic(
-      PortafogliCondivisiServizio.intervallo,
-      (_) => _sincronizzaCondivisi(soloSeCiSono: true),
-    );
+    // Portafogli condivisi: dopo una modifica qui, l'invio agli altri entro
+    // pochi secondi.
     _modifiche = widget.sessione.condivisi.modificheLocali.listen((_) {
       _invio?.cancel();
       _invio = Timer(const Duration(seconds: 3), _inviaModifiche);
@@ -258,6 +253,33 @@ class _GuscioState extends State<Guscio> {
     });
     // Link d'invito: arrivato prima dello sblocco o con l'app aperta.
     widget.sessione.invitoInArrivo.addListener(_invitoArrivato);
+  }
+
+  /// I controlli periodici dell'app aperta: scadenze del giorno (15 minuti),
+  /// sincronizzazione (5 minuti), portafogli condivisi (1 minuto, controllo
+  /// leggero).
+  void _avviaTimer() {
+    _fermaTimer();
+    _controllo = Timer.periodic(
+      const Duration(minutes: 15),
+      (_) => _registra(),
+    );
+    _sincronia = Timer.periodic(
+      Sincronizzazione.intervallo,
+      (_) => _sincronizza(),
+    );
+    _condivisi = Timer.periodic(
+      PortafogliCondivisiServizio.intervallo,
+      (_) => _sincronizzaCondivisi(soloSeCiSono: true),
+    );
+  }
+
+  /// In secondo piano: niente lavoro inutile (rete, processore, batteria).
+  void _fermaTimer() {
+    _controllo?.cancel();
+    _sincronia?.cancel();
+    _condivisi?.cancel();
+    _controllo = _sincronia = _condivisi = null;
   }
 
   /// Un link d'invito: va nei "Nuovi inviti" e si apre la pagina dei
@@ -385,12 +407,10 @@ class _GuscioState extends State<Guscio> {
 
   @override
   void dispose() {
-    _controllo?.cancel();
-    _sincronia?.cancel();
+    _fermaTimer();
     _ciclo?.dispose();
     _blocco?.dispose();
     _avvisiCondivisi?.cancel();
-    _condivisi?.cancel();
     _modifiche?.cancel();
     _invio?.cancel();
     widget.sessione.invitoInArrivo.removeListener(_invitoArrivato);

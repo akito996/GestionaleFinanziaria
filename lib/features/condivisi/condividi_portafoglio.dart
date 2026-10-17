@@ -9,6 +9,7 @@ import '../../core/db/tabelle.dart';
 import '../../core/sessione.dart';
 import '../comuni/avvisi.dart';
 import '../comuni/blocco_automatico.dart';
+import 'guida_condivisi.dart';
 
 /// Invita una persona nel portafoglio (ADR-019): alla prima volta il
 /// portafoglio diventa condiviso. Google le manda un'email.
@@ -197,11 +198,19 @@ class _ModuloInvitoState extends State<_ModuloInvito> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Google le manda un\'email. Lei apre WalleCy e preme '
-              '"Unisciti" in Impostazioni › Portafogli condivisi. I dati '
+              'All\'altra persona arriva un\'email con il link d\'invito: lo '
+              'apre dal telefono e tocca «Accetta» entro un\'ora. I dati '
               'viaggiano cifrati: Google non li può leggere.',
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => apriGuidaCondivisi(context),
+                icon: const Icon(Icons.menu_book_outlined),
+                label: const Text('Come si fa, passo passo'),
               ),
             ),
           ],

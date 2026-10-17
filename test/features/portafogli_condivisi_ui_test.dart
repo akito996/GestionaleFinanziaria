@@ -322,6 +322,8 @@ void main() {
       invito!.link.toString(),
     );
     await attendi(tester, find.text('Nuovi inviti'));
+    // Le istruzioni passo passo sono a portata di mano.
+    expect(find.text('Come si fa: istruzioni passo passo'), findsOneWidget);
     expect(find.text('«Vacanze»'), findsOneWidget);
     expect(find.textContaining('Da prop@example.com'), findsOneWidget);
 

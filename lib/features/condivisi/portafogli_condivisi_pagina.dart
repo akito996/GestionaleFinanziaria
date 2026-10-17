@@ -12,6 +12,7 @@ import '../comuni/errori.dart';
 import '../comuni/layout.dart';
 import '../portafogli/portafoglio_pagina.dart';
 import '../sync/sync_pagina.dart';
+import 'guida_condivisi.dart';
 
 /// Impostazioni › Portafogli condivisi (ADR-019): quelli di cui fai parte e
 /// "Unisciti" per entrare in un portafoglio a cui sei stato invitato.
@@ -247,11 +248,10 @@ class _PortafogliCondivisiPaginaState extends State<PortafogliCondivisiPagina> {
                 if (_occupato) const LinearProgressIndicator(),
                 const Text(
                   'Un portafoglio condiviso lo vedono e lo usano più persone, '
-                  'ognuna con il proprio WalleCy e il proprio account Google. '
-                  'Per condividerne uno, aprilo e scegli «Condividi con altre '
-                  'persone» dal menu ☰. '
-                  'Se ti hanno invitato, premi «Unisciti».',
+                  'ognuna con il proprio WalleCy e il proprio account Google.',
                 ),
+                const SizedBox(height: 12),
+                const _ComeSiFa(),
                 const SizedBox(height: 16),
                 _NuoviInviti(
                   inviti: _inviti,
@@ -302,6 +302,53 @@ class _PortafogliCondivisiPaginaState extends State<PortafogliCondivisiPagina> {
 }
 
 /// "Nuovi inviti": arrivati con un link e non ancora accettati.
+/// "Come si fa": i passi per chi condivide e per chi è invitato.
+class _ComeSiFa extends StatelessWidget {
+  const _ComeSiFa();
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.menu_book_outlined),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Come si fa: istruzioni passo passo',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            children: [
+              TextButton.icon(
+                onPressed: () => apriGuidaCondivisi(context),
+                icon: const Icon(Icons.star_outline),
+                label: const Text('Condivido io'),
+              ),
+              TextButton.icon(
+                onPressed: () =>
+                    apriGuidaCondivisi(context, ruolo: RuoloGuida.membro),
+                icon: const Icon(Icons.mail_outline),
+                label: const Text('Mi hanno invitato'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 class _NuoviInviti extends StatelessWidget {
   const _NuoviInviti({
     required this.inviti,

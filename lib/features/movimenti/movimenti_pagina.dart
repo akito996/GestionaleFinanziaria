@@ -124,7 +124,8 @@ class MovimentiPagina extends StatefulWidget {
 }
 
 class _MovimentiPaginaState extends State<MovimentiPagina> {
-  static const _pagina = 300;
+  // 100 alla volta: la pagina resta fluida, "Mostra altri" per il resto.
+  static const _pagina = 100;
 
   final _ricerca = TextEditingController();
   Timer? _attesa;

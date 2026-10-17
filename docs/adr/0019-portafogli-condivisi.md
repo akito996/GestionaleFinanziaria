@@ -154,6 +154,7 @@ Scelta dell'utente: **Qualità/Prezzo** (le altre: proprietario come "centro" ch
   - se il consenso di Google manca, o un giro non riesce, lo **si vede**: ⟳ diventa rosso e la pagina della sincronizzazione lo spiega (prima saltava senza dire niente);
   - le altre scelte: **Prestazione**, controllo ogni 10-15 secondi (più batteria e traffico; le notifiche istantanee vorrebbero un server, non gratis); **Economica**, solo a mano (⟳ e trascina) più i 5 minuti.
 - **Interfaccia** (stessa richiesta): nel dettaglio del portafoglio in alto restano solo ⟳ e il menu ☰ (Condividi con altre persone, Modifica, Archivia, Elimina). La scheda "Portafoglio condiviso" è **chiusa** quando tutti hanno accettato ("Con mario@gmail.com") e si apre con le frecce; resta aperta se qualcuno deve ancora rispondere.
+- **Istruzioni** (richiesta del 17/10/2026): nella pagina "Portafogli condivisi" c'è la scheda "Come si fa" con due percorsi, **"Condivido io"** e **"Mi hanno invitato"**. Ognuno ha 5 passi numerati, poi "Dopo" e "Se qualcosa non va" (email non arrivata, invito scaduto, accesso bloccato da Google finché l'app è in prova, ⟳ rossa). La guida si apre anche dalla finestra dell'invito. La pagina `sito/invito.html` mostra al membro i 4 passi per accettare.
 - Da fare (consegne 2 e 3): quote nel totale e voci assegnate, vista per membro, impedire nell'interfaccia di modificare le voci altrui, badge in Panoramica, notifiche, rimozione di un membro con cambio di chiave, scansione del QR con la fotocamera.
 
 ## Consegne
