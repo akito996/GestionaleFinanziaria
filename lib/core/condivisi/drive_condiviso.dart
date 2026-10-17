@@ -318,6 +318,17 @@ class DriveCondiviso {
     );
   }
 
+  /// L'email dell'account Google collegato (per ritrovarsi nel registro).
+  Future<String?> mioIndirizzo() async {
+    final r = await _client.get(
+      _api
+          .resolve('about')
+          .replace(queryParameters: {'fields': 'user(emailAddress)'}),
+    );
+    final utente = (await _json(r))['user'] as Map<String, Object?>?;
+    return (utente?['emailAddress'] as String?)?.toLowerCase();
+  }
+
   /// Contenuto di un file di testo.
   Future<String> leggi(String fileId) async {
     final r = await _client.get(

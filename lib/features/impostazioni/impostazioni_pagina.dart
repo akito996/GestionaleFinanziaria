@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/sessione.dart';
 import '../../core/sicurezza/sicurezza_dispositivo.dart';
 import '../comuni/firma_versione.dart';
+import '../condivisi/portafogli_condivisi_pagina.dart';
 import '../condivisi/prova_condivisione_pagina.dart';
 import '../comuni/layout.dart';
 import '../comuni/navigazione.dart';
@@ -227,6 +228,23 @@ class _ImpostazioniPaginaState extends State<ImpostazioniPagina> {
                 Card(
                   child: Column(
                     children: [
+                      ListTile(
+                        leading: const Icon(Icons.group_outlined),
+                        title: const Text('Portafogli condivisi'),
+                        subtitle: const Text(
+                          'Quelli che usi con altre persone; «Unisciti» se '
+                          'ti hanno invitato',
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => PortafogliCondivisiPagina(
+                              sessione: widget.sessione,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const Divider(height: 1),
                       ListTile(
                         leading: const Icon(Icons.inventory_2_outlined),
                         title: const Text('Portafogli archiviati'),

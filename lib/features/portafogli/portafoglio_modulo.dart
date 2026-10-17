@@ -6,6 +6,7 @@ import '../../core/importo.dart';
 import '../../core/sessione.dart';
 import '../comuni/campi.dart';
 import '../comuni/errori.dart';
+import '../condivisi/condividi_portafoglio.dart';
 
 /// Nuovo portafoglio (o modifica di uno [esistente]). [nomeSuggerito] e [tipoSuggerito]
 /// precompilano il modulo (es. dalle scorciatoie "Contanti", "Conto corrente").
@@ -48,6 +49,10 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
 
   List<DefinizioneTipo> _tipi = const [];
   bool _preferito = false;
+
+  /// Nuovo portafoglio condiviso (ADR-019): si invita subito [_email].
+  bool _condiviso = false;
+  final _email = TextEditingController();
   String? _tipo;
   String _valuta = 'EUR';
   bool _salvataggio = false;
@@ -86,6 +91,7 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
   @override
   void dispose() {
     _nome.dispose();
+    _email.dispose();
     _saldo.dispose();
     super.dispose();
   }
@@ -114,6 +120,9 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
         );
         if (_preferito) {
           await contabilita.impostaPreferito(id, true);
+        }
+        if (_condiviso && mounted) {
+          await invitaPersona(context, widget.sessione, id, _email.text);
         }
       } else {
         await contabilita.modificaPortafoglio(
@@ -239,6 +248,33 @@ class _PortafoglioModuloState extends State<_PortafoglioModulo> {
                   ],
                   onChanged: (v) => setState(() => _valuta = v ?? 'EUR'),
                 ),
+                if (!modifica) ...[
+                  const SizedBox(height: 8),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: _condiviso,
+                    onChanged: (v) => setState(() => _condiviso = v),
+                    secondary: const Icon(Icons.group_outlined),
+                    title: const Text('Condiviso'),
+                    subtitle: const Text(
+                      'Lo usano anche altre persone, ognuna con il suo '
+                      'WalleCy',
+                    ),
+                  ),
+                  if (_condiviso)
+                    TextFormField(
+                      controller: _email,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        labelText: 'Email Google della persona da invitare',
+                      ),
+                      validator: (v) =>
+                          RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+                              .hasMatch(v?.trim() ?? '')
+                          ? null
+                          : 'Scrivi un indirizzo email valido',
+                    ),
+                ],
                 const SizedBox(height: 16),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,

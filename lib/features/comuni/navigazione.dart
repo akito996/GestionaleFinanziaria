@@ -216,6 +216,9 @@ class _GuscioState extends State<Guscio> {
   void _sincronizza() {
     if (widget.sessione.fase == FaseSessione.sbloccata) {
       widget.sessione.sync.sincronizza().ignore();
+      // Portafogli condivisi (ADR-019): solo se ce ne sono, senza chiedere
+      // niente a Google.
+      widget.sessione.condivisi.sincronizza().ignore();
     }
   }
 

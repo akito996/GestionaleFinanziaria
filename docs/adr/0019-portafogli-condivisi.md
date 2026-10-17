@@ -1,6 +1,6 @@
 # ADR-019 – Portafogli condivisi (conti cointestati)
 
-- **Stato**: accettata. Consegna 0 (prova tecnica) **riuscita** il 16/10/2026; consegna 1 progettata (file preparati dal proprietario).
+- **Stato**: accettata. Consegna 0 (prova tecnica) **riuscita** il 16/10/2026; **consegna 1 fatta** il 17/10/2026, da provare con due account.
 - **Data**: 2026-10-16
 - **Codice (consegna 0)**:
   - `lib/core/condivisi/` (`accesso_drive_file.dart`, `drive_condiviso.dart`);
@@ -116,6 +116,17 @@ Scelta dell'utente: **Qualità/Prezzo** (le altre: proprietario come "centro" ch
 - 1b. Invito: "Condiviso" nel modulo del portafoglio, email, cartella e file preparati, consegna della chiave.
 - 1c. Ingresso del membro: "Unisciti a un portafoglio condiviso", scelta dei file, il portafoglio compare.
 - 1d. Sincronizzazione condivisa: scrittura e lettura dei file, firme, unione, "nuovo membro da confermare".
+
+**1b–1d fatti (17/10/2026)**, `lib/core/condivisi/portafogli_condivisi.dart` (`PortafogliCondivisiServizio`):
+- **Cartella** `WalleCy/wallecy_share_<nome>_<id>`; **registro** `wallecy_registro.json` (membri, email, ruoli, stati, file, chiavi pubbliche, chiave del portafoglio sigillata per ogni membro attivo, versione) firmato Ed25519 dal proprietario; un file `wallecy_membro_<id>.json` per persona.
+- **Invito**: "Condiviso" nel modulo del nuovo portafoglio o l'icona delle persone nel dettaglio; la stessa email non si invita due volte ("Persona già presente"), la propria nemmeno.
+- **Ingresso**: Impostazioni › Portafogli condivisi › "Unisciti": il membro sceglie tutti i file della cartella; l'app lo trova nel registro dall'email dell'account (Drive `about`), scrive le sue chiavi pubbliche nel suo file e aspetta. L'app del proprietario, al giro dopo, lo segna attivo e gli sigilla la chiave nel registro.
+- **Righe firmate**: ogni riga (portafoglio e movimenti) viaggia come JSON canonico firmato da chi l'ha cambiata; tabella locale `righe_condivise` (database v15). Ogni file contiene **tutte** le righe che quella persona conosce, cifrate con la chiave del portafoglio: chi non vede il file di un altro membro riceve le sue righe dal file del proprietario.
+- **Permessi** controllati da chi legge: il portafoglio lo cambia solo il proprietario; un movimento solo chi l'ha inserito o il proprietario; l'autore non si può cambiare.
+- **Traduzione** tra archivi: categorie per percorso ("Alimentari › Spesa", create se mancano), tipi per effetto; un trasferimento da o verso un portafoglio personale arriva agli altri come entrata o uscita.
+- **Fiducia**: chiave del proprietario fissata alla prima lettura del registro (se cambia, il registro si rifiuta); codice di sicurezza con QR nella scheda "Persone".
+- Gira ogni 5 minuti con la sincronizzazione, senza chiedere niente a Google (se manca il consenso, salta); "Aggiorna ora" nella pagina dei portafogli condivisi. Su Windows il permesso drive.file resta nell'archivio cifrato.
+- Da fare (consegne 2 e 3): quote nel totale e voci assegnate, vista per membro, impedire nell'interfaccia di modificare le voci altrui, badge in Panoramica, notifiche, uscita e rimozione con cambio di chiave, scansione del QR con la fotocamera.
 
 ## Consegne
 0. **Prova tecnica** (Laboratorio):

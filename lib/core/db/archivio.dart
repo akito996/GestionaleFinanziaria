@@ -60,6 +60,7 @@ const categorieProposte = [
     Report,
     PortafogliCondivisi,
     Membri,
+    RigheCondivise,
     Impostazioni,
   ],
 )
@@ -115,7 +116,7 @@ class Archivio extends _$Archivio {
   Archivio.conEsecutore(super.e);
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -215,6 +216,17 @@ class Archivio extends _$Archivio {
         await m.createTable(membri);
         await m.addColumn(movimenti, movimenti.inseritoDa);
         await m.addColumn(movimenti, movimenti.modificatoDa);
+      }
+      // v15: righe firmate dei portafogli condivisi; le due tabelle della
+      // v14 (ancora vuote) si ricreano senza vincolo verso i portafogli.
+      if (da < 15) {
+        if (da >= 14) {
+          await m.deleteTable('membri');
+          await m.deleteTable('portafogli_condivisi');
+          await m.createTable(portafogliCondivisi);
+          await m.createTable(membri);
+        }
+        await m.createTable(righeCondivise);
       }
     },
     beforeOpen: (_) async {

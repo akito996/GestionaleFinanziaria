@@ -404,7 +404,9 @@ abstract final class OriginePianificazione {
 /// ogni membro; ognuno scrive solo nel proprio file.
 @DataClassName('PortafoglioCondiviso')
 class PortafogliCondivisi extends Table with ColonneSincronizzate {
-  TextColumn get portafoglioId => text().references(Portafogli, #id)();
+  /// Senza vincolo: il membro riceve la riga del portafoglio solo dopo
+  /// essere entrato.
+  TextColumn get portafoglioId => text()();
 
   /// Ruolo di questo archivio: vedi [RuoloMembro].
   TextColumn get ruolo => text()();
@@ -426,7 +428,9 @@ class PortafogliCondivisi extends Table with ColonneSincronizzate {
 /// Una persona di un portafoglio condiviso, proprietario compreso.
 @DataClassName('Membro')
 class Membri extends Table with ColonneSincronizzate {
-  TextColumn get portafoglioId => text().references(Portafogli, #id)();
+  /// Senza vincolo: il membro riceve la riga del portafoglio solo dopo
+  /// essere entrato.
+  TextColumn get portafoglioId => text()();
 
   /// Email Google con cui è stato invitato.
   TextColumn get email => text()();
@@ -452,6 +456,34 @@ class Membri extends Table with ColonneSincronizzate {
   /// Quota del totale in centesimi di punto (5000 = 50%); vuota = non
   /// indicata (consegna 2).
   IntColumn get quota => integer().nullable()();
+}
+
+/// L'ultima versione **firmata** di ogni riga di un portafoglio condiviso
+/// (il portafoglio stesso o un suo movimento), com'è scritta nei file su
+/// Drive. `id` = `<portafoglio>:<riga>`, `aggiornatoIl` = orologio di chi
+/// l'ha cambiata (vale l'ultima). Chiunque la può ricopiare: la firma dice
+/// chi l'ha cambiata davvero.
+@DataClassName('RigaCondivisa')
+class RigheCondivise extends Table with ColonneSincronizzate {
+  TextColumn get portafoglioId => text()();
+
+  /// Id della riga nella sua tabella.
+  TextColumn get rigaId => text()();
+
+  /// "portafoglio" o "movimento".
+  TextColumn get tipo => text()();
+
+  /// Il membro che l'ha firmata.
+  TextColumn get firmatario => text()();
+
+  /// JSON canonico della riga (quello firmato).
+  TextColumn get contenuto => text()();
+  TextColumn get firma => text()();
+
+  /// L'orologio della riga locale dopo l'ultima scrittura da qui o da un
+  /// file condiviso: se la riga ne ha uno diverso, è cambiata su questo
+  /// archivio e va pubblicata.
+  TextColumn get rigaAggiornataIl => text()();
 }
 
 /// Valori ammessi per [PortafogliCondivisi.ruolo] e [Membri.ruolo].

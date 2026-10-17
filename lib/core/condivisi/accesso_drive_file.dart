@@ -29,16 +29,21 @@ final class SceltaAnnullata implements Exception {
 }
 
 abstract interface class AccessoDriveFile {
-  /// Client autorizzato a creare e leggere i propri file (consenso Google).
-  Future<http.Client?> client();
+  /// Client autorizzato a creare e leggere i propri file. Con [interattivo]
+  /// può chiedere il consenso a Google; senza (sincronizzazione in
+  /// sottofondo) restituisce `null` se il consenso non c'è ancora.
+  Future<http.Client?> client({bool interattivo = true});
 
   /// Finestra di Google per scegliere cartelle o file condivisi da altri
   /// (anche più di uno). Con [soloId] mostra solo quei file.
   Future<ElementiScelti> scegli({List<String> soloId = const []});
 
-  static AccessoDriveFile perPiattaforma() => Platform.isAndroid
+  /// [credenziali]: dove Windows conserva il permesso (nell'archivio
+  /// cifrato), così la sincronizzazione non riapre il browser.
+  static AccessoDriveFile perPiattaforma([CredenzialiGoogle? credenziali]) =>
+      Platform.isAndroid
       ? AccessoDriveFileAndroid()
-      : AccessoDriveFileDesktop();
+      : AccessoDriveFileDesktop(credenziali ?? CredenzialiInMemoria());
 }
 
 /// Android: Google Play services (stesso client OAuth "Android" della
@@ -49,7 +54,7 @@ class AccessoDriveFileAndroid implements AccessoDriveFile {
   bool _pronto = false;
 
   @override
-  Future<http.Client?> client() async {
+  Future<http.Client?> client({bool interattivo = true}) async {
     if (!_pronto) {
       await GoogleSignIn.instance.initialize();
       _pronto = true;
@@ -57,8 +62,10 @@ class AccessoDriveFileAndroid implements AccessoDriveFile {
     final autorizzazioni = GoogleSignIn.instance.authorizationClient;
     final esito =
         await autorizzazioni.authorizationForScopes([ambitoDriveFile]) ??
-        await autorizzazioni.authorizeScopes([ambitoDriveFile]);
-    return ClientConToken(esito.accessToken);
+        (interattivo
+            ? await autorizzazioni.authorizeScopes([ambitoDriveFile])
+            : null);
+    return esito == null ? null : ClientConToken(esito.accessToken);
   }
 
   @override
@@ -89,30 +96,61 @@ class AccessoDriveFileAndroid implements AccessoDriveFile {
 /// Windows: consenso e selettore nel browser, con ritorno su `localhost` e
 /// PKCE (client OAuth "App desktop", come la sincronizzazione).
 class AccessoDriveFileDesktop implements AccessoDriveFile {
+  AccessoDriveFileDesktop(this._credenziali);
+
   static const _segreto = String.fromEnvironment(
     'GOOGLE_CLIENT_SECRET_WINDOWS',
   );
 
+  /// Il permesso (con il token di rinnovo), nell'archivio cifrato.
+  final CredenzialiGoogle _credenziali;
+
   ClientId get _id => ClientId(AccessoGoogleDesktop.idClient, _segreto);
 
   @override
-  Future<http.Client?> client() async {
-    final base = http.Client();
+  Future<http.Client?> client({bool interattivo = true}) async {
+    var credenziali = await _salvate();
+    if (credenziali == null || credenziali.refreshToken == null) {
+      if (!interattivo) {
+        return null;
+      }
+      final base = http.Client();
+      try {
+        credenziali = await obtainAccessCredentialsViaUserConsent(
+          _id,
+          [ambitoDriveFile],
+          base,
+          (indirizzo) => launchUrl(
+            Uri.parse(indirizzo),
+            mode: LaunchMode.externalApplication,
+          ),
+        );
+      } finally {
+        base.close();
+      }
+      await _salva(credenziali);
+    }
+    final client = autoRefreshingClient(_id, credenziali, http.Client());
+    client.credentialUpdates.listen(_salva);
+    return client;
+  }
+
+  Future<AccessCredentials?> _salvate() async {
+    final json = await _credenziali.leggi();
+    if (json == null) {
+      return null;
+    }
     try {
-      final credenziali = await obtainAccessCredentialsViaUserConsent(
-        _id,
-        [ambitoDriveFile],
-        base,
-        (indirizzo) => launchUrl(
-          Uri.parse(indirizzo),
-          mode: LaunchMode.externalApplication,
-        ),
+      return AccessCredentials.fromJson(
+        jsonDecode(json) as Map<String, dynamic>,
       );
-      return ClientConToken(credenziali.accessToken.data);
-    } finally {
-      base.close();
+    } on Object {
+      return null;
     }
   }
+
+  Future<void> _salva(AccessCredentials credenziali) =>
+      _credenziali.scrivi(jsonEncode(credenziali.toJson()));
 
   @override
   Future<ElementiScelti> scegli({List<String> soloId = const []}) async {
@@ -170,6 +208,22 @@ class AccessoDriveFileDesktop implements AccessoDriveFile {
       final accesso = json['access_token'];
       if (accesso is! String) {
         throw StateError('Token non ricevuto: ${token.body}');
+      }
+      // Il permesso resta per la sincronizzazione in sottofondo.
+      final rinnovo = json['refresh_token'];
+      final durata = json['expires_in'];
+      if (rinnovo is String && durata is int) {
+        await _salva(
+          AccessCredentials(
+            AccessToken(
+              'Bearer',
+              accesso,
+              DateTime.now().toUtc().add(Duration(seconds: durata - 60)),
+            ),
+            rinnovo,
+            [ambitoDriveFile],
+          ),
+        );
       }
       final scelti = (p['picked_file_ids'] ?? '')
           .split(',')

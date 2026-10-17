@@ -46,6 +46,7 @@ class RigheSincronizzate {
     'movimenti_etichette',
     'versamenti',
     'notifiche_lette',
+    'righe_condivise',
   ];
 
   /// Tabelle che non viaggiano mai.

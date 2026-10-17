@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:sodium/sodium_sumo.dart';
 
+import 'condivisi/accesso_drive_file.dart';
 import 'condivisi/identita_persona.dart';
+import 'condivisi/portafogli_condivisi.dart';
 import 'crypto/keyring.dart';
 import 'crypto/operazioni_chiavi.dart';
 import 'crypto/secret_key.dart';
@@ -43,10 +45,13 @@ class Sessione extends ChangeNotifier {
     AccessoGoogle? accessoGoogle,
     CreaBackend? creaBackend,
     this._cassaforte,
+    AccessoDriveFile? accessoDriveFile,
   }) : _accessoIniettato = accessoGoogle,
+       _accessoDriveFileIniettato = accessoDriveFile,
        _creaBackend = creaBackend ?? DriveBackend.new;
 
   final AccessoGoogle? _accessoIniettato;
+  final AccessoDriveFile? _accessoDriveFileIniettato;
   final CreaBackend _creaBackend;
   final CassaforteDispositivo? _cassaforte;
 
@@ -86,6 +91,22 @@ class Sessione extends ChangeNotifier {
 
   /// Credenziali di Google (Windows): nell'archivio cifrato quando è aperto.
   late final _credenzialiGoogle = _CredenzialiNellArchivio(this);
+
+  /// Permesso "drive.file" dei portafogli condivisi (Windows: nell'archivio).
+  late final _credenzialiCondivisi = _CredenzialiNellArchivio(
+    this,
+    chiave: 'google.credenziali_condivisi',
+  );
+
+  /// Accesso a Drive per i portafogli condivisi (ADR-019).
+  late final AccessoDriveFile accessoDriveFile =
+      _accessoDriveFileIniettato ??
+      AccessoDriveFile.perPiattaforma(_credenzialiCondivisi);
+
+  PortafogliCondivisiServizio? _condivisi;
+
+  /// Portafogli condivisi: solo ad archivio aperto.
+  PortafogliCondivisiServizio get condivisi => _condivisi!;
 
   /// Accesso a Google Drive per la sincronizzazione (ADR-015).
   late final AccessoGoogle accessoGoogle =
@@ -342,6 +363,7 @@ class Sessione extends ChangeNotifier {
     _obiettivi = null;
     _statistiche = null;
     _report = null;
+    _condivisi = null;
     _sync?.chiudi();
     _sync = null;
     _archivio = null;
@@ -510,6 +532,13 @@ class Sessione extends ChangeNotifier {
         _costoVita!,
         _statistiche!,
       );
+      _condivisi = PortafogliCondivisiServizio(
+        db: archivio,
+        contabilita: _contabilita!,
+        sodium: sodium,
+        identita: () => identita,
+        accesso: accessoDriveFile,
+      );
       if (prima != null) {
         await prima(archivio, _contabilita!.orologio);
       }
@@ -520,6 +549,7 @@ class Sessione extends ChangeNotifier {
     }
     _archivio = archivio;
     await _credenzialiGoogle.salvaInSospeso(archivio);
+    await _credenzialiCondivisi.salvaInSospeso(archivio);
     final sync = Sincronizzazione(
       db: archivio,
       orologio: _contabilita!.orologio,
@@ -574,9 +604,12 @@ class NessunArchivioRemoto implements Exception {
 /// dispositivo. Ad archivio chiuso restano in memoria e si salvano appena si
 /// apre.
 class _CredenzialiNellArchivio implements CredenzialiGoogle {
-  _CredenzialiNellArchivio(this._sessione);
+  _CredenzialiNellArchivio(
+    this._sessione, {
+    this._chiave = 'google.credenziali',
+  });
 
-  static const _chiave = 'google.credenziali';
+  final String _chiave;
 
   final Sessione _sessione;
   String? _inSospeso;
@@ -612,7 +645,7 @@ class _CredenzialiNellArchivio implements CredenzialiGoogle {
     }
   }
 
-  static Future<void> _salva(Archivio db, String? json) => json == null
+  Future<void> _salva(Archivio db, String? json) => json == null
       ? (db.delete(
           db.impostazioni,
         )..where((i) => i.chiave.equals(_chiave))).go()

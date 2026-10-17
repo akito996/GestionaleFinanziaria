@@ -11343,9 +11343,6 @@ class $PortafogliCondivisiTable extends PortafogliCondivisi
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES portafogli (id)',
-    ),
   );
   static const VerificationMeta _ruoloMeta = const VerificationMeta('ruolo');
   @override
@@ -11552,6 +11549,9 @@ class PortafoglioCondiviso extends DataClass
   final String id;
   final String aggiornatoIl;
   final bool eliminato;
+
+  /// Senza vincolo: il membro riceve la riga del portafoglio solo dopo
+  /// essere entrato.
   final String portafoglioId;
 
   /// Ruolo di questo archivio: vedi [RuoloMembro].
@@ -11930,9 +11930,6 @@ class $MembriTable extends Membri with TableInfo<$MembriTable, Membro> {
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES portafogli (id)',
-    ),
   );
   static const VerificationMeta _emailMeta = const VerificationMeta('email');
   @override
@@ -12227,6 +12224,9 @@ class Membro extends DataClass implements Insertable<Membro> {
   final String id;
   final String aggiornatoIl;
   final bool eliminato;
+
+  /// Senza vincolo: il membro riceve la riga del portafoglio solo dopo
+  /// essere entrato.
   final String portafoglioId;
 
   /// Email Google con cui è stato invitato.
@@ -12666,6 +12666,638 @@ class MembriCompanion extends UpdateCompanion<Membro> {
   }
 }
 
+class $RigheCondiviseTable extends RigheCondivise
+    with TableInfo<$RigheCondiviseTable, RigaCondivisa> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RigheCondiviseTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _aggiornatoIlMeta = const VerificationMeta(
+    'aggiornatoIl',
+  );
+  @override
+  late final GeneratedColumn<String> aggiornatoIl = GeneratedColumn<String>(
+    'aggiornato_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eliminatoMeta = const VerificationMeta(
+    'eliminato',
+  );
+  @override
+  late final GeneratedColumn<bool> eliminato = GeneratedColumn<bool>(
+    'eliminato',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("eliminato" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _portafoglioIdMeta = const VerificationMeta(
+    'portafoglioId',
+  );
+  @override
+  late final GeneratedColumn<String> portafoglioId = GeneratedColumn<String>(
+    'portafoglio_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rigaIdMeta = const VerificationMeta('rigaId');
+  @override
+  late final GeneratedColumn<String> rigaId = GeneratedColumn<String>(
+    'riga_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tipoMeta = const VerificationMeta('tipo');
+  @override
+  late final GeneratedColumn<String> tipo = GeneratedColumn<String>(
+    'tipo',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _firmatarioMeta = const VerificationMeta(
+    'firmatario',
+  );
+  @override
+  late final GeneratedColumn<String> firmatario = GeneratedColumn<String>(
+    'firmatario',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contenutoMeta = const VerificationMeta(
+    'contenuto',
+  );
+  @override
+  late final GeneratedColumn<String> contenuto = GeneratedColumn<String>(
+    'contenuto',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _firmaMeta = const VerificationMeta('firma');
+  @override
+  late final GeneratedColumn<String> firma = GeneratedColumn<String>(
+    'firma',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rigaAggiornataIlMeta = const VerificationMeta(
+    'rigaAggiornataIl',
+  );
+  @override
+  late final GeneratedColumn<String> rigaAggiornataIl = GeneratedColumn<String>(
+    'riga_aggiornata_il',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    aggiornatoIl,
+    eliminato,
+    portafoglioId,
+    rigaId,
+    tipo,
+    firmatario,
+    contenuto,
+    firma,
+    rigaAggiornataIl,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'righe_condivise';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RigaCondivisa> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('aggiornato_il')) {
+      context.handle(
+        _aggiornatoIlMeta,
+        aggiornatoIl.isAcceptableOrUnknown(
+          data['aggiornato_il']!,
+          _aggiornatoIlMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_aggiornatoIlMeta);
+    }
+    if (data.containsKey('eliminato')) {
+      context.handle(
+        _eliminatoMeta,
+        eliminato.isAcceptableOrUnknown(data['eliminato']!, _eliminatoMeta),
+      );
+    }
+    if (data.containsKey('portafoglio_id')) {
+      context.handle(
+        _portafoglioIdMeta,
+        portafoglioId.isAcceptableOrUnknown(
+          data['portafoglio_id']!,
+          _portafoglioIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_portafoglioIdMeta);
+    }
+    if (data.containsKey('riga_id')) {
+      context.handle(
+        _rigaIdMeta,
+        rigaId.isAcceptableOrUnknown(data['riga_id']!, _rigaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rigaIdMeta);
+    }
+    if (data.containsKey('tipo')) {
+      context.handle(
+        _tipoMeta,
+        tipo.isAcceptableOrUnknown(data['tipo']!, _tipoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tipoMeta);
+    }
+    if (data.containsKey('firmatario')) {
+      context.handle(
+        _firmatarioMeta,
+        firmatario.isAcceptableOrUnknown(data['firmatario']!, _firmatarioMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_firmatarioMeta);
+    }
+    if (data.containsKey('contenuto')) {
+      context.handle(
+        _contenutoMeta,
+        contenuto.isAcceptableOrUnknown(data['contenuto']!, _contenutoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contenutoMeta);
+    }
+    if (data.containsKey('firma')) {
+      context.handle(
+        _firmaMeta,
+        firma.isAcceptableOrUnknown(data['firma']!, _firmaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_firmaMeta);
+    }
+    if (data.containsKey('riga_aggiornata_il')) {
+      context.handle(
+        _rigaAggiornataIlMeta,
+        rigaAggiornataIl.isAcceptableOrUnknown(
+          data['riga_aggiornata_il']!,
+          _rigaAggiornataIlMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_rigaAggiornataIlMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RigaCondivisa map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RigaCondivisa(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      aggiornatoIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}aggiornato_il'],
+      )!,
+      eliminato: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}eliminato'],
+      )!,
+      portafoglioId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}portafoglio_id'],
+      )!,
+      rigaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}riga_id'],
+      )!,
+      tipo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tipo'],
+      )!,
+      firmatario: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}firmatario'],
+      )!,
+      contenuto: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}contenuto'],
+      )!,
+      firma: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}firma'],
+      )!,
+      rigaAggiornataIl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}riga_aggiornata_il'],
+      )!,
+    );
+  }
+
+  @override
+  $RigheCondiviseTable createAlias(String alias) {
+    return $RigheCondiviseTable(attachedDatabase, alias);
+  }
+}
+
+class RigaCondivisa extends DataClass implements Insertable<RigaCondivisa> {
+  final String id;
+  final String aggiornatoIl;
+  final bool eliminato;
+  final String portafoglioId;
+
+  /// Id della riga nella sua tabella.
+  final String rigaId;
+
+  /// "portafoglio" o "movimento".
+  final String tipo;
+
+  /// Il membro che l'ha firmata.
+  final String firmatario;
+
+  /// JSON canonico della riga (quello firmato).
+  final String contenuto;
+  final String firma;
+
+  /// L'orologio della riga locale dopo l'ultima scrittura da qui o da un
+  /// file condiviso: se la riga ne ha uno diverso, è cambiata su questo
+  /// archivio e va pubblicata.
+  final String rigaAggiornataIl;
+  const RigaCondivisa({
+    required this.id,
+    required this.aggiornatoIl,
+    required this.eliminato,
+    required this.portafoglioId,
+    required this.rigaId,
+    required this.tipo,
+    required this.firmatario,
+    required this.contenuto,
+    required this.firma,
+    required this.rigaAggiornataIl,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['aggiornato_il'] = Variable<String>(aggiornatoIl);
+    map['eliminato'] = Variable<bool>(eliminato);
+    map['portafoglio_id'] = Variable<String>(portafoglioId);
+    map['riga_id'] = Variable<String>(rigaId);
+    map['tipo'] = Variable<String>(tipo);
+    map['firmatario'] = Variable<String>(firmatario);
+    map['contenuto'] = Variable<String>(contenuto);
+    map['firma'] = Variable<String>(firma);
+    map['riga_aggiornata_il'] = Variable<String>(rigaAggiornataIl);
+    return map;
+  }
+
+  RigheCondiviseCompanion toCompanion(bool nullToAbsent) {
+    return RigheCondiviseCompanion(
+      id: Value(id),
+      aggiornatoIl: Value(aggiornatoIl),
+      eliminato: Value(eliminato),
+      portafoglioId: Value(portafoglioId),
+      rigaId: Value(rigaId),
+      tipo: Value(tipo),
+      firmatario: Value(firmatario),
+      contenuto: Value(contenuto),
+      firma: Value(firma),
+      rigaAggiornataIl: Value(rigaAggiornataIl),
+    );
+  }
+
+  factory RigaCondivisa.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RigaCondivisa(
+      id: serializer.fromJson<String>(json['id']),
+      aggiornatoIl: serializer.fromJson<String>(json['aggiornatoIl']),
+      eliminato: serializer.fromJson<bool>(json['eliminato']),
+      portafoglioId: serializer.fromJson<String>(json['portafoglioId']),
+      rigaId: serializer.fromJson<String>(json['rigaId']),
+      tipo: serializer.fromJson<String>(json['tipo']),
+      firmatario: serializer.fromJson<String>(json['firmatario']),
+      contenuto: serializer.fromJson<String>(json['contenuto']),
+      firma: serializer.fromJson<String>(json['firma']),
+      rigaAggiornataIl: serializer.fromJson<String>(json['rigaAggiornataIl']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'aggiornatoIl': serializer.toJson<String>(aggiornatoIl),
+      'eliminato': serializer.toJson<bool>(eliminato),
+      'portafoglioId': serializer.toJson<String>(portafoglioId),
+      'rigaId': serializer.toJson<String>(rigaId),
+      'tipo': serializer.toJson<String>(tipo),
+      'firmatario': serializer.toJson<String>(firmatario),
+      'contenuto': serializer.toJson<String>(contenuto),
+      'firma': serializer.toJson<String>(firma),
+      'rigaAggiornataIl': serializer.toJson<String>(rigaAggiornataIl),
+    };
+  }
+
+  RigaCondivisa copyWith({
+    String? id,
+    String? aggiornatoIl,
+    bool? eliminato,
+    String? portafoglioId,
+    String? rigaId,
+    String? tipo,
+    String? firmatario,
+    String? contenuto,
+    String? firma,
+    String? rigaAggiornataIl,
+  }) => RigaCondivisa(
+    id: id ?? this.id,
+    aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+    eliminato: eliminato ?? this.eliminato,
+    portafoglioId: portafoglioId ?? this.portafoglioId,
+    rigaId: rigaId ?? this.rigaId,
+    tipo: tipo ?? this.tipo,
+    firmatario: firmatario ?? this.firmatario,
+    contenuto: contenuto ?? this.contenuto,
+    firma: firma ?? this.firma,
+    rigaAggiornataIl: rigaAggiornataIl ?? this.rigaAggiornataIl,
+  );
+  RigaCondivisa copyWithCompanion(RigheCondiviseCompanion data) {
+    return RigaCondivisa(
+      id: data.id.present ? data.id.value : this.id,
+      aggiornatoIl: data.aggiornatoIl.present
+          ? data.aggiornatoIl.value
+          : this.aggiornatoIl,
+      eliminato: data.eliminato.present ? data.eliminato.value : this.eliminato,
+      portafoglioId: data.portafoglioId.present
+          ? data.portafoglioId.value
+          : this.portafoglioId,
+      rigaId: data.rigaId.present ? data.rigaId.value : this.rigaId,
+      tipo: data.tipo.present ? data.tipo.value : this.tipo,
+      firmatario: data.firmatario.present
+          ? data.firmatario.value
+          : this.firmatario,
+      contenuto: data.contenuto.present ? data.contenuto.value : this.contenuto,
+      firma: data.firma.present ? data.firma.value : this.firma,
+      rigaAggiornataIl: data.rigaAggiornataIl.present
+          ? data.rigaAggiornataIl.value
+          : this.rigaAggiornataIl,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RigaCondivisa(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('portafoglioId: $portafoglioId, ')
+          ..write('rigaId: $rigaId, ')
+          ..write('tipo: $tipo, ')
+          ..write('firmatario: $firmatario, ')
+          ..write('contenuto: $contenuto, ')
+          ..write('firma: $firma, ')
+          ..write('rigaAggiornataIl: $rigaAggiornataIl')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    aggiornatoIl,
+    eliminato,
+    portafoglioId,
+    rigaId,
+    tipo,
+    firmatario,
+    contenuto,
+    firma,
+    rigaAggiornataIl,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RigaCondivisa &&
+          other.id == this.id &&
+          other.aggiornatoIl == this.aggiornatoIl &&
+          other.eliminato == this.eliminato &&
+          other.portafoglioId == this.portafoglioId &&
+          other.rigaId == this.rigaId &&
+          other.tipo == this.tipo &&
+          other.firmatario == this.firmatario &&
+          other.contenuto == this.contenuto &&
+          other.firma == this.firma &&
+          other.rigaAggiornataIl == this.rigaAggiornataIl);
+}
+
+class RigheCondiviseCompanion extends UpdateCompanion<RigaCondivisa> {
+  final Value<String> id;
+  final Value<String> aggiornatoIl;
+  final Value<bool> eliminato;
+  final Value<String> portafoglioId;
+  final Value<String> rigaId;
+  final Value<String> tipo;
+  final Value<String> firmatario;
+  final Value<String> contenuto;
+  final Value<String> firma;
+  final Value<String> rigaAggiornataIl;
+  final Value<int> rowid;
+  const RigheCondiviseCompanion({
+    this.id = const Value.absent(),
+    this.aggiornatoIl = const Value.absent(),
+    this.eliminato = const Value.absent(),
+    this.portafoglioId = const Value.absent(),
+    this.rigaId = const Value.absent(),
+    this.tipo = const Value.absent(),
+    this.firmatario = const Value.absent(),
+    this.contenuto = const Value.absent(),
+    this.firma = const Value.absent(),
+    this.rigaAggiornataIl = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RigheCondiviseCompanion.insert({
+    required String id,
+    required String aggiornatoIl,
+    this.eliminato = const Value.absent(),
+    required String portafoglioId,
+    required String rigaId,
+    required String tipo,
+    required String firmatario,
+    required String contenuto,
+    required String firma,
+    required String rigaAggiornataIl,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       aggiornatoIl = Value(aggiornatoIl),
+       portafoglioId = Value(portafoglioId),
+       rigaId = Value(rigaId),
+       tipo = Value(tipo),
+       firmatario = Value(firmatario),
+       contenuto = Value(contenuto),
+       firma = Value(firma),
+       rigaAggiornataIl = Value(rigaAggiornataIl);
+  static Insertable<RigaCondivisa> custom({
+    Expression<String>? id,
+    Expression<String>? aggiornatoIl,
+    Expression<bool>? eliminato,
+    Expression<String>? portafoglioId,
+    Expression<String>? rigaId,
+    Expression<String>? tipo,
+    Expression<String>? firmatario,
+    Expression<String>? contenuto,
+    Expression<String>? firma,
+    Expression<String>? rigaAggiornataIl,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (aggiornatoIl != null) 'aggiornato_il': aggiornatoIl,
+      if (eliminato != null) 'eliminato': eliminato,
+      if (portafoglioId != null) 'portafoglio_id': portafoglioId,
+      if (rigaId != null) 'riga_id': rigaId,
+      if (tipo != null) 'tipo': tipo,
+      if (firmatario != null) 'firmatario': firmatario,
+      if (contenuto != null) 'contenuto': contenuto,
+      if (firma != null) 'firma': firma,
+      if (rigaAggiornataIl != null) 'riga_aggiornata_il': rigaAggiornataIl,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RigheCondiviseCompanion copyWith({
+    Value<String>? id,
+    Value<String>? aggiornatoIl,
+    Value<bool>? eliminato,
+    Value<String>? portafoglioId,
+    Value<String>? rigaId,
+    Value<String>? tipo,
+    Value<String>? firmatario,
+    Value<String>? contenuto,
+    Value<String>? firma,
+    Value<String>? rigaAggiornataIl,
+    Value<int>? rowid,
+  }) {
+    return RigheCondiviseCompanion(
+      id: id ?? this.id,
+      aggiornatoIl: aggiornatoIl ?? this.aggiornatoIl,
+      eliminato: eliminato ?? this.eliminato,
+      portafoglioId: portafoglioId ?? this.portafoglioId,
+      rigaId: rigaId ?? this.rigaId,
+      tipo: tipo ?? this.tipo,
+      firmatario: firmatario ?? this.firmatario,
+      contenuto: contenuto ?? this.contenuto,
+      firma: firma ?? this.firma,
+      rigaAggiornataIl: rigaAggiornataIl ?? this.rigaAggiornataIl,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (aggiornatoIl.present) {
+      map['aggiornato_il'] = Variable<String>(aggiornatoIl.value);
+    }
+    if (eliminato.present) {
+      map['eliminato'] = Variable<bool>(eliminato.value);
+    }
+    if (portafoglioId.present) {
+      map['portafoglio_id'] = Variable<String>(portafoglioId.value);
+    }
+    if (rigaId.present) {
+      map['riga_id'] = Variable<String>(rigaId.value);
+    }
+    if (tipo.present) {
+      map['tipo'] = Variable<String>(tipo.value);
+    }
+    if (firmatario.present) {
+      map['firmatario'] = Variable<String>(firmatario.value);
+    }
+    if (contenuto.present) {
+      map['contenuto'] = Variable<String>(contenuto.value);
+    }
+    if (firma.present) {
+      map['firma'] = Variable<String>(firma.value);
+    }
+    if (rigaAggiornataIl.present) {
+      map['riga_aggiornata_il'] = Variable<String>(rigaAggiornataIl.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RigheCondiviseCompanion(')
+          ..write('id: $id, ')
+          ..write('aggiornatoIl: $aggiornatoIl, ')
+          ..write('eliminato: $eliminato, ')
+          ..write('portafoglioId: $portafoglioId, ')
+          ..write('rigaId: $rigaId, ')
+          ..write('tipo: $tipo, ')
+          ..write('firmatario: $firmatario, ')
+          ..write('contenuto: $contenuto, ')
+          ..write('firma: $firma, ')
+          ..write('rigaAggiornataIl: $rigaAggiornataIl, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ImpostazioniTable extends Impostazioni
     with TableInfo<$ImpostazioniTable, Impostazione> {
   @override
@@ -12903,6 +13535,7 @@ abstract class _$Archivio extends GeneratedDatabase {
   late final $PortafogliCondivisiTable portafogliCondivisi =
       $PortafogliCondivisiTable(this);
   late final $MembriTable membri = $MembriTable(this);
+  late final $RigheCondiviseTable righeCondivise = $RigheCondiviseTable(this);
   late final $ImpostazioniTable impostazioni = $ImpostazioniTable(this);
   late final Index movimentiPianificatiUnici = Index(
     'movimenti_pianificati_unici',
@@ -12933,6 +13566,7 @@ abstract class _$Archivio extends GeneratedDatabase {
     report,
     portafogliCondivisi,
     membri,
+    righeCondivise,
     impostazioni,
     movimentiPianificatiUnici,
   ];
@@ -13764,48 +14398,6 @@ final class $$PortafogliTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
-
-  static MultiTypedResultKey<
-    $PortafogliCondivisiTable,
-    List<PortafoglioCondiviso>
-  >
-  _portafogliCondivisiRefsTable(_$Archivio db) => MultiTypedResultKey.fromTable(
-    db.portafogliCondivisi,
-    aliasName: 'portafogli__id__portafogli_condivisi__portafoglio_id',
-  );
-
-  $$PortafogliCondivisiTableProcessedTableManager get portafogliCondivisiRefs {
-    final manager = $$PortafogliCondivisiTableTableManager(
-      $_db,
-      $_db.portafogliCondivisi,
-    ).filter((f) => f.portafoglioId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(
-      _portafogliCondivisiRefsTable($_db),
-    );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
-  static MultiTypedResultKey<$MembriTable, List<Membro>> _membriRefsTable(
-    _$Archivio db,
-  ) => MultiTypedResultKey.fromTable(
-    db.membri,
-    aliasName: 'portafogli__id__membri__portafoglio_id',
-  );
-
-  $$MembriTableProcessedTableManager get membriRefs {
-    final manager = $$MembriTableTableManager(
-      $_db,
-      $_db.membri,
-    ).filter((f) => f.portafoglioId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(_membriRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
 }
 
 class $$PortafogliTableFilterComposer
@@ -14086,56 +14678,6 @@ class $$PortafogliTableFilterComposer
           }) => $$ObiettiviTableFilterComposer(
             $db: $db,
             $table: $db.obiettivi,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
-  Expression<bool> portafogliCondivisiRefs(
-    Expression<bool> Function($$PortafogliCondivisiTableFilterComposer f) f,
-  ) {
-    final $$PortafogliCondivisiTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.portafogliCondivisi,
-      getReferencedColumn: (t) => t.portafoglioId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PortafogliCondivisiTableFilterComposer(
-            $db: $db,
-            $table: $db.portafogliCondivisi,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
-  Expression<bool> membriRefs(
-    Expression<bool> Function($$MembriTableFilterComposer f) f,
-  ) {
-    final $$MembriTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.membri,
-      getReferencedColumn: (t) => t.portafoglioId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$MembriTableFilterComposer(
-            $db: $db,
-            $table: $db.membri,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -14504,57 +15046,6 @@ class $$PortafogliTableAnnotationComposer
     );
     return f(composer);
   }
-
-  Expression<T> portafogliCondivisiRefs<T extends Object>(
-    Expression<T> Function($$PortafogliCondivisiTableAnnotationComposer a) f,
-  ) {
-    final $$PortafogliCondivisiTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.portafogliCondivisi,
-          getReferencedColumn: (t) => t.portafoglioId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$PortafogliCondivisiTableAnnotationComposer(
-                $db: $db,
-                $table: $db.portafogliCondivisi,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return f(composer);
-  }
-
-  Expression<T> membriRefs<T extends Object>(
-    Expression<T> Function($$MembriTableAnnotationComposer a) f,
-  ) {
-    final $$MembriTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.membri,
-      getReferencedColumn: (t) => t.portafoglioId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$MembriTableAnnotationComposer(
-            $db: $db,
-            $table: $db.membri,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
 }
 
 class $$PortafogliTableTableManager
@@ -14580,8 +15071,6 @@ class $$PortafogliTableTableManager
             bool carteAddebitate,
             bool prestitiRefs,
             bool obiettiviRefs,
-            bool portafogliCondivisiRefs,
-            bool membriRefs,
           })
         > {
   $$PortafogliTableTableManager(_$Archivio db, $PortafogliTable table)
@@ -14674,8 +15163,6 @@ class $$PortafogliTableTableManager
                 carteAddebitate = false,
                 prestitiRefs = false,
                 obiettiviRefs = false,
-                portafogliCondivisiRefs = false,
-                membriRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -14688,8 +15175,6 @@ class $$PortafogliTableTableManager
                     if (carteAddebitate) db.carteCredito,
                     if (prestitiRefs) db.prestiti,
                     if (obiettiviRefs) db.obiettivi,
-                    if (portafogliCondivisiRefs) db.portafogliCondivisi,
-                    if (membriRefs) db.membri,
                   ],
                   addJoins:
                       <
@@ -14891,48 +15376,6 @@ class $$PortafogliTableTableManager
                               ),
                           typedResults: items,
                         ),
-                      if (portafogliCondivisiRefs)
-                        await $_getPrefetchedData<
-                          Portafoglio,
-                          $PortafogliTable,
-                          PortafoglioCondiviso
-                        >(
-                          currentTable: table,
-                          referencedTable: $$PortafogliTableReferences
-                              ._portafogliCondivisiRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$PortafogliTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).portafogliCondivisiRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.portafoglioId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                      if (membriRefs)
-                        await $_getPrefetchedData<
-                          Portafoglio,
-                          $PortafogliTable,
-                          Membro
-                        >(
-                          currentTable: table,
-                          referencedTable: $$PortafogliTableReferences
-                              ._membriRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$PortafogliTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).membriRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.portafoglioId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
                     ];
                   },
                 );
@@ -14963,8 +15406,6 @@ typedef $$PortafogliTableProcessedTableManager =
         bool carteAddebitate,
         bool prestitiRefs,
         bool obiettiviRefs,
-        bool portafogliCondivisiRefs,
-        bool membriRefs,
       })
     >;
 typedef $$CategorieTableCreateCompanionBuilder = CategorieCompanion Function({
@@ -23695,37 +24136,6 @@ typedef $$PortafogliCondivisiTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-final class $$PortafogliCondivisiTableReferences
-    extends
-        BaseReferences<
-          _$Archivio,
-          $PortafogliCondivisiTable,
-          PortafoglioCondiviso
-        > {
-  $$PortafogliCondivisiTableReferences(
-    super.$_db,
-    super.$_table,
-    super.$_typedResult,
-  );
-
-  static $PortafogliTable _portafoglioIdTable(_$Archivio db) => db.portafogli
-      .createAlias('portafogli_condivisi__portafoglio_id__portafogli__id');
-
-  $$PortafogliTableProcessedTableManager get portafoglioId {
-    final $_column = $_itemColumn<String>('portafoglio_id')!;
-
-    final manager = $$PortafogliTableTableManager(
-      $_db,
-      $_db.portafogli,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_portafoglioIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-}
-
 class $$PortafogliCondivisiTableFilterComposer
     extends Composer<_$Archivio, $PortafogliCondivisiTable> {
   $$PortafogliCondivisiTableFilterComposer({
@@ -23747,6 +24157,11 @@ class $$PortafogliCondivisiTableFilterComposer
 
   ColumnFilters<bool> get eliminato => $composableBuilder(
     column: $table.eliminato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get portafoglioId => $composableBuilder(
+    column: $table.portafoglioId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -23774,29 +24189,6 @@ class $$PortafogliCondivisiTableFilterComposer
     column: $table.chiave,
     builder: (column) => ColumnFilters(column),
   );
-
-  $$PortafogliTableFilterComposer get portafoglioId {
-    final $$PortafogliTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.portafoglioId,
-      referencedTable: $db.portafogli,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PortafogliTableFilterComposer(
-            $db: $db,
-            $table: $db.portafogli,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
 }
 
 class $$PortafogliCondivisiTableOrderingComposer
@@ -23820,6 +24212,11 @@ class $$PortafogliCondivisiTableOrderingComposer
 
   ColumnOrderings<bool> get eliminato => $composableBuilder(
     column: $table.eliminato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get portafoglioId => $composableBuilder(
+    column: $table.portafoglioId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -23847,29 +24244,6 @@ class $$PortafogliCondivisiTableOrderingComposer
     column: $table.chiave,
     builder: (column) => ColumnOrderings(column),
   );
-
-  $$PortafogliTableOrderingComposer get portafoglioId {
-    final $$PortafogliTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.portafoglioId,
-      referencedTable: $db.portafogli,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PortafogliTableOrderingComposer(
-            $db: $db,
-            $table: $db.portafogli,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
 }
 
 class $$PortafogliCondivisiTableAnnotationComposer
@@ -23892,6 +24266,11 @@ class $$PortafogliCondivisiTableAnnotationComposer
   GeneratedColumn<bool> get eliminato =>
       $composableBuilder(column: $table.eliminato, builder: (column) => column);
 
+  GeneratedColumn<String> get portafoglioId => $composableBuilder(
+    column: $table.portafoglioId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get ruolo =>
       $composableBuilder(column: $table.ruolo, builder: (column) => column);
 
@@ -23910,29 +24289,6 @@ class $$PortafogliCondivisiTableAnnotationComposer
 
   GeneratedColumn<String> get chiave =>
       $composableBuilder(column: $table.chiave, builder: (column) => column);
-
-  $$PortafogliTableAnnotationComposer get portafoglioId {
-    final $$PortafogliTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.portafoglioId,
-      referencedTable: $db.portafogli,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PortafogliTableAnnotationComposer(
-            $db: $db,
-            $table: $db.portafogli,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
 }
 
 class $$PortafogliCondivisiTableTableManager
@@ -23946,9 +24302,16 @@ class $$PortafogliCondivisiTableTableManager
           $$PortafogliCondivisiTableAnnotationComposer,
           $$PortafogliCondivisiTableCreateCompanionBuilder,
           $$PortafogliCondivisiTableUpdateCompanionBuilder,
-          (PortafoglioCondiviso, $$PortafogliCondivisiTableReferences),
+          (
+            PortafoglioCondiviso,
+            BaseReferences<
+              _$Archivio,
+              $PortafogliCondivisiTable,
+              PortafoglioCondiviso
+            >,
+          ),
           PortafoglioCondiviso,
-          PrefetchHooks Function({bool portafoglioId})
+          PrefetchHooks Function()
         > {
   $$PortafogliCondivisiTableTableManager(
     _$Archivio db,
@@ -24023,49 +24386,15 @@ class $$PortafogliCondivisiTableTableManager
                   e.readTable<$PortafogliCondivisiTable, PortafoglioCondiviso>(
                     table,
                   ),
-                  $$PortafogliCondivisiTableReferences(db, table, e),
+                  BaseReferences<
+                    _$Archivio,
+                    $PortafogliCondivisiTable,
+                    PortafoglioCondiviso
+                  >(db, table, e),
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({portafoglioId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (portafoglioId) {
-                      state = state.withJoin(
-                        currentTable: table,
-                        currentColumn: table.portafoglioId,
-                        referencedTable: $$PortafogliCondivisiTableReferences
-                            ._portafoglioIdTable(db),
-                        referencedColumn: $$PortafogliCondivisiTableReferences
-                            ._portafoglioIdTable(db)
-                            .id,
-                      ) as T;
-                    }
-
-                    return state;
-                  },
-              getPrefetchedDataCallback: (items) async {
-                return [];
-              },
-            );
-          },
+          prefetchHooksCallback: null,
         ),
       );
 }
@@ -24080,9 +24409,16 @@ typedef $$PortafogliCondivisiTableProcessedTableManager =
       $$PortafogliCondivisiTableAnnotationComposer,
       $$PortafogliCondivisiTableCreateCompanionBuilder,
       $$PortafogliCondivisiTableUpdateCompanionBuilder,
-      (PortafoglioCondiviso, $$PortafogliCondivisiTableReferences),
+      (
+        PortafoglioCondiviso,
+        BaseReferences<
+          _$Archivio,
+          $PortafogliCondivisiTable,
+          PortafoglioCondiviso
+        >,
+      ),
       PortafoglioCondiviso,
-      PrefetchHooks Function({bool portafoglioId})
+      PrefetchHooks Function()
     >;
 typedef $$MembriTableCreateCompanionBuilder = MembriCompanion Function({
   required String id,
@@ -24117,28 +24453,6 @@ typedef $$MembriTableUpdateCompanionBuilder = MembriCompanion Function({
   Value<int> rowid,
 });
 
-final class $$MembriTableReferences
-    extends BaseReferences<_$Archivio, $MembriTable, Membro> {
-  $$MembriTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static $PortafogliTable _portafoglioIdTable(_$Archivio db) =>
-      db.portafogli.createAlias('membri__portafoglio_id__portafogli__id');
-
-  $$PortafogliTableProcessedTableManager get portafoglioId {
-    final $_column = $_itemColumn<String>('portafoglio_id')!;
-
-    final manager = $$PortafogliTableTableManager(
-      $_db,
-      $_db.portafogli,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_portafoglioIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-}
-
 class $$MembriTableFilterComposer extends Composer<_$Archivio, $MembriTable> {
   $$MembriTableFilterComposer({
     required super.$db,
@@ -24159,6 +24473,11 @@ class $$MembriTableFilterComposer extends Composer<_$Archivio, $MembriTable> {
 
   ColumnFilters<bool> get eliminato => $composableBuilder(
     column: $table.eliminato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get portafoglioId => $composableBuilder(
+    column: $table.portafoglioId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -24206,29 +24525,6 @@ class $$MembriTableFilterComposer extends Composer<_$Archivio, $MembriTable> {
     column: $table.quota,
     builder: (column) => ColumnFilters(column),
   );
-
-  $$PortafogliTableFilterComposer get portafoglioId {
-    final $$PortafogliTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.portafoglioId,
-      referencedTable: $db.portafogli,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PortafogliTableFilterComposer(
-            $db: $db,
-            $table: $db.portafogli,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
 }
 
 class $$MembriTableOrderingComposer extends Composer<_$Archivio, $MembriTable> {
@@ -24251,6 +24547,11 @@ class $$MembriTableOrderingComposer extends Composer<_$Archivio, $MembriTable> {
 
   ColumnOrderings<bool> get eliminato => $composableBuilder(
     column: $table.eliminato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get portafoglioId => $composableBuilder(
+    column: $table.portafoglioId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -24298,29 +24599,6 @@ class $$MembriTableOrderingComposer extends Composer<_$Archivio, $MembriTable> {
     column: $table.quota,
     builder: (column) => ColumnOrderings(column),
   );
-
-  $$PortafogliTableOrderingComposer get portafoglioId {
-    final $$PortafogliTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.portafoglioId,
-      referencedTable: $db.portafogli,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PortafogliTableOrderingComposer(
-            $db: $db,
-            $table: $db.portafogli,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
 }
 
 class $$MembriTableAnnotationComposer
@@ -24342,6 +24620,11 @@ class $$MembriTableAnnotationComposer
 
   GeneratedColumn<bool> get eliminato =>
       $composableBuilder(column: $table.eliminato, builder: (column) => column);
+
+  GeneratedColumn<String> get portafoglioId => $composableBuilder(
+    column: $table.portafoglioId,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get email =>
       $composableBuilder(column: $table.email, builder: (column) => column);
@@ -24375,29 +24658,6 @@ class $$MembriTableAnnotationComposer
 
   GeneratedColumn<int> get quota =>
       $composableBuilder(column: $table.quota, builder: (column) => column);
-
-  $$PortafogliTableAnnotationComposer get portafoglioId {
-    final $$PortafogliTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.portafoglioId,
-      referencedTable: $db.portafogli,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PortafogliTableAnnotationComposer(
-            $db: $db,
-            $table: $db.portafogli,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
 }
 
 class $$MembriTableTableManager
@@ -24411,9 +24671,9 @@ class $$MembriTableTableManager
           $$MembriTableAnnotationComposer,
           $$MembriTableCreateCompanionBuilder,
           $$MembriTableUpdateCompanionBuilder,
-          (Membro, $$MembriTableReferences),
+          (Membro, BaseReferences<_$Archivio, $MembriTable, Membro>),
           Membro,
-          PrefetchHooks Function({bool portafoglioId})
+          PrefetchHooks Function()
         > {
   $$MembriTableTableManager(_$Archivio db, $MembriTable table)
     : super(
@@ -24494,49 +24754,15 @@ class $$MembriTableTableManager
               .map(
                 (e) => (
                   e.readTable<$MembriTable, Membro>(table),
-                  $$MembriTableReferences(db, table, e),
+                  BaseReferences<_$Archivio, $MembriTable, Membro>(
+                    db,
+                    table,
+                    e,
+                  ),
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({portafoglioId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (portafoglioId) {
-                      state = state.withJoin(
-                        currentTable: table,
-                        currentColumn: table.portafoglioId,
-                        referencedTable: $$MembriTableReferences
-                            ._portafoglioIdTable(db),
-                        referencedColumn: $$MembriTableReferences
-                            ._portafoglioIdTable(db)
-                            .id,
-                      ) as T;
-                    }
-
-                    return state;
-                  },
-              getPrefetchedDataCallback: (items) async {
-                return [];
-              },
-            );
-          },
+          prefetchHooksCallback: null,
         ),
       );
 }
@@ -24551,9 +24777,321 @@ typedef $$MembriTableProcessedTableManager =
       $$MembriTableAnnotationComposer,
       $$MembriTableCreateCompanionBuilder,
       $$MembriTableUpdateCompanionBuilder,
-      (Membro, $$MembriTableReferences),
+      (Membro, BaseReferences<_$Archivio, $MembriTable, Membro>),
       Membro,
-      PrefetchHooks Function({bool portafoglioId})
+      PrefetchHooks Function()
+    >;
+typedef $$RigheCondiviseTableCreateCompanionBuilder =
+    RigheCondiviseCompanion Function({
+      required String id,
+      required String aggiornatoIl,
+      Value<bool> eliminato,
+      required String portafoglioId,
+      required String rigaId,
+      required String tipo,
+      required String firmatario,
+      required String contenuto,
+      required String firma,
+      required String rigaAggiornataIl,
+      Value<int> rowid,
+    });
+typedef $$RigheCondiviseTableUpdateCompanionBuilder =
+    RigheCondiviseCompanion Function({
+      Value<String> id,
+      Value<String> aggiornatoIl,
+      Value<bool> eliminato,
+      Value<String> portafoglioId,
+      Value<String> rigaId,
+      Value<String> tipo,
+      Value<String> firmatario,
+      Value<String> contenuto,
+      Value<String> firma,
+      Value<String> rigaAggiornataIl,
+      Value<int> rowid,
+    });
+
+class $$RigheCondiviseTableFilterComposer
+    extends Composer<_$Archivio, $RigheCondiviseTable> {
+  $$RigheCondiviseTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get portafoglioId => $composableBuilder(
+    column: $table.portafoglioId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rigaId => $composableBuilder(
+    column: $table.rigaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tipo => $composableBuilder(
+    column: $table.tipo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get firmatario => $composableBuilder(
+    column: $table.firmatario,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contenuto => $composableBuilder(
+    column: $table.contenuto,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get firma => $composableBuilder(
+    column: $table.firma,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rigaAggiornataIl => $composableBuilder(
+    column: $table.rigaAggiornataIl,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RigheCondiviseTableOrderingComposer
+    extends Composer<_$Archivio, $RigheCondiviseTable> {
+  $$RigheCondiviseTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get eliminato => $composableBuilder(
+    column: $table.eliminato,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get portafoglioId => $composableBuilder(
+    column: $table.portafoglioId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rigaId => $composableBuilder(
+    column: $table.rigaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tipo => $composableBuilder(
+    column: $table.tipo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get firmatario => $composableBuilder(
+    column: $table.firmatario,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contenuto => $composableBuilder(
+    column: $table.contenuto,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get firma => $composableBuilder(
+    column: $table.firma,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rigaAggiornataIl => $composableBuilder(
+    column: $table.rigaAggiornataIl,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RigheCondiviseTableAnnotationComposer
+    extends Composer<_$Archivio, $RigheCondiviseTable> {
+  $$RigheCondiviseTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get aggiornatoIl => $composableBuilder(
+    column: $table.aggiornatoIl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get eliminato =>
+      $composableBuilder(column: $table.eliminato, builder: (column) => column);
+
+  GeneratedColumn<String> get portafoglioId => $composableBuilder(
+    column: $table.portafoglioId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get rigaId =>
+      $composableBuilder(column: $table.rigaId, builder: (column) => column);
+
+  GeneratedColumn<String> get tipo =>
+      $composableBuilder(column: $table.tipo, builder: (column) => column);
+
+  GeneratedColumn<String> get firmatario => $composableBuilder(
+    column: $table.firmatario,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get contenuto =>
+      $composableBuilder(column: $table.contenuto, builder: (column) => column);
+
+  GeneratedColumn<String> get firma =>
+      $composableBuilder(column: $table.firma, builder: (column) => column);
+
+  GeneratedColumn<String> get rigaAggiornataIl => $composableBuilder(
+    column: $table.rigaAggiornataIl,
+    builder: (column) => column,
+  );
+}
+
+class $$RigheCondiviseTableTableManager
+    extends
+        RootTableManager<
+          _$Archivio,
+          $RigheCondiviseTable,
+          RigaCondivisa,
+          $$RigheCondiviseTableFilterComposer,
+          $$RigheCondiviseTableOrderingComposer,
+          $$RigheCondiviseTableAnnotationComposer,
+          $$RigheCondiviseTableCreateCompanionBuilder,
+          $$RigheCondiviseTableUpdateCompanionBuilder,
+          (
+            RigaCondivisa,
+            BaseReferences<_$Archivio, $RigheCondiviseTable, RigaCondivisa>,
+          ),
+          RigaCondivisa,
+          PrefetchHooks Function()
+        > {
+  $$RigheCondiviseTableTableManager(_$Archivio db, $RigheCondiviseTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RigheCondiviseTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RigheCondiviseTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RigheCondiviseTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> aggiornatoIl = const Value.absent(),
+                Value<bool> eliminato = const Value.absent(),
+                Value<String> portafoglioId = const Value.absent(),
+                Value<String> rigaId = const Value.absent(),
+                Value<String> tipo = const Value.absent(),
+                Value<String> firmatario = const Value.absent(),
+                Value<String> contenuto = const Value.absent(),
+                Value<String> firma = const Value.absent(),
+                Value<String> rigaAggiornataIl = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RigheCondiviseCompanion(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                portafoglioId: portafoglioId,
+                rigaId: rigaId,
+                tipo: tipo,
+                firmatario: firmatario,
+                contenuto: contenuto,
+                firma: firma,
+                rigaAggiornataIl: rigaAggiornataIl,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String aggiornatoIl,
+                Value<bool> eliminato = const Value.absent(),
+                required String portafoglioId,
+                required String rigaId,
+                required String tipo,
+                required String firmatario,
+                required String contenuto,
+                required String firma,
+                required String rigaAggiornataIl,
+                Value<int> rowid = const Value.absent(),
+              }) => RigheCondiviseCompanion.insert(
+                id: id,
+                aggiornatoIl: aggiornatoIl,
+                eliminato: eliminato,
+                portafoglioId: portafoglioId,
+                rigaId: rigaId,
+                tipo: tipo,
+                firmatario: firmatario,
+                contenuto: contenuto,
+                firma: firma,
+                rigaAggiornataIl: rigaAggiornataIl,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$RigheCondiviseTable, RigaCondivisa>(table),
+                  BaseReferences<
+                    _$Archivio,
+                    $RigheCondiviseTable,
+                    RigaCondivisa
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RigheCondiviseTableProcessedTableManager =
+    ProcessedTableManager<
+      _$Archivio,
+      $RigheCondiviseTable,
+      RigaCondivisa,
+      $$RigheCondiviseTableFilterComposer,
+      $$RigheCondiviseTableOrderingComposer,
+      $$RigheCondiviseTableAnnotationComposer,
+      $$RigheCondiviseTableCreateCompanionBuilder,
+      $$RigheCondiviseTableUpdateCompanionBuilder,
+      (
+        RigaCondivisa,
+        BaseReferences<_$Archivio, $RigheCondiviseTable, RigaCondivisa>,
+      ),
+      RigaCondivisa,
+      PrefetchHooks Function()
     >;
 typedef $$ImpostazioniTableCreateCompanionBuilder =
     ImpostazioniCompanion Function({
@@ -24751,6 +25289,8 @@ class $ArchivioManager {
       $$PortafogliCondivisiTableTableManager(_db, _db.portafogliCondivisi);
   $$MembriTableTableManager get membri =>
       $$MembriTableTableManager(_db, _db.membri);
+  $$RigheCondiviseTableTableManager get righeCondivise =>
+      $$RigheCondiviseTableTableManager(_db, _db.righeCondivise);
   $$ImpostazioniTableTableManager get impostazioni =>
       $$ImpostazioniTableTableManager(_db, _db.impostazioni);
 }

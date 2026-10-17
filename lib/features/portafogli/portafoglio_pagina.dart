@@ -17,6 +17,7 @@ import 'avviso_obiettivi.dart';
 import 'elimina_portafoglio.dart';
 import 'portafoglio_modulo.dart';
 import '../comuni/avvisi.dart';
+import '../condivisi/condividi_portafoglio.dart';
 
 /// Dettaglio di un portafoglio: saldo e movimenti, con modifica e archiviazione.
 class PortafoglioPagina extends StatelessWidget {
@@ -95,6 +96,11 @@ class PortafoglioPagina extends StatelessWidget {
           appBar: AppBar(
             title: Text(p.portafoglio.nome),
             actions: [
+              IconButton(
+                tooltip: 'Condividi con altre persone',
+                icon: const Icon(Icons.group_add_outlined),
+                onPressed: () => apriInvito(context, sessione, portafoglioId),
+              ),
               IconButton(
                 tooltip: 'Modifica portafoglio',
                 icon: const Icon(Icons.edit_outlined),
@@ -180,6 +186,10 @@ class PortafoglioPagina extends StatelessWidget {
                             titolo: 'Prossimi movimenti su questo portafoglio',
                             chiave: 'inarrivo.$portafoglioId',
                             escludiOrigini: const {'carta'},
+                          ),
+                          SchedaPersone(
+                            sessione: sessione,
+                            portafoglioId: portafoglioId,
                           ),
                         ],
                       ),
